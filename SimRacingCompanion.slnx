@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/apps/" />
+  <Folder Name="/apps/CompanionAgent/">
+      <Project Path="apps/CompanionAgent/CompanionAgent.Api/CompanionAgent.Api.csproj" />
+      <Project Path="apps/CompanionAgent/CompanionAgent.Tray/CompanionAgent.Tray.csproj" />
+  </Folder>
+  <Folder Name="/packages/">
+    <Project Path="packages/Companion.Domain/Companion.Domain.csproj" />
+    <Project Path="packages/Companion.Infrastructure/Companion.Infrastructure.csproj" />
+    <Project Path="packages/Companion.SharedContracts/Companion.SharedContracts.csproj" />
+  </Folder>
+</Solution>

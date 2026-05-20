@@ -1,0 +1,411 @@
+using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Companion.Domain.History;
+using Companion.SharedContracts.History;
+
+namespace Companion.Infrastructure.History;
+
+public sealed class LocalHistoryService : ILocalHistoryService
+{
+    private const string EmptyValue = "--";
+
+    public HistoryResponse GetHistory()
+    {
+        var sources = GetSources();
+        var import = new HistoryImportResult(
+            LoadSessions(sources.ContentManagerSessionsPath),
+            LoadPersonalBests(sources.PersonalBestPath));
+
+        var sessions = import.Sessions
+            .OrderByDescending(session => session.StartedAt)
+            .Select(ToDto)
+            .ToList();
+
+        var personalBests = import.PersonalBests
+            .OrderBy(best => best.TimeMs)
+            .Select(ToDto)
+            .ToList();
+
+        return new HistoryResponse(
+            Summary: BuildSummary(sessions, personalBests),
+            LatestSession: sessions.FirstOrDefault(),
+            FastestSessionLap: sessions.Where(session => session.BestLapMs is > 0).MinBy(session => session.BestLapMs),
+            FastestPersonalBest: personalBests.FirstOrDefault(),
+            TopCars: BuildTopCars(sessions),
+            TopTracks: BuildTopTracks(sessions),
+            Sessions: sessions,
+            PersonalBests: personalBests,
+            Sources: sources);
+    }
+
+    private static HistorySourceDto GetSources()
+    {
+        var sessionsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AcTools Content Manager",
+            "Progress",
+            "Sessions");
+
+        var personalBestPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Assetto Corsa",
+            "personalbest.ini");
+
+        return new HistorySourceDto(
+            ContentManagerSessionsPath: sessionsPath,
+            ContentManagerSessionsFound: Directory.Exists(sessionsPath),
+            PersonalBestPath: personalBestPath,
+            PersonalBestFound: File.Exists(personalBestPath));
+    }
+
+    private static List<ImportedSession> LoadSessions(string sessionsPath)
+    {
+        if (!Directory.Exists(sessionsPath))
+        {
+            return [];
+        }
+
+        var sessions = new List<ImportedSession>();
+
+        foreach (var file in Directory.EnumerateFiles(sessionsPath, "*.json"))
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(file));
+                var root = document.RootElement;
+
+                var track = GetString(root, "track");
+                var driverName = EmptyValue;
+                var car = EmptyValue;
+
+                if (root.TryGetProperty("players", out var players) &&
+                    players.ValueKind == JsonValueKind.Array &&
+                    players.GetArrayLength() > 0)
+                {
+                    var player = players[0];
+                    driverName = GetString(player, "name");
+                    car = GetString(player, "car");
+                }
+
+                var sessionNames = new List<string>();
+                var laps = 0;
+                var bestLapMs = (int?)null;
+                var lastLapMs = (int?)null;
+
+                if (root.TryGetProperty("sessions", out var sessionElements) &&
+                    sessionElements.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var session in sessionElements.EnumerateArray())
+                    {
+                        var name = GetString(session, "name");
+                        if (name != EmptyValue)
+                        {
+                            sessionNames.Add(name);
+                        }
+
+                        laps += GetPlayerLapTotal(session);
+                        bestLapMs = MinNullable(bestLapMs, GetPlayerBestLap(session));
+                        lastLapMs = GetPlayerLastLap(session) ?? lastLapMs;
+                    }
+                }
+
+                var raceIni = GetString(root, "__raceIni");
+                var distanceKm = GetDrivenDistanceKm(raceIni);
+
+                sessions.Add(new ImportedSession(
+                    SourceId: Path.GetFileNameWithoutExtension(file),
+                    StartedAt: new DateTimeOffset(File.GetLastWriteTime(file)),
+                    DriverName: driverName,
+                    CarId: NormalizeId(car),
+                    TrackId: NormalizeId(track),
+                    SessionTypes: sessionNames.Count > 0 ? string.Join(", ", sessionNames.Distinct()) : EmptyValue,
+                    Laps: laps,
+                    DistanceKm: distanceKm,
+                    BestLapMs: bestLapMs,
+                    LastLapMs: lastLapMs));
+            }
+            catch
+            {
+                // Bad or partially written CM files should not break the local API.
+            }
+        }
+
+        return sessions;
+    }
+
+    private static List<PersonalBestRecord> LoadPersonalBests(string personalBestPath)
+    {
+        if (!File.Exists(personalBestPath))
+        {
+            return [];
+        }
+
+        var personalBests = new List<PersonalBestRecord>();
+        var currentCombo = string.Empty;
+        long? currentDate = null;
+        int? currentTime = null;
+
+        foreach (var line in File.ReadLines(personalBestPath))
+        {
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                AddPersonalBest(personalBests, currentCombo, currentDate, currentTime);
+
+                currentCombo = line.Trim('[', ']');
+                currentDate = null;
+                currentTime = null;
+                continue;
+            }
+
+            var parts = line.Split('=', 2);
+            if (parts.Length != 2)
+            {
+                continue;
+            }
+
+            if (parts[0].Equals("DATE", StringComparison.OrdinalIgnoreCase) &&
+                long.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var date))
+            {
+                currentDate = date;
+            }
+
+            if (parts[0].Equals("TIME", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var time))
+            {
+                currentTime = time;
+            }
+        }
+
+        AddPersonalBest(personalBests, currentCombo, currentDate, currentTime);
+        return personalBests;
+    }
+
+    private static void AddPersonalBest(
+        List<PersonalBestRecord> personalBests,
+        string combo,
+        long? date,
+        int? timeMs)
+    {
+        if (string.IsNullOrWhiteSpace(combo) || timeMs is not > 0)
+        {
+            return;
+        }
+
+        var separatorIndex = combo.IndexOf('@', StringComparison.Ordinal);
+        var car = separatorIndex > 0 ? combo[..separatorIndex] : combo;
+        var track = separatorIndex > 0 ? combo[(separatorIndex + 1)..] : EmptyValue;
+
+        personalBests.Add(new PersonalBestRecord(
+            CarId: NormalizeId(car),
+            TrackId: NormalizeId(track),
+            TimeMs: timeMs.Value,
+            SourceDate: date));
+    }
+
+    private static ProfileSummaryDto BuildSummary(
+        IReadOnlyList<SessionDto> sessions,
+        IReadOnlyList<PersonalBestDto> personalBests)
+    {
+        return new ProfileSummaryDto(
+            Sessions: sessions.Count,
+            PersonalBests: personalBests.Count,
+            Cars: sessions.Select(session => session.CarId).Where(IsKnownId).Distinct().Count(),
+            Tracks: sessions.Select(session => session.TrackId).Where(IsKnownId).Distinct().Count(),
+            Laps: sessions.Sum(session => session.Laps),
+            DistanceKm: Math.Round(sessions.Sum(session => session.DistanceKm ?? 0), 2));
+    }
+
+    private static List<TopCarDto> BuildTopCars(IReadOnlyList<SessionDto> sessions)
+    {
+        return sessions
+            .Where(session => IsKnownId(session.CarId))
+            .GroupBy(session => session.CarId)
+            .Select(group => new TopCarDto(
+                CarId: group.Key,
+                Sessions: group.Count(),
+                Laps: group.Sum(session => session.Laps),
+                DistanceKm: Math.Round(group.Sum(session => session.DistanceKm ?? 0), 2),
+                BestLapMs: MinValidLap(group.Select(session => session.BestLapMs))))
+            .OrderByDescending(car => car.DistanceKm)
+            .ThenByDescending(car => car.Sessions)
+            .Take(10)
+            .ToList();
+    }
+
+    private static List<TopTrackDto> BuildTopTracks(IReadOnlyList<SessionDto> sessions)
+    {
+        return sessions
+            .Where(session => IsKnownId(session.TrackId))
+            .GroupBy(session => session.TrackId)
+            .Select(group => new TopTrackDto(
+                TrackId: group.Key,
+                Sessions: group.Count(),
+                Laps: group.Sum(session => session.Laps),
+                DistanceKm: Math.Round(group.Sum(session => session.DistanceKm ?? 0), 2),
+                BestLapMs: MinValidLap(group.Select(session => session.BestLapMs))))
+            .OrderByDescending(track => track.Sessions)
+            .ThenByDescending(track => track.DistanceKm)
+            .Take(10)
+            .ToList();
+    }
+
+    private static SessionDto ToDto(ImportedSession session)
+    {
+        return new SessionDto(
+            Id: session.SourceId,
+            StartedAt: session.StartedAt,
+            DriverName: session.DriverName,
+            CarId: session.CarId,
+            TrackId: session.TrackId,
+            SessionTypes: session.SessionTypes,
+            Laps: session.Laps,
+            DistanceKm: session.DistanceKm.HasValue ? Math.Round(session.DistanceKm.Value, 2) : null,
+            BestLapMs: session.BestLapMs,
+            LastLapMs: session.LastLapMs);
+    }
+
+    private static PersonalBestDto ToDto(PersonalBestRecord personalBest)
+    {
+        return new PersonalBestDto(
+            CarId: personalBest.CarId,
+            TrackId: personalBest.TrackId,
+            TimeMs: personalBest.TimeMs,
+            SourceDate: personalBest.SourceDate);
+    }
+
+    private static int GetPlayerLapTotal(JsonElement session)
+    {
+        if (!session.TryGetProperty("lapstotal", out var lapsTotal) ||
+            lapsTotal.ValueKind != JsonValueKind.Array ||
+            lapsTotal.GetArrayLength() == 0 ||
+            !lapsTotal[0].TryGetInt32(out var laps))
+        {
+            return 0;
+        }
+
+        return laps;
+    }
+
+    private static int? GetPlayerBestLap(JsonElement session)
+    {
+        var bestLapMs = (int?)null;
+
+        if (session.TryGetProperty("bestLaps", out var bestLaps) &&
+            bestLaps.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var bestLap in bestLaps.EnumerateArray())
+            {
+                if (GetInt(bestLap, "car") == 0)
+                {
+                    bestLapMs = MinNullable(bestLapMs, GetInt(bestLap, "time"));
+                }
+            }
+        }
+
+        if (bestLapMs.HasValue)
+        {
+            return bestLapMs;
+        }
+
+        if (session.TryGetProperty("laps", out var laps) &&
+            laps.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var lap in laps.EnumerateArray())
+            {
+                if (GetInt(lap, "car") == 0)
+                {
+                    bestLapMs = MinNullable(bestLapMs, GetInt(lap, "time"));
+                }
+            }
+        }
+
+        return bestLapMs;
+    }
+
+    private static int? GetPlayerLastLap(JsonElement session)
+    {
+        if (!session.TryGetProperty("laps", out var laps) ||
+            laps.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var lastLapMs = (int?)null;
+
+        foreach (var lap in laps.EnumerateArray())
+        {
+            if (GetInt(lap, "car") == 0)
+            {
+                var time = GetInt(lap, "time");
+                if (time is > 0)
+                {
+                    lastLapMs = time;
+                }
+            }
+        }
+
+        return lastLapMs;
+    }
+
+    private static double? GetDrivenDistanceKm(string raceIni)
+    {
+        if (raceIni == EmptyValue)
+        {
+            return null;
+        }
+
+        var match = Regex.Match(raceIni, @"__CM_DRIVEN_DISTANCE=([0-9.]+)");
+        if (!match.Success ||
+            !double.TryParse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var meters))
+        {
+            return null;
+        }
+
+        return meters / 1000;
+    }
+
+    private static string GetString(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? EmptyValue
+            : EmptyValue;
+    }
+
+    private static int? GetInt(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var value) && value.TryGetInt32(out var number)
+            ? number
+            : null;
+    }
+
+    private static int? MinNullable(int? current, int? candidate)
+    {
+        if (candidate is not > 0)
+        {
+            return current;
+        }
+
+        return !current.HasValue || candidate.Value < current.Value ? candidate : current;
+    }
+
+    private static int? MinValidLap(IEnumerable<int?> lapTimes)
+    {
+        return lapTimes
+            .Where(time => time is > 0)
+            .Order()
+            .FirstOrDefault();
+    }
+
+    private static bool IsKnownId(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value) && value != EmptyValue;
+    }
+
+    private static string NormalizeId(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? EmptyValue
+            : value.Trim().ToLowerInvariant();
+    }
+}
