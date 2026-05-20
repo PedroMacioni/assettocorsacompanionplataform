@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { PaceChartClient } from "@/components/charts/PaceChartClient";
 
+type DataPoint = Record<string, string | number | null>;
+
 interface PaceEvolutionCardProps {
-  data: Array<Record<string, unknown>>;
+  data: DataPoint[];
   tracks: string[];
   trackLabels: Record<string, string>;
 }
