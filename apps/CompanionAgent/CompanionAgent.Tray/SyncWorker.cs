@@ -63,7 +63,11 @@ public sealed class SyncWorker : IDisposable
 
     public async Task SyncAsync()
     {
-        if (!await _lock.WaitAsync(0)) return;
+        if (!await _lock.WaitAsync(0))
+        {
+            ActivityLogged?.Invoke("⏳ Sincronização já em andamento...");
+            return;
+        }
         try
         {
             if (!_supabase.IsConfigured)
@@ -105,10 +109,11 @@ public sealed class SyncWorker : IDisposable
 
             try { await _supabase.UpdateAgentStatusAsync(unsynced.Count); } catch { /* non-fatal */ }
 
-            // Report Idle BEFORE track sync — tracks sync is heavy and non-critical
+            // Report Idle BEFORE heavy non-critical syncs
             StateChanged?.Invoke(SyncState.Idle, $"Sincronizado às {DateTime.Now:HH:mm}");
 
             try { await SyncTracksAsync(); } catch { /* non-fatal */ }
+            try { await SyncCarBadgesAsync(); } catch { /* non-fatal */ }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -146,8 +151,12 @@ public sealed class SyncWorker : IDisposable
 
         var outlineUrls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var track in pendingOutlines)
+        if (pendingOutlines.Count > 0)
+            ActivityLogged?.Invoke($"↑ Enviando outlines de pistas (0/{pendingOutlines.Count})...");
+
+        for (int i = 0; i < pendingOutlines.Count; i++)
         {
+            var track = pendingOutlines[i];
             try
             {
                 var bytes = _trackService.GetOutlineBytes(track.TrackId);
@@ -158,15 +167,84 @@ public sealed class SyncWorker : IDisposable
                 }
             }
             catch { /* individual upload failure should not block metadata sync */ }
+
+            if ((i + 1) % 5 == 0 || i == pendingOutlines.Count - 1)
+                ActivityLogged?.Invoke($"↑ Enviando outlines de pistas ({i + 1}/{pendingOutlines.Count})...");
         }
 
-        await _supabase.UpsertTracksAsync(allTracks, outlineUrls);
+        await _supabase.UpsertTracksAsync(allTracks, outlineUrls,
+            (done, total) => ActivityLogged?.Invoke($"↑ Pistas sincronizadas ({done}/{total})..."));
 
         if (outlineUrls.Count > 0)
             _cache.MarkTrackOutlinesSynced(outlineUrls.Keys);
 
         _tracksSyncedThisSession = true;
-        ActivityLogged?.Invoke($"↑ {allTracks.Count} pistas catalogadas · {outlineUrls.Count} outlines novos");
+        ActivityLogged?.Invoke($"✓ {allTracks.Count} pistas catalogadas · {outlineUrls.Count} outlines enviados");
+    }
+
+    private async Task SyncCarBadgesAsync()
+    {
+        var carsPath = FindAcCarsPath();
+        if (carsPath == null) return;
+
+        var allCarIds = _history.GetHistory().Sessions
+            .Select(s => s.CarId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(id => !_cache.SyncedCarBadgeIds.Contains(id))
+            .ToList();
+
+        if (allCarIds.Count == 0) return;
+
+        ActivityLogged?.Invoke($"↑ Enviando badges de carros (0/{allCarIds.Count})...");
+
+        var uploaded = new List<string>();
+        for (int i = 0; i < allCarIds.Count; i++)
+        {
+            var carId = allCarIds[i];
+            var badgePath = Path.Combine(carsPath, carId, "ui", "badge.png");
+            if (!File.Exists(badgePath)) continue;
+
+            try
+            {
+                var bytes = File.ReadAllBytes(badgePath);
+                if (bytes.Length > 0 && await _supabase.UploadCarBadgeAsync(carId, bytes))
+                    uploaded.Add(carId);
+            }
+            catch { /* individual failure should not block remaining uploads */ }
+
+            if ((i + 1) % 5 == 0 || i == allCarIds.Count - 1)
+                ActivityLogged?.Invoke($"↑ Enviando badges de carros ({i + 1}/{allCarIds.Count})...");
+        }
+
+        if (uploaded.Count > 0)
+        {
+            _cache.MarkCarBadgesSynced(uploaded);
+            ActivityLogged?.Invoke($"✓ {uploaded.Count} badges de carros enviados");
+        }
+    }
+
+    private static string? FindAcCarsPath()
+    {
+        string? steamPath = null;
+        try
+        {
+#pragma warning disable CA1416
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam");
+            steamPath = key?.GetValue("SteamPath") as string;
+#pragma warning restore CA1416
+        }
+        catch { }
+
+        if (string.IsNullOrEmpty(steamPath))
+        {
+            steamPath = new[] { @"C:\Program Files (x86)\Steam", @"C:\Program Files\Steam" }
+                .FirstOrDefault(Directory.Exists);
+        }
+
+        if (string.IsNullOrEmpty(steamPath)) return null;
+
+        var path = Path.Combine(steamPath, "steamapps", "common", "assettocorsa", "content", "cars");
+        return Directory.Exists(path) ? path : null;
     }
 
     private void SetupWatchers()

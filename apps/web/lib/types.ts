@@ -62,6 +62,13 @@ export type Track = {
   outline_url: string | null;
 };
 
+export type UserCarPreference = {
+  user_id: string;
+  car_id: string;
+  display_name: string | null;
+  updated_at: string;
+};
+
 export type AgentStatus = {
   user_id: string;
   last_synced_at: string | null;

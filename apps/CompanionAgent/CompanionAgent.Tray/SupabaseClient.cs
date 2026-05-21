@@ -16,6 +16,8 @@ public sealed class SupabaseClient : IDisposable
     private string _refreshToken = "";
     private DateTimeOffset _tokenExpiry;
 
+    public event Action<string, string>? TokensRefreshed;
+
     public bool IsConfigured => !string.IsNullOrEmpty(_accessToken);
     public string UserId { get; private set; } = "";
 
@@ -78,12 +80,17 @@ public sealed class SupabaseClient : IDisposable
         req.Headers.Add("apikey", _anonKey);
         req.Content = new StringContent(body, Encoding.UTF8, "application/json");
         var res = await _http.SendAsync(req);
-        res.EnsureSuccessStatusCode();
+        if (!res.IsSuccessStatusCode)
+        {
+            var errorBody = await res.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"refresh_token {(int)res.StatusCode}: {errorBody}", null, res.StatusCode);
+        }
 
         using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
         var at = doc.RootElement.GetProperty("access_token").GetString()!;
         var rt = doc.RootElement.GetProperty("refresh_token").GetString()!;
         SetTokens(at, rt);
+        TokensRefreshed?.Invoke(at, rt);
     }
 
     public async Task UpsertSessionsAsync(IReadOnlyList<SessionDto> sessions)
@@ -129,7 +136,12 @@ public sealed class SupabaseClient : IDisposable
         var req = BuildRequest(HttpMethod.Post, "/rest/v1/personal_bests?on_conflict=user_id,car_id,track_id");
         req.Headers.Add("Prefer", "resolution=merge-duplicates");
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        (await _http.SendAsync(req)).EnsureSuccessStatusCode();
+        var res = await _http.SendAsync(req);
+        if (!res.IsSuccessStatusCode)
+        {
+            var body = await res.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"personal_bests {(int)res.StatusCode}: {body}", null, res.StatusCode);
+        }
     }
 
     public async Task UpdateAgentStatusAsync(int sessionsSynced)
@@ -147,13 +159,21 @@ public sealed class SupabaseClient : IDisposable
         var req = BuildRequest(HttpMethod.Post, "/rest/v1/agent_status");
         req.Headers.Add("Prefer", "resolution=merge-duplicates");
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        (await _http.SendAsync(req)).EnsureSuccessStatusCode();
+        var res = await _http.SendAsync(req);
+        if (!res.IsSuccessStatusCode)
+        {
+            var body = await res.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"agent_status {(int)res.StatusCode}: {body}", null, res.StatusCode);
+        }
     }
 
-    public async Task UpsertTracksAsync(IReadOnlyList<TrackDto> tracks, IReadOnlyDictionary<string, string> outlineUrls)
+    public async Task UpsertTracksAsync(
+        IReadOnlyList<TrackDto> tracks,
+        IReadOnlyDictionary<string, string> outlineUrls,
+        Action<int, int>? onBatchProgress = null)
     {
         await EnsureValidTokenAsync();
-        const int batchSize = 50;
+        const int batchSize = 1;
 
         for (int i = 0; i < tracks.Count; i += batchSize)
         {
@@ -169,19 +189,39 @@ public sealed class SupabaseClient : IDisposable
                     ["pitboxes"] = t.Pitboxes,
                     ["run"] = t.Run,
                     ["tags"] = t.Tags,
-                    ["description"] = t.Description,
-                    ["updated_at"] = DateTimeOffset.UtcNow
+                    ["description"] = t.Description
                 };
                 if (outlineUrls.TryGetValue(t.TrackId, out var url))
                     obj["outline_url"] = url;
                 return obj;
             }).ToList();
 
-            var req = BuildRequest(HttpMethod.Post, "/rest/v1/tracks");
-            req.Headers.Add("Prefer", "resolution=merge-duplicates");
+            var req = BuildRequest(HttpMethod.Post, "/rest/v1/tracks?on_conflict=track_id");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
             req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
-            (await _http.SendAsync(req)).EnsureSuccessStatusCode();
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var res = await _http.SendAsync(req, cts.Token);
+            if (!res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync(cts.Token);
+                throw new HttpRequestException($"tracks {(int)res.StatusCode}: {body}", null, res.StatusCode);
+            }
+
+            onBatchProgress?.Invoke(Math.Min(i + batchSize, tracks.Count), tracks.Count);
         }
+    }
+
+    public async Task<bool> UploadCarBadgeAsync(string carId, byte[] imageBytes)
+    {
+        await EnsureValidTokenAsync();
+        var storagePath = $"{UserId}/{carId}.png";
+        var req = BuildRequest(HttpMethod.Post, $"/storage/v1/object/car-previews/{storagePath}");
+        req.Headers.Add("x-upsert", "true");
+        req.Content = new ByteArrayContent(imageBytes);
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        var res = await _http.SendAsync(req);
+        return res.IsSuccessStatusCode;
     }
 
     public async Task<string?> UploadTrackOutlineAsync(string trackId, byte[] imageBytes)
@@ -214,7 +254,14 @@ public sealed class SupabaseClient : IDisposable
     private async Task EnsureValidTokenAsync()
     {
         if (_tokenExpiry - DateTimeOffset.UtcNow < TimeSpan.FromMinutes(5) && !string.IsNullOrEmpty(_refreshToken))
-            await RefreshTokenAsync();
+        {
+            try { await RefreshTokenAsync(); }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                ClearTokens();
+                throw new HttpRequestException("Sessão expirada — faça login novamente nas configurações", ex, System.Net.HttpStatusCode.Unauthorized);
+            }
+        }
     }
 
     private HttpRequestMessage BuildRequest(HttpMethod method, string path)

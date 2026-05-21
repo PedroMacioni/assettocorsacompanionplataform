@@ -29,7 +29,7 @@ public sealed class LocalTrackService : ILocalTrackService
         {
             var trackFolderName = Path.GetFileName(trackDir).ToLowerInvariant();
 
-            // Base layout (track has a single layout or serves as the default)
+            // Format A: single-layout track — ui/ui_track.json at root
             var baseUiJson = Path.Combine(trackDir, "ui", "ui_track.json");
             if (File.Exists(baseUiJson))
             {
@@ -42,12 +42,41 @@ public sealed class LocalTrackService : ILocalTrackService
                 }
             }
 
-            // Named layout variants (subfolders that have their own ui_track.json)
+            var ignoredDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "ui", "data", "sfx", "animations", "sounds", "texture", "preview", "skins", "extension", "lights" };
+
+            // Format B: Kunos-style multi-layout — ui/{layout}/ui_track.json
+            var uiDir = Path.Combine(trackDir, "ui");
+            if (Directory.Exists(uiDir))
+            {
+                foreach (var layoutUiDir in Directory.EnumerateDirectories(uiDir))
+                {
+                    var layoutName = Path.GetFileName(layoutUiDir).ToLowerInvariant();
+                    var layoutUiJson = Path.Combine(layoutUiDir, "ui_track.json");
+                    if (!File.Exists(layoutUiJson)) continue;
+
+                    var layoutTrackId = $"{trackFolderName}/{layoutName}";
+                    var layoutDataDir = Path.Combine(trackDir, layoutName);
+                    var outlinePath = File.Exists(Path.Combine(layoutDataDir, "map.png"))
+                        ? Path.Combine(layoutDataDir, "map.png")
+                        : File.Exists(Path.Combine(trackDir, "map.png"))
+                            ? Path.Combine(trackDir, "map.png")
+                            : null;
+
+                    var dto = ParseTrackJson(layoutTrackId, layoutUiJson, outlinePath != null);
+                    if (dto != null)
+                    {
+                        if (outlinePath != null) outlinePaths[layoutTrackId] = outlinePath;
+                        tracks.Add(dto);
+                    }
+                }
+            }
+
+            // Format C: MOD-style multi-layout — {layout}/ui/ui_track.json
             foreach (var layoutDir in Directory.EnumerateDirectories(trackDir))
             {
                 var layoutName = Path.GetFileName(layoutDir).ToLowerInvariant();
-                if (layoutName is "ui" or "data" or "sfx" or "animations" or "sounds" or "texture" or "preview")
-                    continue;
+                if (ignoredDirs.Contains(layoutName)) continue;
 
                 var layoutUiJson = Path.Combine(layoutDir, "ui", "ui_track.json");
                 if (!File.Exists(layoutUiJson)) continue;

@@ -39,6 +39,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         _tray.DoubleClick  += (_, _) => ShowMainForm();
         _tray.ContextMenuStrip = BuildTrayMenu();
 
+        _supabase.TokensRefreshed += OnTokensRefreshed;
         _worker.StateChanged += OnStateChanged;
         _worker.Start(_settings.SyncIntervalMinutes);
     }
@@ -94,6 +95,13 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         if (ctx != null) ctx.Post(_ => Update(), null);
         else Update();
+    }
+
+    private void OnTokensRefreshed(string accessToken, string refreshToken)
+    {
+        _settings.UserToken = accessToken;
+        _settings.RefreshToken = refreshToken;
+        SettingsStore.Save(_settings);
     }
 
     private void OnSettingsSaved(AgentSettings updated)

@@ -166,7 +166,11 @@ public sealed class MainForm : Form
         _syncBtn.Click += (_, _) =>
         {
             _syncBtn.Enabled = false;
-            _ = _worker.SyncAsync();
+            _ = _worker.SyncAsync().ContinueWith(_ =>
+            {
+                if (IsDisposed || !IsHandleCreated) return;
+                BeginInvoke(() => { if (_stateLabel.Text != "Sincronizando...") _syncBtn.Enabled = true; });
+            });
         };
 
         syncCard.Controls.AddRange(new Control[] { _stateLabel, _syncBtn });

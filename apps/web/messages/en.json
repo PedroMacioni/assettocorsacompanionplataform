@@ -1,0 +1,42 @@
+{
+  "Garage": {
+    "title": "Garage",
+    "yourCars": "Your Cars",
+    "searchPlaceholder": "Search cars...",
+    "noResults": "No cars found",
+    "empty": {
+      "title": "No cars in your garage",
+      "description": "Sync your sessions to see your car stats."
+    },
+    "summary": {
+      "carsOne": "car",
+      "carsOther": "cars",
+      "sessionsOne": "session",
+      "sessionsOther": "sessions",
+      "driven": "driven"
+    },
+    "car": {
+      "sessions": "Sessions",
+      "bestLap": "Best Lap",
+      "distance": "Distance",
+      "laps": "Laps",
+      "favorite": "FAVORITE"
+    },
+    "sections": {
+      "recentSessions": "Recent Sessions",
+      "knownTracks": "Known Tracks",
+      "personalBests": "Personal Bests",
+      "noSessions": "No sessions yet",
+      "noTracks": "No track data"
+    },
+    "edit": {
+      "button": "Rename",
+      "title": "Rename Car",
+      "displayNameLabel": "Display name",
+      "placeholder": "E.g. Race F40",
+      "hint": "Visible only to you. Leave empty to use the original name.",
+      "save": "Save",
+      "cancel": "Cancel"
+    }
+  }
+}

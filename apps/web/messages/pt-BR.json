@@ -1,0 +1,42 @@
+{
+  "Garage": {
+    "title": "Garagem",
+    "yourCars": "Seus Carros",
+    "searchPlaceholder": "Buscar carro...",
+    "noResults": "Nenhum carro encontrado",
+    "empty": {
+      "title": "Nenhum carro na garagem",
+      "description": "Sincronize suas sessões para ver as estatísticas dos seus carros."
+    },
+    "summary": {
+      "carsOne": "carro",
+      "carsOther": "carros",
+      "sessionsOne": "sessão",
+      "sessionsOther": "sessões",
+      "driven": "rodados"
+    },
+    "car": {
+      "sessions": "Sessões",
+      "bestLap": "Melhor Volta",
+      "distance": "Distância",
+      "laps": "Voltas",
+      "favorite": "FAVORITO"
+    },
+    "sections": {
+      "recentSessions": "Sessões Recentes",
+      "knownTracks": "Pistas Conhecidas",
+      "personalBests": "Recordes Pessoais",
+      "noSessions": "Sem sessões ainda",
+      "noTracks": "Sem dados de pistas"
+    },
+    "edit": {
+      "button": "Renomear",
+      "title": "Renomear Carro",
+      "displayNameLabel": "Nome de exibição",
+      "placeholder": "Ex: F40 de treino",
+      "hint": "Visível apenas para você. Deixe em branco para usar o nome original.",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    }
+  }
+}

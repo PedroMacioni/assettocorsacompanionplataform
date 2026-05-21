@@ -12,6 +12,7 @@ public sealed class SyncCache
 
     public HashSet<string> SyncedSessionIds { get; private set; } = [];
     public HashSet<string> SyncedTrackOutlineIds { get; private set; } = [];
+    public HashSet<string> SyncedCarBadgeIds { get; private set; } = [];
     public DateTimeOffset? PersonalBestsSyncedAt { get; private set; }
 
     public static SyncCache Load()
@@ -26,6 +27,7 @@ public sealed class SyncCache
                     {
                         SyncedSessionIds = new HashSet<string>(data.Sessions ?? []),
                         SyncedTrackOutlineIds = new HashSet<string>(data.TrackOutlines ?? []),
+                        SyncedCarBadgeIds = new HashSet<string>(data.CarBadges ?? []),
                         PersonalBestsSyncedAt = data.PersonalBestsSyncedAt
                     };
             }
@@ -52,6 +54,12 @@ public sealed class SyncCache
         Persist();
     }
 
+    public void MarkCarBadgesSynced(IEnumerable<string> carIds)
+    {
+        foreach (var id in carIds) SyncedCarBadgeIds.Add(id);
+        Persist();
+    }
+
     private void Persist()
     {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(CachePath)!);
@@ -60,6 +68,7 @@ public sealed class SyncCache
             {
                 Sessions = [.. SyncedSessionIds],
                 TrackOutlines = [.. SyncedTrackOutlineIds],
+                CarBadges = [.. SyncedCarBadgeIds],
                 PersonalBestsSyncedAt = PersonalBestsSyncedAt
             },
             JsonOpts));
@@ -69,6 +78,7 @@ public sealed class SyncCache
     {
         public List<string>? Sessions { get; set; }
         public List<string>? TrackOutlines { get; set; }
+        public List<string>? CarBadges { get; set; }
         public DateTimeOffset? PersonalBestsSyncedAt { get; set; }
     }
 }
