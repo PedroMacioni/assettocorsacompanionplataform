@@ -10,4 +10,8 @@ public sealed class AgentSettings
     public bool AutoStart { get; set; } = true;
     public DateTimeOffset? LastSyncAt { get; set; }
     public int LastSyncSessionCount { get; set; }
+
+    // Custom data paths (empty = use default locations)
+    public string CustomSessionsPath { get; set; } = "";
+    public string CustomPersonalBestPath { get; set; } = "";
 }

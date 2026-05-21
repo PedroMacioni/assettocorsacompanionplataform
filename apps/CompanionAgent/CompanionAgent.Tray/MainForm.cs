@@ -1,5 +1,6 @@
 namespace CompanionAgent.Tray;
 
+using Companion.Infrastructure.History;
 using System.Runtime.InteropServices;
 
 public sealed class MainForm : Form
@@ -21,6 +22,7 @@ public sealed class MainForm : Form
     // ── State ─────────────────────────────────────────────────────────────
     private readonly SyncWorker _worker;
     private readonly SupabaseClient _supabase;
+    private readonly ILocalHistoryService _historyService;
     private AgentSettings _settings;
     private readonly Action<AgentSettings> _onSettingsSaved;
     private bool _allowClose;
@@ -35,11 +37,13 @@ public sealed class MainForm : Form
     public MainForm(
         SupabaseClient supabase,
         SyncWorker worker,
+        ILocalHistoryService historyService,
         AgentSettings settings,
         Action<AgentSettings> onSettingsSaved)
     {
         _worker          = worker;
         _supabase        = supabase;
+        _historyService  = historyService;
         _settings        = settings;
         _onSettingsSaved = onSettingsSaved;
 
@@ -199,7 +203,7 @@ public sealed class MainForm : Form
         var btnCfg = MakeFooterButton("Configurações", 158);
         btnCfg.Click += (_, _) =>
         {
-            var form = new SettingsForm(_settings, _supabase, saved =>
+            var form = new SettingsForm(_settings, _supabase, _historyService, saved =>
             {
                 _settings = saved;
                 _onSettingsSaved(saved);

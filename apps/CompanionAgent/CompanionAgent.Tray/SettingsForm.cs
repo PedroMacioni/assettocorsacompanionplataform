@@ -1,5 +1,6 @@
 namespace CompanionAgent.Tray;
 
+using Companion.Infrastructure.History;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 
@@ -18,23 +19,27 @@ public sealed class SettingsForm : Form
     private static readonly Color Red     = Color.FromArgb(248, 113, 113);
 
     private readonly SupabaseClient _supabase;
+    private readonly ILocalHistoryService _historyService;
     private readonly Action<AgentSettings> _onSave;
 
-    private Panel         _authCard     = null!;
-    private NumericUpDown _intervalBox  = null!;
-    private CheckBox      _autoStartBox = null!;
+    private Panel         _authCard        = null!;
+    private NumericUpDown _intervalBox     = null!;
+    private CheckBox      _autoStartBox    = null!;
+    private TextBox       _sessionsPathBox = null!;
+    private TextBox       _pbPathBox       = null!;
 
-    public SettingsForm(AgentSettings current, SupabaseClient supabase, Action<AgentSettings> onSave)
+    public SettingsForm(AgentSettings current, SupabaseClient supabase, ILocalHistoryService historyService, Action<AgentSettings> onSave)
     {
-        _supabase = supabase;
-        _onSave   = onSave;
+        _supabase       = supabase;
+        _historyService = historyService;
+        _onSave         = onSave;
 
         Text            = "Configurações";
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox     = false;
         MinimizeBox     = false;
         StartPosition   = FormStartPosition.CenterScreen;
-        ClientSize      = new Size(420, 370);
+        ClientSize      = new Size(420, 520);
         BackColor       = BgDark;
         ForeColor       = TxtPri;
         Font            = new Font("Segoe UI", 9f);
@@ -87,15 +92,56 @@ public sealed class SettingsForm : Form
         };
         syncCard.Controls.Add(_autoStartBox);
 
+        // ── Data sources card ─────────────────────────────────────────────
+        var (currentSessionsPath, currentPbPath) = _historyService.GetCurrentPaths();
+
+        var dataCard = MakeCard(12, 322, 396, 140);
+        dataCard.Controls.Add(MakeLabel("FONTES DE DADOS", 14, 12, TxtSec, 7f, FontStyle.Bold));
+        dataCard.Controls.Add(MakeLabel("Deixe vazio para usar o caminho padrão/sample-data", 14, 30, TxtSec, 7f));
+
+        dataCard.Controls.Add(MakeLabel("Sessões:", 14, 52, TxtSec, 8.5f));
+        _sessionsPathBox = MakeTextBox(14, 70, 330, current.CustomSessionsPath);
+        _sessionsPathBox.PlaceholderText = currentSessionsPath;
+        dataCard.Controls.Add(_sessionsPathBox);
+
+        var browseSessionsBtn = MakeButton("...", 350, 70, 32, 24, (_, _) => BrowseFolder(_sessionsPathBox));
+        dataCard.Controls.Add(browseSessionsBtn);
+
+        dataCard.Controls.Add(MakeLabel("Personal Bests:", 14, 98, TxtSec, 8.5f));
+        _pbPathBox = MakeTextBox(14, 116, 330, current.CustomPersonalBestPath);
+        _pbPathBox.PlaceholderText = currentPbPath;
+        dataCard.Controls.Add(_pbPathBox);
+
+        var browsePbBtn = MakeButton("...", 350, 116, 32, 24, (_, _) => BrowseFile(_pbPathBox, "INI files (*.ini)|*.ini|All files (*.*)|*.*"));
+        dataCard.Controls.Add(browsePbBtn);
+
         // ── Footer ────────────────────────────────────────────────────────
-        var footer = MakePanel(0, 324, 420, 46, BgSub);
+        var footer = MakePanel(0, 474, 420, 46, BgSub);
         footer.Paint += (_, e) => e.Graphics.DrawLine(new Pen(Border), 0, 0, 420, 0);
 
         var saveBtn   = MakeButton("Salvar",   210, 8, 90, 28, OnSave);
         var cancelBtn = MakeButton("Cancelar", 310, 8, 90, 28, (_, _) => Close());
         footer.Controls.AddRange(new Control[] { saveBtn, cancelBtn });
 
-        Controls.AddRange(new Control[] { header, _authCard, syncCard, footer });
+        Controls.AddRange(new Control[] { header, _authCard, syncCard, dataCard, footer });
+    }
+
+    private void BrowseFolder(TextBox target)
+    {
+        using var dialog = new FolderBrowserDialog();
+        if (!string.IsNullOrEmpty(target.Text) && Directory.Exists(target.Text))
+            dialog.SelectedPath = target.Text;
+        if (dialog.ShowDialog() == DialogResult.OK)
+            target.Text = dialog.SelectedPath;
+    }
+
+    private void BrowseFile(TextBox target, string filter)
+    {
+        using var dialog = new OpenFileDialog { Filter = filter };
+        if (!string.IsNullOrEmpty(target.Text) && File.Exists(target.Text))
+            dialog.FileName = target.Text;
+        if (dialog.ShowDialog() == DialogResult.OK)
+            target.Text = dialog.FileName;
     }
 
     // ── Auth card content (swappable) ─────────────────────────────────────
@@ -227,8 +273,10 @@ public sealed class SettingsForm : Form
     private void OnSave(object? sender, EventArgs e)
     {
         var settings = SettingsStore.Load();
-        settings.SyncIntervalMinutes = (int)_intervalBox.Value;
-        settings.AutoStart           = _autoStartBox.Checked;
+        settings.SyncIntervalMinutes   = (int)_intervalBox.Value;
+        settings.AutoStart             = _autoStartBox.Checked;
+        settings.CustomSessionsPath    = _sessionsPathBox.Text.Trim();
+        settings.CustomPersonalBestPath = _pbPathBox.Text.Trim();
         SettingsStore.Save(settings);
 
         if (_autoStartBox.Checked) AutoStartManager.Enable();

@@ -9,6 +9,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly SupabaseClient _supabase;
     private readonly SyncWorker _worker;
     private readonly MainForm _mainForm;
+    private readonly LocalHistoryService _historyService;
     private AgentSettings _settings;
 
     private ToolStripMenuItem _statusItem = null!;
@@ -21,9 +22,12 @@ public sealed class TrayApplicationContext : ApplicationContext
         if (!string.IsNullOrEmpty(_settings.UserToken))
             _supabase.SetTokens(_settings.UserToken, _settings.RefreshToken);
 
-        _worker = new SyncWorker(_supabase, new LocalHistoryService(), new LocalTrackService());
+        _historyService = new LocalHistoryService();
+        _historyService.SetCustomPaths(_settings.CustomSessionsPath, _settings.CustomPersonalBestPath);
 
-        _mainForm = new MainForm(_supabase, _worker, _settings, OnSettingsSaved);
+        _worker = new SyncWorker(_supabase, _historyService, new LocalTrackService());
+
+        _mainForm = new MainForm(_supabase, _worker, _historyService, _settings, OnSettingsSaved);
         _mainForm.Show();
 
         _tray = new NotifyIcon
@@ -96,6 +100,7 @@ public sealed class TrayApplicationContext : ApplicationContext
     {
         _settings = updated;
         _supabase.SetTokens(updated.UserToken, updated.RefreshToken);
+        _historyService.SetCustomPaths(updated.CustomSessionsPath, updated.CustomPersonalBestPath);
         _worker.UpdateInterval(updated.SyncIntervalMinutes);
         _ = _worker.SyncAsync();
     }

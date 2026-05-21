@@ -10,6 +10,21 @@ public sealed class LocalHistoryService : ILocalHistoryService
 {
     private const string EmptyValue = "--";
 
+    private string? _customSessionsPath;
+    private string? _customPersonalBestPath;
+
+    public void SetCustomPaths(string? sessionsPath, string? personalBestPath)
+    {
+        _customSessionsPath = string.IsNullOrWhiteSpace(sessionsPath) ? null : sessionsPath;
+        _customPersonalBestPath = string.IsNullOrWhiteSpace(personalBestPath) ? null : personalBestPath;
+    }
+
+    public (string SessionsPath, string PersonalBestPath) GetCurrentPaths()
+    {
+        var sources = GetSources();
+        return (sources.ContentManagerSessionsPath, sources.PersonalBestPath);
+    }
+
     public HistoryResponse GetHistory()
     {
         var sources = GetSources();
@@ -44,29 +59,48 @@ public sealed class LocalHistoryService : ILocalHistoryService
             Sources: sources);
     }
 
-    private static HistorySourceDto GetSources()
+    private HistorySourceDto GetSources()
     {
-        var sessionsPath = Path.Combine(
+        // Use custom paths if provided
+        if (!string.IsNullOrEmpty(_customSessionsPath) || !string.IsNullOrEmpty(_customPersonalBestPath))
+        {
+            var sessionsPath = _customSessionsPath ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AcTools Content Manager", "Progress", "Sessions");
+
+            var personalBestPath = _customPersonalBestPath ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Assetto Corsa", "personalbest.ini");
+
+            return new HistorySourceDto(
+                ContentManagerSessionsPath: sessionsPath,
+                ContentManagerSessionsFound: Directory.Exists(sessionsPath),
+                PersonalBestPath: personalBestPath,
+                PersonalBestFound: File.Exists(personalBestPath));
+        }
+
+        // Default paths
+        var defaultSessionsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "AcTools Content Manager", "Progress", "Sessions");
 
-        var personalBestPath = Path.Combine(
+        var defaultPersonalBestPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             "Assetto Corsa", "personalbest.ini");
 
         // Fall back to bundled sample data when CM is not installed
-        if (!Directory.Exists(sessionsPath))
+        if (!Directory.Exists(defaultSessionsPath))
         {
             var sampleBase = Path.Combine(AppContext.BaseDirectory, "sample-data");
-            sessionsPath     = Path.Combine(sampleBase, "Sessions");
-            personalBestPath = Path.Combine(sampleBase, "personalbest.ini");
+            defaultSessionsPath     = Path.Combine(sampleBase, "Sessions");
+            defaultPersonalBestPath = Path.Combine(sampleBase, "personalbest.ini");
         }
 
         return new HistorySourceDto(
-            ContentManagerSessionsPath: sessionsPath,
-            ContentManagerSessionsFound: Directory.Exists(sessionsPath),
-            PersonalBestPath: personalBestPath,
-            PersonalBestFound: File.Exists(personalBestPath));
+            ContentManagerSessionsPath: defaultSessionsPath,
+            ContentManagerSessionsFound: Directory.Exists(defaultSessionsPath),
+            PersonalBestPath: defaultPersonalBestPath,
+            PersonalBestFound: File.Exists(defaultPersonalBestPath));
     }
 
     private static List<ImportedSession> LoadSessions(string sessionsPath, string dataFilePath)
