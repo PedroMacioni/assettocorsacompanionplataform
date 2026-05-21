@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, List, TrendingUp, Car, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, List, TrendingUp, Car, MapPin, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,17 +12,28 @@ const navItems = [
   { href: "/sessions", label: "Sessions", icon: List },
   { href: "/analytics", label: "Analytics", icon: TrendingUp },
   { href: "/garage", label: "Garage", icon: Car },
+  { href: "/tracks", label: "Tracks", icon: MapPin },
 ] as const;
 
-function Initials({ name }: { name: string }) {
+function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt={name}
+        className="w-8 h-8 rounded-full object-cover shrink-0 border border-border"
+      />
+    );
+  }
   const parts = name.trim().split(/\s+/);
   const letters =
     parts.length >= 2
       ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
       : name.slice(0, 2).toUpperCase();
   return (
-    <div className="w-8 h-8 rounded-full bg-[#e8612a20] border border-[#e8612a40] flex items-center justify-center shrink-0">
-      <span className="text-[11px] font-bold text-[#e8612a]">{letters}</span>
+    <div className="w-8 h-8 rounded-full bg-primary/[0.12] border border-primary/25 flex items-center justify-center shrink-0">
+      <span className="text-[11px] font-bold text-primary">{letters}</span>
     </div>
   );
 }
@@ -32,6 +43,7 @@ export function Sidebar() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -43,6 +55,7 @@ export function Sidebar() {
             "Driver"
         );
         setEmail(data.user.email ?? "");
+        setAvatarUrl(data.user.user_metadata?.avatar_url ?? null);
       }
     });
   }, []);
@@ -58,20 +71,20 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col bg-[#0d0d0f] border-r border-[#2a2a2c] z-40">
+    <aside className="fixed left-0 top-0 h-screen w-[220px] flex flex-col bg-background border-r border-border z-40">
 
       {/* Logo */}
       <div className="px-5 pt-7 pb-6">
         <div className="flex items-baseline gap-2">
-          <span className="text-[15px] font-bold tracking-[0.2em] text-white uppercase">
+          <span className="text-[15px] font-bold tracking-[0.2em] text-foreground uppercase">
             Apex
           </span>
-          <span className="text-[10px] font-medium text-[#6b6b72] tracking-widest">v1.0</span>
+          <span className="text-[10px] font-medium text-muted-foreground tracking-widest">v1.0</span>
         </div>
-        <p className="text-[10px] text-[#6b6b72] mt-0.5 tracking-wide">Sim Racing</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5 tracking-wide">Sim Racing</p>
       </div>
 
-      <div className="mx-4 h-px bg-[#2a2a2c]" />
+      <div className="mx-4 h-px bg-border" />
 
       {/* Main nav */}
       <nav className="flex-1 px-3 pt-3 space-y-0.5">
@@ -85,30 +98,25 @@ export function Sidebar() {
                 "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
                 "transition-all duration-150 ease-out",
                 active
-                  ? "text-white bg-[#1a1a1c]"
-                  : "text-[#6b6b72] hover:text-white hover:bg-[#161618]"
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
-              {/* Active indicator bar */}
               <span
                 className={cn(
                   "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full",
                   "transition-all duration-200 ease-out",
                   active
-                    ? "h-5 bg-[#e8612a] opacity-100"
-                    : "h-0 bg-[#e8612a] opacity-0 group-hover:h-3 group-hover:opacity-40"
+                    ? "h-5 bg-primary opacity-100"
+                    : "h-0 bg-primary opacity-0 group-hover:h-3 group-hover:opacity-40"
                 )}
               />
-
               <Icon
                 className={cn(
                   "h-[15px] w-[15px] shrink-0 transition-all duration-150",
-                  active
-                    ? "text-[#e8612a]"
-                    : "text-[#6b6b72] group-hover:text-white"
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
               />
-
               <span className="transition-colors duration-150">{label}</span>
             </Link>
           );
@@ -117,7 +125,7 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className="px-3 pb-4">
-        <div className="mx-1 h-px bg-[#2a2a2c] mb-3" />
+        <div className="mx-1 h-px bg-border mb-3" />
 
         {/* Settings */}
         {(() => {
@@ -129,22 +137,22 @@ export function Sidebar() {
                 "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
                 "transition-all duration-150 ease-out",
                 active
-                  ? "text-white bg-[#1a1a1c]"
-                  : "text-[#6b6b72] hover:text-white hover:bg-[#161618]"
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               <span
                 className={cn(
                   "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-200",
                   active
-                    ? "h-5 bg-[#e8612a] opacity-100"
-                    : "h-0 opacity-0 group-hover:h-3 group-hover:opacity-40 bg-[#e8612a]"
+                    ? "h-5 bg-primary opacity-100"
+                    : "h-0 opacity-0 group-hover:h-3 group-hover:opacity-40 bg-primary"
                 )}
               />
               <Settings
                 className={cn(
                   "h-[15px] w-[15px] shrink-0 transition-colors duration-150",
-                  active ? "text-[#e8612a]" : "text-[#6b6b72] group-hover:text-white"
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
               />
               Settings
@@ -153,21 +161,21 @@ export function Sidebar() {
         })()}
 
         {/* User card + sign out */}
-        <div className="mt-3 mx-1 p-2.5 rounded-md bg-[#161618] border border-[#2a2a2c]">
+        <div className="mt-3 mx-1 p-2.5 rounded-md bg-muted border border-border">
           <div className="flex items-center gap-2.5">
-            <Initials name={displayName || "D"} />
+            <Avatar name={displayName || "D"} avatarUrl={avatarUrl} />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate leading-tight">
+              <p className="text-xs font-semibold text-foreground truncate leading-tight">
                 {displayName}
               </p>
-              <p className="text-[10px] text-[#6b6b72] truncate leading-tight mt-0.5">
+              <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
                 {email}
               </p>
             </div>
             <button
               onClick={signOut}
               title="Sign out"
-              className="shrink-0 p-1 rounded text-[#6b6b72] hover:text-[#ef4444] transition-colors duration-150"
+              className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive transition-colors duration-150"
             >
               <LogOut className="h-3.5 w-3.5" />
             </button>

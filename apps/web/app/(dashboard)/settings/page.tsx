@@ -22,6 +22,9 @@ export default async function SettingsPage() {
       email={user!.email ?? ""}
       displayName={user!.user_metadata?.display_name ?? ""}
       avatarColor={user!.user_metadata?.avatar_color ?? "#e8612a"}
+      avatarUrl={user!.user_metadata?.avatar_url ?? null}
+      savedTheme={user!.user_metadata?.theme ?? null}
+      savedLang={user!.user_metadata?.lang ?? null}
       memberSince={user!.created_at}
       totalSessions={summary?.total_sessions ?? 0}
       lastSessionAt={summary?.last_session_at ?? null}

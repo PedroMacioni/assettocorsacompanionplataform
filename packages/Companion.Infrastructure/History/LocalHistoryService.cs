@@ -13,8 +13,13 @@ public sealed class LocalHistoryService : ILocalHistoryService
     public HistoryResponse GetHistory()
     {
         var sources = GetSources();
+        var cmDataFile = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AcTools Content Manager", "Progress", "Profile (Sessions).data");
+        var sampleDataFile = Path.Combine(AppContext.BaseDirectory, "sample-data", "Profile (Sessions).data");
+        var dataFilePath = File.Exists(cmDataFile) ? cmDataFile : sampleDataFile;
         var import = new HistoryImportResult(
-            LoadSessions(sources.ContentManagerSessionsPath),
+            LoadSessions(sources.ContentManagerSessionsPath, dataFilePath),
             LoadPersonalBests(sources.PersonalBestPath));
 
         var sessions = import.Sessions
@@ -43,14 +48,19 @@ public sealed class LocalHistoryService : ILocalHistoryService
     {
         var sessionsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AcTools Content Manager",
-            "Progress",
-            "Sessions");
+            "AcTools Content Manager", "Progress", "Sessions");
 
         var personalBestPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "Assetto Corsa",
-            "personalbest.ini");
+            "Assetto Corsa", "personalbest.ini");
+
+        // Fall back to bundled sample data when CM is not installed
+        if (!Directory.Exists(sessionsPath))
+        {
+            var sampleBase = Path.Combine(AppContext.BaseDirectory, "sample-data");
+            sessionsPath     = Path.Combine(sampleBase, "Sessions");
+            personalBestPath = Path.Combine(sampleBase, "personalbest.ini");
+        }
 
         return new HistorySourceDto(
             ContentManagerSessionsPath: sessionsPath,
@@ -59,79 +69,152 @@ public sealed class LocalHistoryService : ILocalHistoryService
             PersonalBestFound: File.Exists(personalBestPath));
     }
 
-    private static List<ImportedSession> LoadSessions(string sessionsPath)
+    private static List<ImportedSession> LoadSessions(string sessionsPath, string dataFilePath)
     {
-        if (!Directory.Exists(sessionsPath))
+        // Build a lookup of rich JSON sessions indexed by their filename-derived ID (yyMMdd-HHmmss).
+        var jsonById = new Dictionary<string, ImportedSession>(StringComparer.OrdinalIgnoreCase);
+        if (Directory.Exists(sessionsPath))
         {
-            return [];
+            foreach (var file in Directory.EnumerateFiles(sessionsPath, "*.json"))
+            {
+                try
+                {
+                    var session = ParseJsonSession(file);
+                    if (session != null)
+                        jsonById[session.SourceId] = session;
+                }
+                catch { }
+            }
         }
 
-        var sessions = new List<ImportedSession>();
+        // If the CM profile data file exists, use it as the canonical 109-session list.
+        if (!File.Exists(dataFilePath))
+            return jsonById.Values.ToList();
 
-        foreach (var file in Directory.EnumerateFiles(sessionsPath, "*.json"))
+        var result = new List<ImportedSession>();
+        var coveredIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var line in File.ReadLines(dataFilePath))
         {
+            if (string.IsNullOrWhiteSpace(line)) continue;
             try
             {
-                using var document = JsonDocument.Parse(File.ReadAllText(file));
-                var root = document.RootElement;
+                using var doc = JsonDocument.Parse(line);
+                var root = doc.RootElement;
 
-                var track = GetString(root, "track");
-                var driverName = EmptyValue;
-                var car = EmptyValue;
+                var startedAt = DateTimeOffset.Parse(
+                    root.GetProperty("StartedAt").GetString()!,
+                    null, System.Globalization.DateTimeStyles.RoundtripKind);
 
-                if (root.TryGetProperty("players", out var players) &&
-                    players.ValueKind == JsonValueKind.Array &&
-                    players.GetArrayLength() > 0)
+                // Derive the same ID format CM uses for JSON filenames: yyMMdd-HHmmss
+                var candidateId = startedAt.ToLocalTime().ToString("yyMMdd-HHmmss");
+                coveredIds.Add(candidateId);
+
+                if (jsonById.TryGetValue(candidateId, out var rich))
                 {
-                    var player = players[0];
-                    driverName = GetString(player, "name");
-                    car = GetString(player, "car");
+                    // JSON file present: use the richer data
+                    result.Add(rich);
+                    continue;
                 }
 
-                var sessionNames = new List<string>();
-                var laps = 0;
-                var bestLapMs = (int?)null;
-                var lastLapMs = (int?)null;
+                // No JSON file — build from .data fields only
+                var carId   = NormalizeId(root.TryGetProperty("CarId",   out var c) ? c.GetString() ?? EmptyValue : EmptyValue);
+                var trackId = NormalizeId(root.TryGetProperty("TrackId", out var t) ? t.GetString() ?? EmptyValue : EmptyValue);
+                var bestLapMs = ParseTimeSpanMs(root.TryGetProperty("BestLap", out var bl) ? bl.GetString() : null);
+                double? distanceKm = null;
+                if (root.TryGetProperty("Distance", out var dist) && dist.TryGetDouble(out var dm) && dm > 0)
+                    distanceKm = Math.Round(dm / 1000.0, 2);
 
-                if (root.TryGetProperty("sessions", out var sessionElements) &&
-                    sessionElements.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var session in sessionElements.EnumerateArray())
-                    {
-                        var name = GetString(session, "name");
-                        if (name != EmptyValue)
-                        {
-                            sessionNames.Add(name);
-                        }
+                // Optional extended fields present in sample/enriched data
+                var laps = root.TryGetProperty("Laps", out var lp) && lp.TryGetInt32(out var lpN) ? lpN : 0;
+                var sessionType = root.TryGetProperty("SessionType", out var stEl) && stEl.ValueKind == JsonValueKind.String
+                    ? stEl.GetString() ?? EmptyValue : EmptyValue;
+                var driverName = root.TryGetProperty("DriverName", out var dnEl) && dnEl.ValueKind == JsonValueKind.String
+                    ? dnEl.GetString() ?? EmptyValue : EmptyValue;
 
-                        laps += GetPlayerLapTotal(session);
-                        bestLapMs = MinNullable(bestLapMs, GetPlayerBestLap(session));
-                        lastLapMs = GetPlayerLastLap(session) ?? lastLapMs;
-                    }
-                }
-
-                var raceIni = GetString(root, "__raceIni");
-                var distanceKm = GetDrivenDistanceKm(raceIni);
-
-                sessions.Add(new ImportedSession(
-                    SourceId: Path.GetFileNameWithoutExtension(file),
-                    StartedAt: new DateTimeOffset(File.GetLastWriteTime(file)),
-                    DriverName: driverName,
-                    CarId: NormalizeId(car),
-                    TrackId: NormalizeId(track),
-                    SessionTypes: sessionNames.Count > 0 ? string.Join(", ", sessionNames.Distinct()) : EmptyValue,
-                    Laps: laps,
-                    DistanceKm: distanceKm,
-                    BestLapMs: bestLapMs,
-                    LastLapMs: lastLapMs));
+                result.Add(new ImportedSession(
+                    SourceId:     candidateId,
+                    StartedAt:    startedAt,
+                    DriverName:   driverName,
+                    CarId:        carId,
+                    TrackId:      trackId,
+                    SessionTypes: sessionType,
+                    Laps:         laps,
+                    DistanceKm:   distanceKm,
+                    BestLapMs:    bestLapMs,
+                    LastLapMs:    null));
             }
-            catch
+            catch { }
+        }
+
+        // Include any JSON sessions that have no corresponding .data entry (edge case)
+        foreach (var (id, s) in jsonById)
+        {
+            if (!coveredIds.Contains(id))
+                result.Add(s);
+        }
+
+        return result;
+    }
+
+    private static ImportedSession? ParseJsonSession(string file)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(file));
+        var root = document.RootElement;
+
+        var track      = GetString(root, "track");
+        var driverName = EmptyValue;
+        var car        = EmptyValue;
+
+        if (root.TryGetProperty("players", out var players) &&
+            players.ValueKind == JsonValueKind.Array &&
+            players.GetArrayLength() > 0)
+        {
+            var player = players[0];
+            driverName = GetString(player, "name");
+            car        = GetString(player, "car");
+        }
+
+        var sessionNames = new List<string>();
+        var laps         = 0;
+        var bestLapMs    = (int?)null;
+        var lastLapMs    = (int?)null;
+
+        if (root.TryGetProperty("sessions", out var sessionElements) &&
+            sessionElements.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var session in sessionElements.EnumerateArray())
             {
-                // Bad or partially written CM files should not break the local API.
+                var name = GetString(session, "name");
+                if (name != EmptyValue) sessionNames.Add(name);
+                laps      += GetPlayerLapTotal(session);
+                bestLapMs  = MinNullable(bestLapMs, GetPlayerBestLap(session));
+                lastLapMs  = GetPlayerLastLap(session) ?? lastLapMs;
             }
         }
 
-        return sessions;
+        var raceIni    = GetString(root, "__raceIni");
+        var distanceKm = GetDrivenDistanceKm(raceIni);
+
+        return new ImportedSession(
+            SourceId:     Path.GetFileNameWithoutExtension(file),
+            StartedAt:    new DateTimeOffset(File.GetLastWriteTime(file)),
+            DriverName:   driverName,
+            CarId:        NormalizeId(car),
+            TrackId:      NormalizeId(track),
+            SessionTypes: sessionNames.Count > 0 ? string.Join(", ", sessionNames.Distinct()) : EmptyValue,
+            Laps:         laps,
+            DistanceKm:   distanceKm,
+            BestLapMs:    bestLapMs,
+            LastLapMs:    lastLapMs);
+    }
+
+    private static int? ParseTimeSpanMs(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return null;
+        if (TimeSpan.TryParse(value, out var ts) && ts.TotalMilliseconds > 0)
+            return (int)ts.TotalMilliseconds;
+        return null;
     }
 
     private static List<PersonalBestRecord> LoadPersonalBests(string personalBestPath)

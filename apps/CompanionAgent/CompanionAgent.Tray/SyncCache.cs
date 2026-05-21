@@ -11,6 +11,7 @@ public sealed class SyncCache
     private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true };
 
     public HashSet<string> SyncedSessionIds { get; private set; } = [];
+    public HashSet<string> SyncedTrackOutlineIds { get; private set; } = [];
     public DateTimeOffset? PersonalBestsSyncedAt { get; private set; }
 
     public static SyncCache Load()
@@ -24,6 +25,7 @@ public sealed class SyncCache
                     return new SyncCache
                     {
                         SyncedSessionIds = new HashSet<string>(data.Sessions ?? []),
+                        SyncedTrackOutlineIds = new HashSet<string>(data.TrackOutlines ?? []),
                         PersonalBestsSyncedAt = data.PersonalBestsSyncedAt
                     };
             }
@@ -44,17 +46,29 @@ public sealed class SyncCache
         Persist();
     }
 
+    public void MarkTrackOutlinesSynced(IEnumerable<string> trackIds)
+    {
+        foreach (var id in trackIds) SyncedTrackOutlineIds.Add(id);
+        Persist();
+    }
+
     private void Persist()
     {
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(CachePath)!);
         File.WriteAllText(CachePath, JsonSerializer.Serialize(
-            new CacheData { Sessions = [.. SyncedSessionIds], PersonalBestsSyncedAt = PersonalBestsSyncedAt },
+            new CacheData
+            {
+                Sessions = [.. SyncedSessionIds],
+                TrackOutlines = [.. SyncedTrackOutlineIds],
+                PersonalBestsSyncedAt = PersonalBestsSyncedAt
+            },
             JsonOpts));
     }
 
     private sealed class CacheData
     {
         public List<string>? Sessions { get; set; }
+        public List<string>? TrackOutlines { get; set; }
         public DateTimeOffset? PersonalBestsSyncedAt { get; set; }
     }
 }

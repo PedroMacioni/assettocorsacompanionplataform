@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+﻿import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SessionsLoading() {
   return (
@@ -13,9 +13,9 @@ export default function SessionsLoading() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#161618] border border-[#2a2a2c] rounded-md overflow-hidden">
+      <div className="bg-card border border-border rounded-md overflow-hidden">
         {/* Header row */}
-        <div className="flex gap-4 px-4 py-3 border-b border-[#2a2a2c]">
+        <div className="flex gap-4 px-4 py-3 border-b border-border">
           {[60, 120, 120, 70, 40, 70, 80].map((w, i) => (
             <Skeleton key={i} className="h-2" style={{ width: w }} />
           ))}
@@ -24,7 +24,7 @@ export default function SessionsLoading() {
         {Array.from({ length: 12 }).map((_, i) => (
           <div
             key={i}
-            className="flex gap-4 px-4 py-3.5 border-b border-[#2a2a2c] last:border-0"
+            className="flex gap-4 px-4 py-3.5 border-b border-border last:border-0"
             style={{ opacity: 1 - i * 0.055 }}
           >
             <Skeleton className="h-2.5 w-[60px]" />
@@ -40,3 +40,4 @@ export default function SessionsLoading() {
     </div>
   );
 }
+

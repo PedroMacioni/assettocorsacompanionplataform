@@ -7,17 +7,17 @@ import type { ProfileSummary, Session, PersonalBest, TopCar, TopTrack } from "@/
 
 const SessionAreaChart = dynamic(() => import("@/components/charts/SessionAreaChart"), {
   ssr: false,
-  loading: () => <div className="h-[140px] bg-[#1e1e20] rounded-md animate-pulse" />,
+  loading: () => <div className="h-[140px] bg-muted rounded-md animate-pulse" />,
 });
 
 const DisciplinePieChart = dynamic(() => import("@/components/charts/DisciplinePieChart"), {
   ssr: false,
-  loading: () => <div className="h-[200px] bg-[#1e1e20] rounded-md animate-pulse" />,
+  loading: () => <div className="h-[200px] bg-muted rounded-md animate-pulse" />,
 });
 
 const PaceLineChart = dynamic(() => import("@/components/charts/PaceLineChart"), {
   ssr: false,
-  loading: () => <div className="h-[200px] bg-[#1e1e20] rounded-md animate-pulse" />,
+  loading: () => <div className="h-[200px] bg-muted rounded-md animate-pulse" />,
 });
 
 type Props = {
@@ -86,10 +86,7 @@ function buildPaceForChart(
   filtered
     .filter((s) => topTracks.includes(s.track_id))
     .forEach((s) => {
-      const d = new Date(s.started_at).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
+      const d = new Date(s.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       if (!dateMap.has(d)) dateMap.set(d, {});
       const entry = dateMap.get(d)!;
       if (!entry[s.track_id] || s.best_lap_ms! < entry[s.track_id]) {
@@ -148,22 +145,22 @@ export function AnalyticsDashboard({
     <div className="space-y-6">
       {/* Page header */}
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
           Performance · 12-week window
         </p>
-        <h1 className="text-2xl font-bold text-white">Driver Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">Driver Analytics</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[#2a2a2c]">
+      <div className="flex gap-1 border-b border-border">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px transition-colors ${
               activeTab === tab.id
-                ? "border-[#e8612a] text-white"
-                : "border-transparent text-[#6b6b72] hover:text-white"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -174,26 +171,23 @@ export function AnalyticsDashboard({
       {/* Tab: Overview */}
       {activeTab === "overview" && (
         <div className="grid grid-cols-3 gap-4">
-          {/* Driver DNA / Composite score */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+          {/* Driver DNA */}
+          <div className="bg-card border border-border rounded-md p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               Driver DNA
             </p>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-white font-bold text-lg">{label}</p>
-              <p className="text-3xl font-bold text-[#e8612a]">{score}</p>
+              <p className="text-foreground font-bold text-lg">{label}</p>
+              <p className="text-3xl font-bold text-primary">{score}</p>
             </div>
-            <div className="h-1.5 bg-[#1e1e20] rounded-full overflow-hidden mb-4">
-              <div
-                className="h-full bg-[#e8612a] rounded-full"
-                style={{ width: `${score}%` }}
-              />
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-4">
+              <div className="h-full bg-primary rounded-full" style={{ width: `${score}%` }} />
             </div>
             <div className="flex flex-wrap gap-1.5">
               {badges.map((b) => (
                 <span
                   key={b}
-                  className="px-2 py-0.5 bg-[#e8612a20] border border-[#e8612a30] text-[#e8612a] text-[10px] font-semibold rounded tracking-wider"
+                  className="px-2 py-0.5 bg-primary/[0.12] border border-primary/[0.18] text-primary text-[10px] font-semibold rounded tracking-wider"
                 >
                   {b}
                 </span>
@@ -202,22 +196,22 @@ export function AnalyticsDashboard({
           </div>
 
           {/* Trajectory */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+          <div className="bg-card border border-border rounded-md p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               Session Trajectory
             </p>
             <SessionAreaChart data={trajectory} />
           </div>
 
           {/* Discipline mix */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+          <div className="bg-card border border-border rounded-md p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               Discipline Mix
             </p>
             {discipline.length > 0 ? (
               <DisciplinePieChart data={discipline} />
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-[#6b6b72] text-sm">
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                 No data
               </div>
             )}
@@ -228,35 +222,29 @@ export function AnalyticsDashboard({
       {/* Tab: Lap Pace */}
       {activeTab === "pace" && (
         <div className="space-y-4">
-          {/* Filters */}
           <div className="flex gap-3">
             <select
               value={carFilter}
               onChange={(e) => setCarFilter(e.target.value)}
-              className="bg-[#161618] border border-[#2a2a2c] rounded-md px-3 py-1.5 text-sm text-white focus:border-[#e8612a] outline-none"
+              className="bg-card border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:border-primary outline-none"
             >
               <option value="">All cars</option>
               {topCars.map((c) => (
-                <option key={c.car_id} value={c.car_id}>
-                  {slugToName(c.car_id)}
-                </option>
+                <option key={c.car_id} value={c.car_id}>{slugToName(c.car_id)}</option>
               ))}
             </select>
             <select
               value={trackFilter}
               onChange={(e) => setTrackFilter(e.target.value)}
-              className="bg-[#161618] border border-[#2a2a2c] rounded-md px-3 py-1.5 text-sm text-white focus:border-[#e8612a] outline-none"
+              className="bg-card border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:border-primary outline-none"
             >
               <option value="">All tracks</option>
               {topTracks.map((t) => (
-                <option key={t.track_id} value={t.track_id}>
-                  {slugToName(t.track_id)}
-                </option>
+                <option key={t.track_id} value={t.track_id}>{slugToName(t.track_id)}</option>
               ))}
             </select>
           </div>
 
-          {/* Chart */}
           {(() => {
             const { data, tracks, trackLabels } = buildPaceForChart(
               sessions,
@@ -264,14 +252,14 @@ export function AnalyticsDashboard({
               trackFilter || undefined
             );
             return (
-              <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+              <div className="bg-card border border-border rounded-md p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
                   Best Lap Per Session
                 </p>
                 {data.length > 0 ? (
                   <PaceLineChart data={data} tracks={tracks} trackLabels={trackLabels} />
                 ) : (
-                  <div className="h-[200px] flex items-center justify-center text-[#6b6b72] text-sm">
+                  <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                     No lap data for selected filters
                   </div>
                 )}
@@ -284,53 +272,47 @@ export function AnalyticsDashboard({
       {/* Tab: Discipline */}
       {activeTab === "discipline" && (
         <div className="grid grid-cols-2 gap-4">
-          {/* Top cars */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+          <div className="bg-card border border-border rounded-md p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               Top Cars
             </p>
             <div className="space-y-3">
               {topCars.map((c, i) => (
                 <div key={c.car_id} className="flex items-center gap-3">
-                  <span className="text-[#6b6b72] text-xs w-4 text-right shrink-0">{i + 1}</span>
+                  <span className="text-muted-foreground text-xs w-4 text-right shrink-0">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-medium truncate">{slugToName(c.car_id)}</p>
-                    <div className="h-1 bg-[#1e1e20] rounded-full mt-1 overflow-hidden">
+                    <p className="text-sm text-foreground font-medium truncate">{slugToName(c.car_id)}</p>
+                    <div className="h-1 bg-muted rounded-full mt-1 overflow-hidden">
                       <div
-                        className="h-full bg-[#e8612a] rounded-full"
-                        style={{
-                          width: `${topCars[0] ? (c.sessions / topCars[0].sessions) * 100 : 0}%`,
-                        }}
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: `${topCars[0] ? (c.sessions / topCars[0].sessions) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
-                  <span className="text-xs text-[#6b6b72] shrink-0">{c.sessions} sessions</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{c.sessions} sessions</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Top tracks */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+          <div className="bg-card border border-border rounded-md p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               Top Tracks
             </p>
             <div className="space-y-3">
               {topTracks.map((t, i) => (
                 <div key={t.track_id} className="flex items-center gap-3">
-                  <span className="text-[#6b6b72] text-xs w-4 text-right shrink-0">{i + 1}</span>
+                  <span className="text-muted-foreground text-xs w-4 text-right shrink-0">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white font-medium truncate">{slugToName(t.track_id)}</p>
-                    <div className="h-1 bg-[#1e1e20] rounded-full mt-1 overflow-hidden">
+                    <p className="text-sm text-foreground font-medium truncate">{slugToName(t.track_id)}</p>
+                    <div className="h-1 bg-muted rounded-full mt-1 overflow-hidden">
                       <div
-                        className="h-full bg-[#22c55e] rounded-full"
-                        style={{
-                          width: `${topTracks[0] ? (t.sessions / topTracks[0].sessions) * 100 : 0}%`,
-                        }}
+                        className="h-full bg-green-500 rounded-full"
+                        style={{ width: `${topTracks[0] ? (t.sessions / topTracks[0].sessions) * 100 : 0}%` }}
                       />
                     </div>
                   </div>
-                  <span className="text-xs text-[#6b6b72] shrink-0">{t.sessions} sessions</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t.sessions} sessions</span>
                 </div>
               ))}
             </div>
@@ -345,27 +327,27 @@ export function AnalyticsDashboard({
             {personalBests.map((pb, i) => (
               <div
                 key={pb.id}
-                className={`bg-[#161618] border rounded-md p-5 ${
-                  i === 0 ? "border-[#e8612a40]" : "border-[#2a2a2c]"
+                className={`bg-card border rounded-md p-5 ${
+                  i === 0 ? "border-primary/25" : "border-border"
                 }`}
               >
                 {i === 0 && (
-                  <span className="inline-block px-2 py-0.5 bg-[#e8612a20] border border-[#e8612a30] text-[#e8612a] text-[10px] font-semibold rounded tracking-wider mb-2">
+                  <span className="inline-block px-2 py-0.5 bg-primary/[0.12] border border-primary/[0.18] text-primary text-[10px] font-semibold rounded tracking-wider mb-2">
                     FASTEST
                   </span>
                 )}
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                   {slugToName(pb.track_id)}
                 </p>
-                <p className="text-white font-medium text-sm mb-2">{slugToName(pb.car_id)}</p>
-                <p className={`text-2xl font-bold font-mono ${i === 0 ? "text-[#e8612a]" : "text-white"}`}>
+                <p className="text-foreground font-medium text-sm mb-2">{slugToName(pb.car_id)}</p>
+                <p className={`text-2xl font-bold font-mono ${i === 0 ? "text-primary" : "text-foreground"}`}>
                   {formatLapTime(pb.time_ms)}
                 </p>
               </div>
             ))}
           </div>
           {personalBests.length === 0 && (
-            <p className="text-[#6b6b72] text-sm text-center py-12">No personal bests recorded yet</p>
+            <p className="text-muted-foreground text-sm text-center py-12">No personal bests recorded yet</p>
           )}
         </div>
       )}

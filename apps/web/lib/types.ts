@@ -49,6 +49,19 @@ export type TopTrack = {
   best_lap_ms: number | null;
 };
 
+export type Track = {
+  track_id: string;
+  name: string;
+  country: string | null;
+  city: string | null;
+  length_km: number | null;
+  pitboxes: number | null;
+  run: string | null;
+  tags: string[] | null;
+  description: string | null;
+  outline_url: string | null;
+};
+
 export type AgentStatus = {
   user_id: string;
   last_synced_at: string | null;

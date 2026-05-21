@@ -25,17 +25,11 @@ export function SyncButton({ userId }: { userId: string }) {
     <button
       onClick={requestSync}
       disabled={state === "requested"}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#2a2a2c] bg-[#1e1e20] hover:bg-[#262628] text-[11px] font-medium text-[#6b6b72] hover:text-[#f0f0f0] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-muted hover:bg-muted/80 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {state === "requested" ? (
         <>
-          <svg
-            className="animate-spin"
-            width="11"
-            height="11"
-            viewBox="0 0 11 11"
-            fill="none"
-          >
+          <svg className="animate-spin" width="11" height="11" viewBox="0 0 11 11" fill="none">
             <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 20" strokeLinecap="round" />
           </svg>
           Solicitado...
@@ -43,10 +37,10 @@ export function SyncButton({ userId }: { userId: string }) {
       ) : state === "error" ? (
         <>
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <circle cx="5.5" cy="5.5" r="4" stroke="#ef4444" strokeWidth="1.5" />
-            <path d="M5.5 3.5v2.5M5.5 7.5v.5" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.5" className="stroke-destructive" />
+            <path d="M5.5 3.5v2.5M5.5 7.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="stroke-destructive" />
           </svg>
-          <span className="text-[#ef4444]">Erro</span>
+          <span className="text-destructive">Erro</span>
         </>
       ) : (
         <>

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+﻿import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GarageLoading() {
   return (
@@ -27,7 +27,7 @@ export default function GarageLoading() {
         {/* Stats panel */}
         <div className="flex-1 space-y-4">
           {/* Car header */}
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-6">
+          <div className="bg-card border border-border rounded-md p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
                 <Skeleton className="h-2 w-32" />
@@ -47,7 +47,7 @@ export default function GarageLoading() {
           {/* Two columns */}
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 2 }).map((_, col) => (
-              <div key={col} className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 space-y-3">
+              <div key={col} className="bg-card border border-border rounded-md p-5 space-y-3">
                 <Skeleton className="h-2 w-28" />
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex justify-between items-center py-1" style={{ opacity: 1 - i * 0.15 }}>
@@ -66,3 +66,4 @@ export default function GarageLoading() {
     </div>
   );
 }
+

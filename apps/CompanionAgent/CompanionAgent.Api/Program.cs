@@ -1,5 +1,6 @@
 using System.Reflection;
 using Companion.Infrastructure.History;
+using Companion.Infrastructure.Tracks;
 using Companion.SharedContracts.Agent;
 
 const string localApiBaseUrl = "http://127.0.0.1:47832";
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls(localApiBaseUrl);
 builder.Services.AddSingleton<ILocalHistoryService, LocalHistoryService>();
+builder.Services.AddSingleton<ILocalTrackService, LocalTrackService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(frontendCorsPolicy, policy =>
@@ -64,5 +66,8 @@ app.MapGet("/api/sessions", (ILocalHistoryService historyService) =>
 
 app.MapGet("/api/personal-bests", (ILocalHistoryService historyService) =>
     historyService.GetHistory().PersonalBests);
+
+app.MapGet("/api/tracks", (ILocalTrackService trackService) =>
+    trackService.GetTracks());
 
 app.Run();

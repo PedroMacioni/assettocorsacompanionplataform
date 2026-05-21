@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+﻿import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (
@@ -15,7 +15,7 @@ export default function SettingsLoading() {
             <Skeleton className="h-3 w-24" />
           </div>
         ))}
-        <div className="!mt-8 p-3.5 rounded-md bg-[#161618] border border-[#2a2a2c] space-y-3">
+        <div className="!mt-8 p-3.5 rounded-md bg-card border border-border space-y-3">
           <Skeleton className="h-2 w-16" />
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex justify-between">
@@ -32,7 +32,7 @@ export default function SettingsLoading() {
           <Skeleton className="h-6 w-24" />
           <Skeleton className="h-3 w-64" />
         </div>
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-6 space-y-4">
+        <div className="bg-card border border-border rounded-md p-6 space-y-4">
           <Skeleton className="h-2 w-16" />
           <div className="flex items-center gap-6">
             <Skeleton className="h-16 w-16 rounded-full shrink-0" />
@@ -43,7 +43,7 @@ export default function SettingsLoading() {
             </div>
           </div>
         </div>
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-6 space-y-5">
+        <div className="bg-card border border-border rounded-md p-6 space-y-5">
           <Skeleton className="h-2 w-16" />
           <div className="space-y-1.5">
             <Skeleton className="h-2 w-24" />
@@ -59,3 +59,4 @@ export default function SettingsLoading() {
     </div>
   );
 }
+

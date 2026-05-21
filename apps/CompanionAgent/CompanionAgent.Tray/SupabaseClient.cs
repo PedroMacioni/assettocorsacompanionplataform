@@ -1,6 +1,7 @@
 namespace CompanionAgent.Tray;
 
 using Companion.SharedContracts.History;
+using Companion.SharedContracts.Tracks;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -24,11 +25,37 @@ public sealed class SupabaseClient : IDisposable
         _anonKey = anonKey;
     }
 
+    public void ClearTokens()
+    {
+        _accessToken  = "";
+        _refreshToken = "";
+        UserId        = "";
+        UserEmail     = "";
+        _tokenExpiry  = DateTimeOffset.MinValue;
+    }
+
     public void SetTokens(string accessToken, string refreshToken)
     {
         _accessToken = accessToken;
         _refreshToken = refreshToken;
-        (UserId, _tokenExpiry) = ParseJwt(accessToken);
+        (UserId, UserEmail, _tokenExpiry) = ParseJwt(accessToken);
+    }
+
+    public string UserEmail { get; private set; } = "";
+
+    public async Task<(string AccessToken, string RefreshToken)?> SignInAsync(string email, string password)
+    {
+        var body = JsonSerializer.Serialize(new { email, password });
+        var req = new HttpRequestMessage(HttpMethod.Post, $"{_url}/auth/v1/token?grant_type=password");
+        req.Headers.Add("apikey", _anonKey);
+        req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        var res = await _http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return null;
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync());
+        var at = doc.RootElement.GetProperty("access_token").GetString()!;
+        var rt = doc.RootElement.GetProperty("refresh_token").GetString()!;
+        SetTokens(at, rt);
+        return (at, rt);
     }
 
     public async Task<bool> ValidateTokenAsync(string accessToken)
@@ -99,7 +126,7 @@ public sealed class SupabaseClient : IDisposable
             source_date = b.SourceDate
         });
 
-        var req = BuildRequest(HttpMethod.Post, "/rest/v1/personal_bests");
+        var req = BuildRequest(HttpMethod.Post, "/rest/v1/personal_bests?on_conflict=user_id,car_id,track_id");
         req.Headers.Add("Prefer", "resolution=merge-duplicates");
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         (await _http.SendAsync(req)).EnsureSuccessStatusCode();
@@ -121,6 +148,53 @@ public sealed class SupabaseClient : IDisposable
         req.Headers.Add("Prefer", "resolution=merge-duplicates");
         req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         (await _http.SendAsync(req)).EnsureSuccessStatusCode();
+    }
+
+    public async Task UpsertTracksAsync(IReadOnlyList<TrackDto> tracks, IReadOnlyDictionary<string, string> outlineUrls)
+    {
+        await EnsureValidTokenAsync();
+        const int batchSize = 50;
+
+        for (int i = 0; i < tracks.Count; i += batchSize)
+        {
+            var batch = tracks.Skip(i).Take(batchSize).Select(t =>
+            {
+                var obj = new Dictionary<string, object?>
+                {
+                    ["track_id"] = t.TrackId,
+                    ["name"] = t.Name,
+                    ["country"] = t.Country,
+                    ["city"] = t.City,
+                    ["length_km"] = t.LengthKm,
+                    ["pitboxes"] = t.Pitboxes,
+                    ["run"] = t.Run,
+                    ["tags"] = t.Tags,
+                    ["description"] = t.Description,
+                    ["updated_at"] = DateTimeOffset.UtcNow
+                };
+                if (outlineUrls.TryGetValue(t.TrackId, out var url))
+                    obj["outline_url"] = url;
+                return obj;
+            }).ToList();
+
+            var req = BuildRequest(HttpMethod.Post, "/rest/v1/tracks");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates");
+            req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
+            (await _http.SendAsync(req)).EnsureSuccessStatusCode();
+        }
+    }
+
+    public async Task<string?> UploadTrackOutlineAsync(string trackId, byte[] imageBytes)
+    {
+        await EnsureValidTokenAsync();
+        var storagePath = $"{trackId}/map.png";
+        var req = BuildRequest(HttpMethod.Post, $"/storage/v1/object/track-outlines/{storagePath}");
+        req.Headers.Add("x-upsert", "true");
+        req.Content = new ByteArrayContent(imageBytes);
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        var res = await _http.SendAsync(req);
+        if (!res.IsSuccessStatusCode) return null;
+        return $"{_url}/storage/v1/object/public/track-outlines/{storagePath}";
     }
 
     public async Task<DateTimeOffset?> GetSyncRequestedAtAsync()
@@ -151,19 +225,21 @@ public sealed class SupabaseClient : IDisposable
         return req;
     }
 
-    private static (string userId, DateTimeOffset expiry) ParseJwt(string jwt)
+    private static (string userId, string email, DateTimeOffset expiry) ParseJwt(string jwt)
     {
         try
         {
             var parts = jwt.Split('.');
-            if (parts.Length < 2) return ("", DateTimeOffset.MinValue);
+            if (parts.Length < 2) return ("", "", DateTimeOffset.MinValue);
             var payload = parts[1].PadRight(parts[1].Length + (4 - parts[1].Length % 4) % 4, '=');
             using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload)));
-            var sub = doc.RootElement.TryGetProperty("sub", out var s) ? s.GetString() ?? "" : "";
-            var exp = doc.RootElement.TryGetProperty("exp", out var e) ? e.GetInt64() : 0;
-            return (sub, DateTimeOffset.FromUnixTimeSeconds(exp));
+            var root  = doc.RootElement;
+            var sub   = root.TryGetProperty("sub",   out var s) ? s.GetString() ?? "" : "";
+            var email = root.TryGetProperty("email", out var em) ? em.GetString() ?? "" : "";
+            var exp   = root.TryGetProperty("exp",   out var e)  ? e.GetInt64()       : 0;
+            return (sub, email, DateTimeOffset.FromUnixTimeSeconds(exp));
         }
-        catch { return ("", DateTimeOffset.MinValue); }
+        catch { return ("", "", DateTimeOffset.MinValue); }
     }
 
     public void Dispose() => _http.Dispose();

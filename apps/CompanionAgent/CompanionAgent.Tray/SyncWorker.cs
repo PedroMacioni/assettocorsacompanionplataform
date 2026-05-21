@@ -1,6 +1,7 @@
 namespace CompanionAgent.Tray;
 
 using Companion.Infrastructure.History;
+using Companion.Infrastructure.Tracks;
 using System.Net;
 
 public enum SyncState { Unconfigured, Syncing, Idle, Error }
@@ -9,6 +10,7 @@ public sealed class SyncWorker : IDisposable
 {
     private readonly SupabaseClient _supabase;
     private readonly ILocalHistoryService _history;
+    private readonly ILocalTrackService _trackService;
     private SyncCache _cache = SyncCache.Load();
     private System.Threading.Timer? _timer;
     private FileSystemWatcher? _sessionWatcher;
@@ -18,11 +20,15 @@ public sealed class SyncWorker : IDisposable
     private DateTimeOffset? _lastSeenSyncRequest;
 
     public event Action<SyncState, string>? StateChanged;
+    public event Action<string>? ActivityLogged;
 
-    public SyncWorker(SupabaseClient supabase, ILocalHistoryService history)
+    private bool _tracksSyncedThisSession;
+
+    public SyncWorker(SupabaseClient supabase, ILocalHistoryService history, ILocalTrackService trackService)
     {
         _supabase = supabase;
         _history = history;
+        _trackService = trackService;
     }
 
     public void Start(int intervalMinutes)
@@ -67,6 +73,7 @@ public sealed class SyncWorker : IDisposable
             }
 
             StateChanged?.Invoke(SyncState.Syncing, "Sincronizando...");
+            ActivityLogged?.Invoke("Iniciando sincronização...");
 
             var history = _history.GetHistory();
 
@@ -78,6 +85,11 @@ public sealed class SyncWorker : IDisposable
             {
                 await _supabase.UpsertSessionsAsync(unsynced);
                 _cache.AddSessions(unsynced.Select(s => s.Id));
+                ActivityLogged?.Invoke($"✓ {unsynced.Count} {(unsynced.Count == 1 ? "sessão nova" : "sessões novas")} sincronizadas");
+            }
+            else
+            {
+                ActivityLogged?.Invoke("✓ Sessões em dia — nenhuma novidade");
             }
 
             if (history.PersonalBests.Count > 0)
@@ -91,10 +103,12 @@ public sealed class SyncWorker : IDisposable
             settings.LastSyncSessionCount = unsynced.Count;
             SettingsStore.Save(settings);
 
-            // Report sync status back to Supabase so the web can display it
             try { await _supabase.UpdateAgentStatusAsync(unsynced.Count); } catch { /* non-fatal */ }
 
+            // Report Idle BEFORE track sync — tracks sync is heavy and non-critical
             StateChanged?.Invoke(SyncState.Idle, $"Sincronizado às {DateTime.Now:HH:mm}");
+
+            try { await SyncTracksAsync(); } catch { /* non-fatal */ }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
@@ -113,6 +127,44 @@ public sealed class SyncWorker : IDisposable
         {
             _lock.Release();
         }
+    }
+
+    private async Task SyncTracksAsync()
+    {
+        var allTracks = _trackService.GetTracks();
+        if (allTracks.Count == 0) return;
+
+        var pendingOutlines = allTracks
+            .Where(t => t.HasOutline && !_cache.SyncedTrackOutlineIds.Contains(t.TrackId))
+            .Take(25)
+            .ToList();
+
+        // Skip metadata upsert if already done this session and no new outlines
+        if (_tracksSyncedThisSession && pendingOutlines.Count == 0) return;
+
+        var outlineUrls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var track in pendingOutlines)
+        {
+            try
+            {
+                var bytes = _trackService.GetOutlineBytes(track.TrackId);
+                if (bytes is { Length: > 0 })
+                {
+                    var url = await _supabase.UploadTrackOutlineAsync(track.TrackId, bytes);
+                    if (url != null) outlineUrls[track.TrackId] = url;
+                }
+            }
+            catch { /* individual upload failure should not block metadata sync */ }
+        }
+
+        await _supabase.UpsertTracksAsync(allTracks, outlineUrls);
+
+        if (outlineUrls.Count > 0)
+            _cache.MarkTrackOutlinesSynced(outlineUrls.Keys);
+
+        _tracksSyncedThisSession = true;
+        ActivityLogged?.Invoke($"↑ {allTracks.Count} pistas catalogadas · {outlineUrls.Count} outlines novos");
     }
 
     private void SetupWatchers()

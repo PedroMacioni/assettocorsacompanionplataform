@@ -53,3 +53,5 @@ CollectorCore/obj/
 
 # Claude Code local settings
 .claude/
+
+apps/CompanionAgent/publish/

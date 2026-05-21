@@ -16,4 +16,7 @@
     <ProjectReference Include="..\..\..\packages\Companion.Infrastructure\Companion.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\packages\Companion.SharedContracts\Companion.SharedContracts.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="sample-data\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

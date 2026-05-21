@@ -8,15 +8,15 @@ import Link from "next/link";
 type SearchParams = { page?: string; car?: string; track?: string };
 
 const SESSION_BADGE: Record<string, string> = {
-  Hotlap: "bg-[#e8612a20] text-[#e8612a] border border-[#e8612a30]",
-  Race: "bg-[#22c55e20] text-[#22c55e] border border-[#22c55e30]",
-  Practice: "bg-[#6b6b7220] text-[#6b6b72] border border-[#6b6b7230]",
-  "Time Attack": "bg-[#3b82f620] text-[#3b82f6] border border-[#3b82f630]",
+  Hotlap: "bg-primary/[0.12] text-primary border border-primary/[0.18]",
+  Race: "bg-green-500/[0.12] text-green-500 border border-green-500/[0.18]",
+  Practice: "bg-muted-foreground/[0.12] text-muted-foreground border border-muted-foreground/[0.18]",
+  "Time Attack": "bg-blue-500/[0.12] text-blue-500 border border-blue-500/[0.18]",
 };
 
 function sessionBadge(type: string | null) {
   if (!type) return null;
-  const cls = SESSION_BADGE[type] ?? "bg-[#6b6b7220] text-[#6b6b72] border border-[#6b6b7230]";
+  const cls = SESSION_BADGE[type] ?? "bg-muted-foreground/[0.12] text-muted-foreground border border-muted-foreground/[0.18]";
   return (
     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
       {type}
@@ -62,43 +62,43 @@ export default async function SessionsPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             History
           </p>
-          <h1 className="text-2xl font-bold text-white">Sessions</h1>
+          <h1 className="text-2xl font-bold text-foreground">Sessions</h1>
         </div>
-        <span className="text-xs text-[#6b6b72]">{count ?? 0} total</span>
+        <span className="text-xs text-muted-foreground">{count ?? 0} total</span>
       </div>
 
       {/* Active filters */}
       {(params.car || params.track) && (
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#6b6b72]">Filtering by:</span>
+          <span className="text-muted-foreground">Filtering by:</span>
           {params.car && (
-            <span className="px-2 py-1 bg-[#1e1e20] border border-[#2a2a2c] rounded text-white">
+            <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
               {slugToName(params.car)}
             </span>
           )}
           {params.track && (
-            <span className="px-2 py-1 bg-[#1e1e20] border border-[#2a2a2c] rounded text-white">
+            <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
               {slugToName(params.track)}
             </span>
           )}
-          <Link href="/sessions" className="text-[#e8612a] hover:underline ml-1">
+          <Link href="/sessions" className="text-primary hover:underline ml-1">
             Clear
           </Link>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-[#161618] border border-[#2a2a2c] rounded-md overflow-hidden">
+      <div className="bg-card border border-border rounded-md overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#2a2a2c]">
+            <tr className="border-b border-border">
               {["Date", "Car", "Track", "Type", "Laps", "Distance", "Best Lap"].map((h, i) => (
                 <th
                   key={h}
-                  className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] ${
+                  className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ${
                     i >= 4 ? "text-right" : "text-left"
                   }`}
                 >
@@ -111,26 +111,26 @@ export default async function SessionsPage({
             {sessions.map((s) => (
               <tr
                 key={s.id}
-                className="border-b border-[#2a2a2c] last:border-0 hover:bg-[#1e1e20] transition-colors"
+                className="border-b border-border last:border-0 hover:bg-muted transition-colors"
               >
-                <td className="px-4 py-3 text-[#6b6b72] text-xs whitespace-nowrap">
+                <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                   {formatDate(s.started_at)}
                 </td>
                 <td className="px-4 py-3">
                   <Link
                     href={`/sessions/${s.source_id}`}
-                    className="font-medium text-white hover:text-[#e8612a] transition-colors"
+                    className="font-medium text-foreground hover:text-primary transition-colors"
                   >
                     {slugToName(s.car_id)}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-[#6b6b72]">{slugToName(s.track_id)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{slugToName(s.track_id)}</td>
                 <td className="px-4 py-3">{sessionBadge(s.session_types)}</td>
-                <td className="px-4 py-3 text-right text-[#6b6b72]">{s.laps}</td>
-                <td className="px-4 py-3 text-right text-[#6b6b72]">
+                <td className="px-4 py-3 text-right text-muted-foreground">{s.laps}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
                   {formatDistance(s.distance_km)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono font-semibold text-white">
+                <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">
                   <LapTime ms={s.best_lap_ms} />
                 </td>
               </tr>
@@ -145,18 +145,18 @@ export default async function SessionsPage({
           {page > 1 && (
             <Link
               href={`/sessions?page=${page - 1}`}
-              className="px-3 py-1.5 border border-[#2a2a2c] rounded-md text-xs text-[#6b6b72] hover:text-white hover:border-[#e8612a] transition-colors"
+              className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
             >
               ← Prev
             </Link>
           )}
-          <span className="text-xs text-[#6b6b72]">
+          <span className="text-xs text-muted-foreground">
             {page} / {totalPages}
           </span>
           {page < totalPages && (
             <Link
               href={`/sessions?page=${page + 1}`}
-              className="px-3 py-1.5 border border-[#2a2a2c] rounded-md text-xs text-[#6b6b72] hover:text-white hover:border-[#e8612a] transition-colors"
+              className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
             >
               Next →
             </Link>

@@ -7,7 +7,7 @@ export default function SessionDetailLoading() {
       <Skeleton className="h-3 w-24" />
 
       {/* Session header */}
-      <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-6">
+      <div className="bg-card border border-border rounded-md p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2.5">
             <Skeleton className="h-5 w-16 rounded" />
@@ -26,7 +26,7 @@ export default function SessionDetailLoading() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 space-y-2">
+          <div key={i} className="bg-card border border-border rounded-md p-5 space-y-2">
             <Skeleton className="h-2 w-16" />
             <Skeleton className={`h-8 ${i === 2 ? "w-36" : "w-24"}`} />
           </div>
@@ -36,11 +36,11 @@ export default function SessionDetailLoading() {
       {/* Track sessions table */}
       <div className="space-y-3">
         <Skeleton className="h-2 w-48" />
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md overflow-hidden">
+        <div className="bg-card border border-border rounded-md overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="flex gap-4 px-4 py-3 border-b border-[#2a2a2c] last:border-0"
+              className="flex gap-4 px-4 py-3 border-b border-border last:border-0"
               style={{ opacity: 1 - i * 0.15 }}
             >
               <Skeleton className="h-2.5 w-20" />

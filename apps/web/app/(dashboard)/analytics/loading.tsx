@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+﻿import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AnalyticsLoading() {
   return (
@@ -10,7 +10,7 @@ export default function AnalyticsLoading() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[#2a2a2c] pb-0">
+      <div className="flex gap-1 border-b border-border pb-0">
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-24 rounded-none" />
         ))}
@@ -19,7 +19,7 @@ export default function AnalyticsLoading() {
       {/* Overview grid */}
       <div className="grid grid-cols-3 gap-4">
         {/* DNA */}
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 space-y-3">
+        <div className="bg-card border border-border rounded-md p-5 space-y-3">
           <Skeleton className="h-2 w-20" />
           <div className="flex justify-between items-center">
             <Skeleton className="h-5 w-32" />
@@ -34,13 +34,13 @@ export default function AnalyticsLoading() {
         </div>
 
         {/* Trajectory */}
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 space-y-3">
+        <div className="bg-card border border-border rounded-md p-5 space-y-3">
           <Skeleton className="h-2 w-32" />
           <Skeleton className="h-[140px] w-full" />
         </div>
 
         {/* Discipline */}
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 space-y-3">
+        <div className="bg-card border border-border rounded-md p-5 space-y-3">
           <Skeleton className="h-2 w-24" />
           <div className="flex justify-center">
             <Skeleton className="h-[160px] w-[160px] rounded-full" />
@@ -50,3 +50,4 @@ export default function AnalyticsLoading() {
     </div>
   );
 }
+
