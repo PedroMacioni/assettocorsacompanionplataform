@@ -601,6 +601,6 @@ public sealed class LocalHistoryService : ILocalHistoryService
     {
         return string.IsNullOrWhiteSpace(value)
             ? EmptyValue
-            : value.Trim().ToLowerInvariant();
+            : value.Trim().ToLowerInvariant().Replace('/', '-');
     }
 }

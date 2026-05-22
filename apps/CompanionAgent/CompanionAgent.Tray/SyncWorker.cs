@@ -117,6 +117,9 @@ public sealed class SyncWorker : IDisposable
 
             try { await _supabase.UpdateAgentStatusAsync(unsynced.Count); } catch { /* non-fatal */ }
 
+            ActivityLogged?.Invoke($"─────────────────────────────────────");
+            ActivityLogged?.Invoke($"✓ Sincronização concluída às {DateTime.Now:HH:mm:ss}");
+
             // Report Idle BEFORE heavy non-critical syncs
             StateChanged?.Invoke(SyncState.Idle, $"Sincronizado às {DateTime.Now:HH:mm}");
 
