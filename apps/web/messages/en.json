@@ -7,7 +7,13 @@
     "sessions": "sessions",
     "laps": "laps",
     "days": "days",
-    "day": "day"
+    "day": "day",
+    "timeAgo": {
+      "daysAgo": "{count}d ago",
+      "hoursAgo": "{count}h ago",
+      "minutesAgo": "{count}m ago",
+      "now": "now"
+    }
   },
   "Header": {
     "goodMorning": "Good morning",
@@ -17,7 +23,8 @@
     "agentOffline": "Agent not seen",
     "lastSync": "Last sync {time}",
     "syncNow": "Sync now",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "error": "Error"
   },
   "HeroCard": {
     "streak": "Streak",
@@ -34,6 +41,8 @@
     "lapsCount": "{count, plural, one {1 lap} other {{count} laps}}",
     "noPbYet": "No previous PB",
     "allSessions": "View all sessions",
+    "vsPb": "vs PB",
+    "vsPersonalBest": "vs Personal Best",
     "badge": {
       "pb": "New PB",
       "improving": "Improving",
@@ -240,5 +249,123 @@
       "save": "Save",
       "cancel": "Cancel"
     }
+  },
+  "Landing": {
+    "nowAvailable": "Now available",
+    "heroTitle1": "Your",
+    "heroTitle2": "Assetto Corsa",
+    "heroTitle3": "history, anywhere.",
+    "heroDescription": "Install CompanionAgent on your PC. It automatically syncs all your sessions and personal bests to the web dashboard — effortlessly.",
+    "createFreeAccount": "Create free account",
+    "alreadyHaveAccount": "I already have an account",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "features": {
+      "syncTitle": "Auto sync",
+      "syncDesc": "The agent detects new sessions and syncs in seconds, with no manual action.",
+      "historyTitle": "Full history",
+      "historyDesc": "All sessions from Content Manager organized in a dashboard accessible from any device.",
+      "pbTitle": "Personal Bests",
+      "pbDesc": "Your best times per car and track, always up to date and easy to check."
+    },
+    "howItWorks": {
+      "label": "How it works",
+      "title": "Three steps. Zero effort.",
+      "step1Title": "Create your account",
+      "step1Desc": "Register for free with Google or email.",
+      "step2Title": "Install the agent",
+      "step2Desc": "Download CompanionAgent and run it on your PC with Assetto Corsa.",
+      "step3Title": "Play normally",
+      "step3Desc": "Each session appears automatically in your dashboard."
+    },
+    "footer": "Apex — Sim Racing Companion"
+  },
+  "Sessions": {
+    "history": "History",
+    "title": "Sessions",
+    "filteringBy": "Filtering by:",
+    "thisWeek": "This week",
+    "clearFilters": "Clear",
+    "noSessions": "No sessions synced",
+    "previous": "← Previous",
+    "next": "Next →",
+    "count": "{count, plural, one {1 session} other {{count} sessions}}",
+    "table": {
+      "date": "Date",
+      "car": "Car",
+      "track": "Track",
+      "type": "Type",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
+    }
+  },
+  "Tracks": {
+    "catalogue": "Catalogue",
+    "title": "Tracks",
+    "count": "{tracks} tracks · {driven} driven",
+    "empty": {
+      "title": "No tracks found",
+      "description": "Sync your agent to populate the track catalogue from your AC installation."
+    },
+    "modal": {
+      "length": "Length",
+      "pitboxes": "Pitboxes",
+      "direction": "Direction",
+      "mySessions": "My Sessions",
+      "myStats": "My Stats",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
+    },
+    "card": {
+      "sessionOne": "session",
+      "sessionOther": "sessions",
+      "notYetDriven": "Not yet driven"
+    }
+  },
+  "Analytics": {
+    "performanceLabel": "Performance · 12-week window",
+    "title": "Driver Analytics",
+    "tabs": {
+      "overview": "Overview",
+      "pace": "Lap Pace",
+      "discipline": "Discipline",
+      "records": "Records"
+    },
+    "driverDna": "Driver DNA",
+    "sessionTrajectory": "Session Trajectory",
+    "disciplineMix": "Discipline Mix",
+    "noData": "No data",
+    "allCars": "All cars",
+    "allTracks": "All tracks",
+    "bestLapPerSession": "Best Lap Per Session",
+    "noLapData": "No lap data for selected filters",
+    "topCars": "Top Cars",
+    "topTracks": "Top Tracks",
+    "sessions": "sessions",
+    "fastest": "FASTEST",
+    "noPbs": "No personal bests recorded yet",
+    "driverLabels": {
+      "trackExplorer": "Track Explorer",
+      "veteran": "Veteran Driver",
+      "lapHunter": "Lap Hunter",
+      "consistent": "Consistent Driver"
+    },
+    "badges": {
+      "active": "ACTIVE",
+      "multiTrack": "MULTI-TRACK",
+      "consistent": "CONSISTENT"
+    }
+  },
+  "Dashboard": {
+    "noSyncRegistered": "No sync recorded",
+    "noSession": "No sessions yet",
+    "sessionsCount": "{count, plural, one {1 session} other {{count} sessions}}"
+  },
+  "EmptyState": {
+    "title": "No sessions yet",
+    "description": "Install the Companion Agent to automatically sync your Assetto Corsa history.",
+    "action": "Set up Agent"
   }
 }

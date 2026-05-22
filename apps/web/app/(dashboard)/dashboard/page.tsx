@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
 import { HeroCard } from "@/components/dashboard/HeroCard";
@@ -29,20 +29,10 @@ function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   return "goodEvening";
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  const hrs = Math.floor(mins / 60);
-  const days = Math.floor(hrs / 24);
-  if (days > 0) return `${days}d atrás`;
-  if (hrs > 0) return `${hrs}h atrás`;
-  if (mins > 0) return `${mins}m atrás`;
-  return "agora";
-}
-
 function buildPaceData(
   sessions: { started_at: string; best_lap_ms: number; track_id: string }[],
-  topTracks: string[]
+  topTracks: string[],
+  locale: string
 ) {
   const weekMap = new Map<string, Record<string, number>>();
   sessions
@@ -51,7 +41,7 @@ function buildPaceData(
       const d = new Date(s.started_at);
       const weekStart = new Date(d);
       weekStart.setDate(d.getDate() - d.getDay());
-      const weekKey = weekStart.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+      const weekKey = weekStart.toLocaleDateString(locale, { day: "numeric", month: "short" });
       if (!weekMap.has(weekKey)) weekMap.set(weekKey, {});
       const entry = weekMap.get(weekKey)!;
       if (!entry[s.track_id] || s.best_lap_ms < entry[s.track_id]) {
@@ -65,6 +55,20 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const tHeader = await getTranslations("Header");
   const tPace = await getTranslations("PaceChart");
+  const tCommon = await getTranslations("Common");
+  const tDash = await getTranslations("Dashboard");
+  const locale = await getLocale();
+
+  function timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return tCommon("timeAgo.daysAgo", { count: days });
+    if (hrs > 0) return tCommon("timeAgo.hoursAgo", { count: hrs });
+    if (mins > 0) return tCommon("timeAgo.minutesAgo", { count: mins });
+    return tCommon("timeAgo.now");
+  }
 
   const {
     data: { user },
@@ -235,14 +239,14 @@ export default async function DashboardPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map((e) => e[0]);
-  const paceData = buildPaceData(paceRaw, topTracks);
+  const paceData = buildPaceData(paceRaw, topTracks, locale);
   const trackLabels = Object.fromEntries(topTracks.map((t) => [t, slugToName(t)]));
 
   const displayName =
     user!.user_metadata?.display_name ?? user!.email?.split("@")[0] ?? "Driver";
 
-  const dayLabel = now.toLocaleDateString("pt-BR", { weekday: "long" }).toUpperCase();
-  const dateLabel = now.toLocaleDateString("pt-BR", { day: "numeric", month: "long" }).toUpperCase();
+  const dayLabel = now.toLocaleDateString(locale, { weekday: "long" }).toUpperCase();
+  const dateLabel = now.toLocaleDateString(locale, { day: "numeric", month: "long" }).toUpperCase();
 
   return (
     <div className="space-y-6">
@@ -270,8 +274,7 @@ export default async function DashboardPage() {
                 {tHeader("lastSync", { time: timeAgo(agentStatus.last_synced_at) })}
                 {agentStatus.last_sync_sessions_count > 0 && (
                   <span className="text-primary">
-                    {" "}· {agentStatus.last_sync_sessions_count}{" "}
-                    {agentStatus.last_sync_sessions_count !== 1 ? "sessões" : "sessão"}
+                    {" "}· {tDash("sessionsCount", { count: agentStatus.last_sync_sessions_count })}
                   </span>
                 )}
               </p>
@@ -285,7 +288,7 @@ export default async function DashboardPage() {
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {lastSession ? timeAgo(lastSession.started_at) : "Nenhum sync registrado"}
+                {lastSession ? timeAgo(lastSession.started_at) : tDash("noSyncRegistered")}
               </p>
             </div>
           )}
@@ -318,7 +321,7 @@ export default async function DashboardPage() {
           />
         ) : (
           <div className="bg-card border border-border rounded-md p-5 flex items-center justify-center min-h-[180px]">
-            <p className="text-muted-foreground text-sm">Nenhuma sessão ainda</p>
+            <p className="text-muted-foreground text-sm">{tDash("noSession")}</p>
           </div>
         )}
         {/* Activity Calendar — dados reais (últimos 90 dias) */}

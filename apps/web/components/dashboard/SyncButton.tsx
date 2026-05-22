@@ -42,7 +42,7 @@ export function SyncButton({ userId }: { userId: string }) {
             <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.5" className="stroke-destructive" />
             <path d="M5.5 3.5v2.5M5.5 7.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="stroke-destructive" />
           </svg>
-          <span className="text-destructive">Erro</span>
+          <span className="text-destructive">{t("error")}</span>
         </>
       ) : (
         <>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 import { formatLapTime, slugToName } from "@/lib/format";
 import type { ProfileSummary, Session, PersonalBest, TopCar, TopTrack } from "@/lib/types";
 
@@ -28,13 +29,6 @@ type Props = {
   personalBests: PersonalBest[];
   initialTab: string;
 };
-
-const TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "pace", label: "Lap Pace" },
-  { id: "discipline", label: "Discipline" },
-  { id: "records", label: "Records" },
-];
 
 function buildTrajectory(sessions: Session[]): { week: string; sessions: number }[] {
   const now = new Date();
@@ -107,22 +101,6 @@ function compositeScore(summary: ProfileSummary): number {
   return Math.min(100, Math.round((raw / (500 * 0.3 + 50 * 0.2 + 50 * 0.5)) * 100));
 }
 
-function driverLabel(summary: ProfileSummary): string {
-  const ratio = summary.total_sessions > 0 ? summary.unique_tracks / summary.total_sessions : 0;
-  if (ratio > 0.5) return "Track Explorer";
-  if (summary.total_sessions > 100) return "Veteran Driver";
-  if (summary.total_laps > 1000) return "Lap Hunter";
-  return "Consistent Driver";
-}
-
-function driverBadges(summary: ProfileSummary, score: number): string[] {
-  const badges = [];
-  if (summary.total_sessions > 0) badges.push("ACTIVE");
-  if (summary.unique_tracks > 5) badges.push("MULTI-TRACK");
-  if (score > 50) badges.push("CONSISTENT");
-  return badges.slice(0, 3);
-}
-
 export function AnalyticsDashboard({
   summary,
   sessions,
@@ -131,9 +109,33 @@ export function AnalyticsDashboard({
   personalBests,
   initialTab,
 }: Props) {
+  const tAnalytics = useTranslations("Analytics");
   const [activeTab, setActiveTab] = useState(initialTab);
   const [carFilter, setCarFilter] = useState("");
   const [trackFilter, setTrackFilter] = useState("");
+
+  const TABS = [
+    { id: "overview", label: tAnalytics("tabs.overview") },
+    { id: "pace", label: tAnalytics("tabs.pace") },
+    { id: "discipline", label: tAnalytics("tabs.discipline") },
+    { id: "records", label: tAnalytics("tabs.records") },
+  ];
+
+  function driverLabel(summary: ProfileSummary): string {
+    const ratio = summary.total_sessions > 0 ? summary.unique_tracks / summary.total_sessions : 0;
+    if (ratio > 0.5) return tAnalytics("driverLabels.trackExplorer");
+    if (summary.total_sessions > 100) return tAnalytics("driverLabels.veteran");
+    if (summary.total_laps > 1000) return tAnalytics("driverLabels.lapHunter");
+    return tAnalytics("driverLabels.consistent");
+  }
+
+  function driverBadges(summary: ProfileSummary, score: number): string[] {
+    const badges = [];
+    if (summary.total_sessions > 0) badges.push(tAnalytics("badges.active"));
+    if (summary.unique_tracks > 5) badges.push(tAnalytics("badges.multiTrack"));
+    if (score > 50) badges.push(tAnalytics("badges.consistent"));
+    return badges.slice(0, 3);
+  }
 
   const trajectory = buildTrajectory(sessions);
   const discipline = buildDiscipline(sessions);
@@ -146,9 +148,9 @@ export function AnalyticsDashboard({
       {/* Page header */}
       <div>
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-          Performance · 12-week window
+          {tAnalytics("performanceLabel")}
         </p>
-        <h1 className="text-2xl font-bold text-foreground">Driver Analytics</h1>
+        <h1 className="text-2xl font-bold text-foreground">{tAnalytics("title")}</h1>
       </div>
 
       {/* Tabs */}
@@ -174,7 +176,7 @@ export function AnalyticsDashboard({
           {/* Driver DNA */}
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Driver DNA
+              {tAnalytics("driverDna")}
             </p>
             <div className="flex items-center justify-between mb-3">
               <p className="text-foreground font-bold text-lg">{label}</p>
@@ -198,7 +200,7 @@ export function AnalyticsDashboard({
           {/* Trajectory */}
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Session Trajectory
+              {tAnalytics("sessionTrajectory")}
             </p>
             <SessionAreaChart data={trajectory} />
           </div>
@@ -206,13 +208,13 @@ export function AnalyticsDashboard({
           {/* Discipline mix */}
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Discipline Mix
+              {tAnalytics("disciplineMix")}
             </p>
             {discipline.length > 0 ? (
               <DisciplinePieChart data={discipline} />
             ) : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-                No data
+                {tAnalytics("noData")}
               </div>
             )}
           </div>
@@ -228,7 +230,7 @@ export function AnalyticsDashboard({
               onChange={(e) => setCarFilter(e.target.value)}
               className="bg-card border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:border-primary outline-none"
             >
-              <option value="">All cars</option>
+              <option value="">{tAnalytics("allCars")}</option>
               {topCars.map((c) => (
                 <option key={c.car_id} value={c.car_id}>{slugToName(c.car_id)}</option>
               ))}
@@ -238,7 +240,7 @@ export function AnalyticsDashboard({
               onChange={(e) => setTrackFilter(e.target.value)}
               className="bg-card border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:border-primary outline-none"
             >
-              <option value="">All tracks</option>
+              <option value="">{tAnalytics("allTracks")}</option>
               {topTracks.map((t) => (
                 <option key={t.track_id} value={t.track_id}>{slugToName(t.track_id)}</option>
               ))}
@@ -254,13 +256,13 @@ export function AnalyticsDashboard({
             return (
               <div className="bg-card border border-border rounded-md p-5">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                  Best Lap Per Session
+                  {tAnalytics("bestLapPerSession")}
                 </p>
                 {data.length > 0 ? (
                   <PaceLineChart data={data} tracks={tracks} trackLabels={trackLabels} />
                 ) : (
                   <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
-                    No lap data for selected filters
+                    {tAnalytics("noLapData")}
                   </div>
                 )}
               </div>
@@ -274,7 +276,7 @@ export function AnalyticsDashboard({
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Top Cars
+              {tAnalytics("topCars")}
             </p>
             <div className="space-y-3">
               {topCars.map((c, i) => (
@@ -289,7 +291,7 @@ export function AnalyticsDashboard({
                       />
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{c.sessions} sessions</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{c.sessions} {tAnalytics("sessions")}</span>
                 </div>
               ))}
             </div>
@@ -297,7 +299,7 @@ export function AnalyticsDashboard({
 
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Top Tracks
+              {tAnalytics("topTracks")}
             </p>
             <div className="space-y-3">
               {topTracks.map((t, i) => (
@@ -312,7 +314,7 @@ export function AnalyticsDashboard({
                       />
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{t.sessions} sessions</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{t.sessions} {tAnalytics("sessions")}</span>
                 </div>
               ))}
             </div>
@@ -333,7 +335,7 @@ export function AnalyticsDashboard({
               >
                 {i === 0 && (
                   <span className="inline-block px-2 py-0.5 bg-primary/[0.12] border border-primary/[0.18] text-primary text-[10px] font-semibold rounded tracking-wider mb-2">
-                    FASTEST
+                    {tAnalytics("fastest")}
                   </span>
                 )}
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
@@ -347,7 +349,7 @@ export function AnalyticsDashboard({
             ))}
           </div>
           {personalBests.length === 0 && (
-            <p className="text-muted-foreground text-sm text-center py-12">No personal bests recorded yet</p>
+            <p className="text-muted-foreground text-sm text-center py-12">{tAnalytics("noPbs")}</p>
           )}
         </div>
       )}

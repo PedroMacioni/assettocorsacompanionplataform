@@ -4,6 +4,7 @@ import { slugToName } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import Link from "next/link";
 import { SessionsClient } from "./SessionsClient";
+import { getTranslations, getLocale } from "next-intl/server";
 
 type SearchParams = { page?: string; car?: string; track?: string; filter?: string; date?: string };
 
@@ -12,6 +13,8 @@ export default async function SessionsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const t = await getTranslations("Sessions");
+  const locale = await getLocale();
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1"));
   const pageSize = 50;
@@ -50,7 +53,7 @@ export default async function SessionsPage({
   const totalPages = Math.ceil((count ?? 0) / pageSize);
 
   if (sessions.length === 0 && page === 1 && !params.car && !params.track)
-    return <EmptyState title="Nenhuma sessão sincronizada" />;
+    return <EmptyState title={t("noSessions")} />;
 
   return (
     <div className="space-y-6">
@@ -58,17 +61,17 @@ export default async function SessionsPage({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-            Histórico
+            {t("history")}
           </p>
-          <h1 className="text-2xl font-bold text-foreground">Sessões</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
         </div>
-        <span className="text-xs text-muted-foreground">{count ?? 0} sessões</span>
+        <span className="text-xs text-muted-foreground">{t("count", { count: count ?? 0 })}</span>
       </div>
 
       {/* Active filters */}
       {(params.car || params.track || params.filter || params.date) && (
         <div className="flex items-center gap-2 text-xs flex-wrap">
-          <span className="text-muted-foreground">Filtrando por:</span>
+          <span className="text-muted-foreground">{t("filteringBy")}</span>
           {params.car && (
             <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
               {slugToName(params.car)}
@@ -81,16 +84,16 @@ export default async function SessionsPage({
           )}
           {params.filter === "this_week" && (
             <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
-              Esta semana
+              {t("thisWeek")}
             </span>
           )}
           {params.date && (
             <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
-              {new Date(params.date + "T12:00:00Z").toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })}
+              {new Date(params.date + "T12:00:00Z").toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}
             </span>
           )}
           <Link href="/sessions" className="text-primary hover:underline ml-1">
-            Limpar
+            {t("clearFilters")}
           </Link>
         </div>
       )}
@@ -105,7 +108,7 @@ export default async function SessionsPage({
               href={`/sessions?page=${page - 1}`}
               className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
             >
-              ← Anterior
+              {t("previous")}
             </Link>
           )}
           <span className="text-xs text-muted-foreground">{page} / {totalPages}</span>
@@ -114,7 +117,7 @@ export default async function SessionsPage({
               href={`/sessions?page=${page + 1}`}
               className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
             >
-              Próxima →
+              {t("next")}
             </Link>
           )}
         </div>

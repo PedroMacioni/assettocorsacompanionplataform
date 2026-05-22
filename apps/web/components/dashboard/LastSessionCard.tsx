@@ -20,17 +20,6 @@ interface LastSessionCardProps {
   pbDelta?: number | null;
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  const hrs = Math.floor(mins / 60);
-  const days = Math.floor(hrs / 24);
-  if (days > 0) return `${days}d atrás`;
-  if (hrs > 0) return `${hrs}h atrás`;
-  if (mins > 0) return `${mins}m atrás`;
-  return "agora";
-}
-
 function formatDeltaMs(ms: number): string {
   const sign = ms < 0 ? "" : "+";
   return `${sign}${(ms / 1000).toFixed(3)}s`;
@@ -39,6 +28,17 @@ function formatDeltaMs(ms: number): string {
 export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }: LastSessionCardProps) {
   const t = await getTranslations("LastSession");
   const tCommon = await getTranslations("Common");
+
+  function timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return tCommon("timeAgo.daysAgo", { count: days });
+    if (hrs > 0) return tCommon("timeAgo.hoursAgo", { count: hrs });
+    if (mins > 0) return tCommon("timeAgo.minutesAgo", { count: mins });
+    return tCommon("timeAgo.now");
+  }
 
   const badgeTypeKey = qualityBadge.type as "pb" | "improving" | "consistent" | "warmup";
   const translatedBadge = { ...qualityBadge, label: t(`badge.${badgeTypeKey}`) };
@@ -77,7 +77,7 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
           </p>
           {pbDelta !== null && pbDelta !== undefined && (
             <p className={`text-sm font-medium mt-1 ${pbDelta <= 0 ? "text-green-500" : "text-red-500"}`}>
-              {formatDeltaMs(pbDelta)} vs PB
+              {formatDeltaMs(pbDelta)} {t("vsPb")}
             </p>
           )}
         </div>
@@ -86,7 +86,7 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
       {pbTime && session.best_lap_ms && (
         <div className="mt-5">
           <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wider">
-            <span>vs Personal Best</span>
+            <span>{t("vsPersonalBest")}</span>
             <span className="font-mono">{formatLapTime(pbTime)}</span>
           </div>
           <div className="h-1.5 bg-muted rounded-full overflow-hidden">

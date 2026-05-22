@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations("Landing");
   return (
     <div className="min-h-screen flex flex-col bg-[#0d0d0f] text-[#f0f0f0]">
       {/* Dot grid background */}
@@ -41,13 +43,13 @@ export default function LandingPage() {
               href="/login"
               className="px-4 py-1.5 text-sm text-[#6b6b72] hover:text-[#f0f0f0] transition-colors"
             >
-              Entrar
+              {t("signIn")}
             </Link>
             <Link
               href="/register"
               className="px-4 py-1.5 text-sm bg-[#e8612a] text-white rounded-md hover:bg-[#d4561f] transition-colors font-medium"
             >
-              Criar conta
+              {t("createAccount")}
             </Link>
           </div>
         </header>
@@ -56,20 +58,18 @@ export default function LandingPage() {
         <section className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#2a2a2c] bg-[#161618] text-[11px] font-semibold uppercase tracking-widest text-[#e8612a] mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-[#e8612a] animate-pulse" />
-            Agora disponível
+            {t("nowAvailable")}
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-bold tracking-tight max-w-3xl leading-[1.1] mb-6">
-            Seu histórico de{" "}
-            <span className="text-[#e8612a]">Assetto Corsa</span>
+            {t("heroTitle1")}{" "}
+            <span className="text-[#e8612a]">{t("heroTitle2")}</span>
             <br />
-            em qualquer lugar.
+            {t("heroTitle3")}
           </h1>
 
           <p className="text-lg text-[#6b6b72] max-w-xl mb-10 leading-relaxed">
-            Instale o CompanionAgent no seu PC. Ele sincroniza automaticamente
-            todas as suas sessões e personal bests com o dashboard web — sem
-            esforço nenhum.
+            {t("heroDescription")}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -77,13 +77,13 @@ export default function LandingPage() {
               href="/register"
               className="px-6 py-2.5 bg-[#e8612a] text-white rounded-md hover:bg-[#d4561f] transition-colors font-semibold text-sm"
             >
-              Criar conta grátis
+              {t("createFreeAccount")}
             </Link>
             <Link
               href="/login"
               className="px-6 py-2.5 border border-[#2a2a2c] text-[#f0f0f0] rounded-md hover:bg-[#161618] transition-colors text-sm"
             >
-              Já tenho conta
+              {t("alreadyHaveAccount")}
             </Link>
           </div>
         </section>
@@ -103,8 +103,8 @@ export default function LandingPage() {
                     />
                   </svg>
                 ),
-                title: "Sync automático",
-                desc: "O agente detecta novas sessões e sincroniza em segundos, sem nenhuma ação manual.",
+                title: t("features.syncTitle"),
+                desc: t("features.syncDesc"),
               },
               {
                 icon: (
@@ -127,8 +127,8 @@ export default function LandingPage() {
                     />
                   </svg>
                 ),
-                title: "Histórico completo",
-                desc: "Todas as sessões do Content Manager organizadas em um dashboard acessível de qualquer dispositivo.",
+                title: t("features.historyTitle"),
+                desc: t("features.historyDesc"),
               },
               {
                 icon: (
@@ -141,8 +141,8 @@ export default function LandingPage() {
                     />
                   </svg>
                 ),
-                title: "Personal Bests",
-                desc: "Seus melhores tempos por carro e pista, sempre atualizados e fáceis de consultar.",
+                title: t("features.pbTitle"),
+                desc: t("features.pbDesc"),
               },
             ].map((f) => (
               <div
@@ -163,25 +163,25 @@ export default function LandingPage() {
         <section className="px-6 pb-24 border-t border-[#2a2a2c] pt-16">
           <div className="max-w-4xl mx-auto">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-3">
-              Como funciona
+              {t("howItWorks.label")}
             </p>
-            <h2 className="text-2xl font-bold mb-10">Três passos. Zero trabalho.</h2>
+            <h2 className="text-2xl font-bold mb-10">{t("howItWorks.title")}</h2>
             <div className="grid sm:grid-cols-3 gap-8">
               {[
                 {
                   n: "01",
-                  title: "Crie sua conta",
-                  desc: "Registre-se gratuitamente com Google ou email.",
+                  title: t("howItWorks.step1Title"),
+                  desc: t("howItWorks.step1Desc"),
                 },
                 {
                   n: "02",
-                  title: "Instale o agente",
-                  desc: "Baixe o CompanionAgent e rode no seu PC com Assetto Corsa.",
+                  title: t("howItWorks.step2Title"),
+                  desc: t("howItWorks.step2Desc"),
                 },
                 {
                   n: "03",
-                  title: "Jogue normalmente",
-                  desc: "Cada sessão aparece automaticamente no seu dashboard.",
+                  title: t("howItWorks.step3Title"),
+                  desc: t("howItWorks.step3Desc"),
                 },
               ].map((s) => (
                 <div key={s.n} className="flex gap-4">
@@ -200,13 +200,13 @@ export default function LandingPage() {
 
         {/* Footer */}
         <footer className="border-t border-[#2a2a2c] px-6 py-4 flex items-center justify-between text-xs text-[#6b6b72]">
-          <span>Apex — Sim Racing Companion</span>
+          <span>{t("footer")}</span>
           <div className="flex gap-4">
             <Link href="/login" className="hover:text-[#f0f0f0] transition-colors">
-              Entrar
+              {t("signIn")}
             </Link>
             <Link href="/register" className="hover:text-[#f0f0f0] transition-colors">
-              Criar conta
+              {t("createAccount")}
             </Link>
           </div>
         </footer>

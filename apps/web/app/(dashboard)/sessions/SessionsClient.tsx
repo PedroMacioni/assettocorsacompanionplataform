@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import { SessionDetailPanel, type SessionPanelData } from "@/components/SessionDetailPanel";
@@ -23,6 +24,7 @@ function SessionBadge({ type }: { type: string | null }) {
 }
 
 export function SessionsClient({ sessions }: { sessions: Session[] }) {
+  const t = useTranslations("Sessions");
   const [panel, setPanel] = useState<SessionPanelData | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -46,13 +48,13 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
           <thead>
             <tr className="border-b border-border">
               {[
-                { label: "Data",        right: false },
-                { label: "Carro",       right: false },
-                { label: "Pista",       right: false },
-                { label: "Tipo",        right: false },
-                { label: "Voltas",      right: true  },
-                { label: "Distância",   right: true  },
-                { label: "Melhor Volta",right: true  },
+                { label: t("table.date"),     right: false },
+                { label: t("table.car"),      right: false },
+                { label: t("table.track"),    right: false },
+                { label: t("table.type"),     right: false },
+                { label: t("table.laps"),     right: true  },
+                { label: t("table.distance"), right: true  },
+                { label: t("table.bestLap"),  right: true  },
               ].map(({ label, right }) => (
                 <th
                   key={label}
