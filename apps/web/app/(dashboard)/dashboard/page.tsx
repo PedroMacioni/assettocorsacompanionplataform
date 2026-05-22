@@ -9,8 +9,15 @@ import { TopRecordsCard } from "@/components/dashboard/TopRecordsCard";
 import { QuickNavCards } from "@/components/dashboard/QuickNavCards";
 import { SyncButton } from "@/components/dashboard/SyncButton";
 import { PaceChartClient } from "@/components/charts/PaceChartClient";
-import { getSessionQualityBadge } from "@/lib/calculations";
-import { formatLapTime, slugToName } from "@/lib/format";
+import {
+  calculateStreak,
+  getSessionDates,
+  calculateConsistencyScore,
+  getSessionQualityBadge,
+  calculateAvgLapTime,
+  calculateStdDev,
+} from "@/lib/calculations";
+import { slugToName } from "@/lib/format";
 import type { ProfileSummary, Session, PersonalBest, AgentStatus } from "@/lib/types";
 import Link from "next/link";
 import { Wifi, WifiOff, ExternalLink } from "lucide-react";
@@ -64,38 +71,50 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const uid = user!.id;
 
-  const weekStart = new Date();
+  const now = new Date();
+  const weekStart = new Date(now);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const eightWeeksAgo = new Date(Date.now() - 56 * 86400000);
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-  const [summaryRes, sessionsWeekRes, lastSessionRes, paceDataRes, pbsRes, agentStatusRes] =
-    await Promise.all([
-      supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
-      supabase.from("sessions").select("laps").eq("user_id", uid).gte("started_at", weekStart.toISOString()),
-      supabase
-        .from("sessions")
-        .select("*")
-        .eq("user_id", uid)
-        .order("started_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("sessions")
-        .select("started_at, best_lap_ms, track_id")
-        .eq("user_id", uid)
-        .not("best_lap_ms", "is", null)
-        .gte("started_at", eightWeeksAgo.toISOString())
-        .order("started_at", { ascending: true }),
-      supabase
-        .from("personal_bests")
-        .select("*")
-        .eq("user_id", uid)
-        .order("time_ms", { ascending: true })
-        .limit(5),
-      supabase.from("agent_status").select("*").eq("user_id", uid).maybeSingle(),
-    ]);
+  const eightWeeksAgo = new Date(Date.now() - 56 * 86400000);
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
+
+  // ── Batch 1: all queries that don't depend on each other ────────────────
+  const [
+    summaryRes,
+    sessionsWeekRes,
+    lastSessionRes,
+    paceDataRes,
+    pbsRes,
+    agentStatusRes,
+    allSessionDatesRes,
+    lastWeekSessionsRes,
+    newPbsRes,
+    activityRawRes,
+    recentSourcesRes,
+  ] = await Promise.all([
+    supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
+    supabase.from("sessions").select("laps").eq("user_id", uid).gte("started_at", weekStart.toISOString()),
+    supabase.from("sessions").select("*").eq("user_id", uid).order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("started_at, best_lap_ms, track_id")
+      .eq("user_id", uid)
+      .not("best_lap_ms", "is", null)
+      .gte("started_at", eightWeeksAgo.toISOString())
+      .order("started_at", { ascending: true }),
+    supabase.from("personal_bests").select("*").eq("user_id", uid).order("time_ms", { ascending: true }).limit(5),
+    supabase.from("agent_status").select("*").eq("user_id", uid).maybeSingle(),
+    // Fase 2 — novos:
+    supabase.from("sessions").select("started_at").eq("user_id", uid),
+    supabase.from("sessions").select("laps").eq("user_id", uid).gte("started_at", lastWeekStart.toISOString()).lt("started_at", weekStart.toISOString()),
+    supabase.from("personal_bests").select("id").eq("user_id", uid).gte("synced_at", weekStart.toISOString()),
+    supabase.from("sessions").select("started_at").eq("user_id", uid).gte("started_at", ninetyDaysAgo.toISOString()),
+    supabase.from("sessions").select("source_id").eq("user_id", uid).not("best_lap_ms", "is", null).order("started_at", { ascending: false }).limit(10),
+  ]);
 
   const summary = summaryRes.data as ProfileSummary | null;
   if (!summary || summary.total_sessions === 0) return <EmptyState />;
@@ -109,34 +128,82 @@ export default async function DashboardPage() {
   const weekLaps = sessionsWeek.reduce((sum, s) => sum + (s.laps ?? 0), 0);
   const weekSessions = sessionsWeek.length;
 
+  // Streak
+  const allSessionDates = (allSessionDatesRes.data ?? []) as { started_at: string }[];
+  const streak = calculateStreak(getSessionDates(allSessionDates));
+
+  // Weekly delta
+  const lastWeekLaps = (lastWeekSessionsRes.data ?? []).reduce(
+    (sum: number, s: { laps: number }) => sum + (s.laps ?? 0),
+    0
+  );
+  const deltaVsLastWeek =
+    lastWeekLaps > 0
+      ? Math.round(((weekLaps - lastWeekLaps) / lastWeekLaps) * 100)
+      : weekLaps > 0
+      ? 100
+      : 0;
+
+  // PBs batidos esta semana
+  const pbsBeaten = (newPbsRes.data ?? []).length;
+
+  // Activity calendar
+  const activityMap = new Map<string, number>();
+  (activityRawRes.data ?? []).forEach((s: { started_at: string }) => {
+    const date = s.started_at.split("T")[0];
+    activityMap.set(date, (activityMap.get(date) ?? 0) + 1);
+  });
+  const activityData = Array.from(activityMap.entries()).map(([date, count]) => ({ date, count }));
+
+  // Source IDs para query de laps
+  const recentSourceIds = (recentSourcesRes.data ?? []).map((s: { source_id: string }) => s.source_id);
+
+  // ── Batch 2: queries que dependem de lastSession e recentSourceIds ──────
   let lastPb: PersonalBest | null = null;
   let pbDelta: number | null = null;
   let prevBestMs: number | null = null;
+  let consistencyResult = { score: 0, trend: "stable" as "up" | "down" | "stable" };
+  let qualityBadge = getSessionQualityBadge(
+    { best_lap_ms: null, laps: 0 },
+    {}
+  );
 
+  const [consistencyLapsRes, sessionLapsRes, pbRes, prevRes] = await Promise.all([
+    recentSourceIds.length > 0
+      ? supabase.from("laps").select("time_ms").eq("user_id", uid).in("session_source_id", recentSourceIds).eq("cuts", 0).gt("time_ms", 0).limit(40)
+      : Promise.resolve({ data: [] as { time_ms: number }[] }),
+    lastSession?.source_id
+      ? supabase.from("laps").select("time_ms").eq("user_id", uid).eq("session_source_id", lastSession.source_id).eq("cuts", 0).gt("time_ms", 0)
+      : Promise.resolve({ data: [] as { time_ms: number }[] }),
+    lastSession
+      ? supabase.from("personal_bests").select("*").eq("user_id", uid).eq("car_id", lastSession.car_id).eq("track_id", lastSession.track_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    lastSession?.best_lap_ms
+      ? supabase
+          .from("sessions")
+          .select("best_lap_ms")
+          .eq("user_id", uid)
+          .eq("car_id", lastSession.car_id)
+          .eq("track_id", lastSession.track_id)
+          .not("best_lap_ms", "is", null)
+          .lt("started_at", lastSession.started_at)
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // Consistency score (últimas até 20 voltas válidas)
+  const consistencyLapTimes = (consistencyLapsRes.data ?? [])
+    .map((l: { time_ms: number }) => l.time_ms)
+    .slice(-20);
+  if (consistencyLapTimes.length >= 2) {
+    const { score, trend } = calculateConsistencyScore(consistencyLapTimes);
+    consistencyResult = { score, trend };
+  }
+
+  // Session quality badge com std dev real
   if (lastSession) {
-    const [pbRes, prevRes] = await Promise.all([
-      supabase
-        .from("personal_bests")
-        .select("*")
-        .eq("user_id", uid)
-        .eq("car_id", lastSession.car_id)
-        .eq("track_id", lastSession.track_id)
-        .maybeSingle(),
-      lastSession.best_lap_ms
-        ? supabase
-            .from("sessions")
-            .select("best_lap_ms")
-            .eq("user_id", uid)
-            .eq("car_id", lastSession.car_id)
-            .eq("track_id", lastSession.track_id)
-            .not("best_lap_ms", "is", null)
-            .lt("started_at", lastSession.started_at)
-            .order("started_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        : Promise.resolve(null),
-    ]);
-
     lastPb = pbRes.data as PersonalBest | null;
     const prev = prevRes as { data: { best_lap_ms: number } | null } | null;
     prevBestMs = prev?.data?.best_lap_ms ?? null;
@@ -144,15 +211,22 @@ export default async function DashboardPage() {
     if (lastPb && lastSession.best_lap_ms) {
       pbDelta = lastSession.best_lap_ms - lastPb.time_ms;
     }
+
+    const sessionLapTimes = (sessionLapsRes.data ?? []).map((l: { time_ms: number }) => l.time_ms);
+    const currentSessionAvgMs = calculateAvgLapTime(sessionLapTimes);
+    const currentSessionStdDev = calculateStdDev(sessionLapTimes);
+
+    qualityBadge = getSessionQualityBadge(
+      { best_lap_ms: lastSession.best_lap_ms, laps: lastSession.laps },
+      {
+        previousBestMs: prevBestMs,
+        currentSessionAvgMs,
+        currentSessionStdDev,
+      }
+    );
   }
 
-  const qualityBadge = lastSession
-    ? getSessionQualityBadge(
-        { best_lap_ms: lastSession.best_lap_ms, laps: lastSession.laps },
-        { previousBestMs: prevBestMs }
-      )
-    : null;
-
+  // Pace chart
   const trackCount: Record<string, number> = {};
   paceRaw.forEach((s) => {
     trackCount[s.track_id] = (trackCount[s.track_id] ?? 0) + 1;
@@ -167,7 +241,6 @@ export default async function DashboardPage() {
   const displayName =
     user!.user_metadata?.display_name ?? user!.email?.split("@")[0] ?? "Driver";
 
-  const now = new Date();
   const dayLabel = now.toLocaleDateString("pt-BR", { weekday: "long" }).toUpperCase();
   const dateLabel = now.toLocaleDateString("pt-BR", { day: "numeric", month: "long" }).toUpperCase();
 
@@ -220,21 +293,21 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* [1] HERO CARD */}
+      {/* [1] HERO CARD — dados reais */}
       <HeroCard
-        streak={{ current: 0, record: 0 }}
-        consistency={{ score: 0, trend: "stable" }}
+        streak={streak}
+        consistency={consistencyResult}
         weeklyDigest={{
           laps: weekLaps,
           sessions: weekSessions,
-          pbsBeaten: 0,
-          deltaVsLastWeek: 0,
+          pbsBeaten,
+          deltaVsLastWeek,
         }}
       />
 
       {/* [2] LAST SESSION + [3] ACTIVITY CALENDAR */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {lastSession && qualityBadge ? (
+        {lastSession ? (
           <LastSessionCard
             session={lastSession}
             qualityBadge={qualityBadge}
@@ -246,7 +319,8 @@ export default async function DashboardPage() {
             <p className="text-[#6b6b72] text-sm">Nenhuma sessão ainda</p>
           </div>
         )}
-        <ActivityCalendar sessions={[]} daysToShow={90} />
+        {/* Activity Calendar — dados reais (últimos 90 dias) */}
+        <ActivityCalendar sessions={activityData} daysToShow={90} />
       </div>
 
       {/* [4] QUICK STATS BAR */}
