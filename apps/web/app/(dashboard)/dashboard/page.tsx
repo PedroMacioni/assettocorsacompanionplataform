@@ -8,7 +8,7 @@ import { QuickStatsBar } from "@/components/dashboard/QuickStatsBar";
 import { TopRecordsCard } from "@/components/dashboard/TopRecordsCard";
 import { QuickNavCards } from "@/components/dashboard/QuickNavCards";
 import { SyncButton } from "@/components/dashboard/SyncButton";
-import { PaceChartClient } from "@/components/charts/PaceChartClient";
+import { PaceChartWithSelector } from "@/components/charts/PaceChartWithSelector";
 import {
   calculateStreak,
   getSessionDates,
@@ -349,7 +349,7 @@ export default async function DashboardPage() {
               {tPace("fullView")}
             </Link>
           </div>
-          <PaceChartClient data={paceData} tracks={topTracks} trackLabels={trackLabels} />
+          <PaceChartWithSelector data={paceData} tracks={topTracks} trackLabels={trackLabels} />
         </div>
 
         <TopRecordsCard records={personalBests} />

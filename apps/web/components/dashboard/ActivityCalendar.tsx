@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 interface ActivityCalendarProps {
@@ -86,22 +87,29 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
         {weeks.map((week, weekIdx) => (
           <div key={weekIdx} className="flex flex-col gap-[3px]">
             {week.map((day, dayIdx) => (
-              <div
-                key={dayIdx}
-                className="w-3 h-3 rounded-sm transition-all duration-150 hover:scale-125 cursor-default"
-                style={{ backgroundColor: day ? getColor(day.count) : "transparent" }}
-                onMouseEnter={(e) => {
-                  if (day) {
+              day && day.count > 0 ? (
+                <Link
+                  key={dayIdx}
+                  href={`/sessions?date=${day.date}`}
+                  className="w-3 h-3 rounded-sm transition-all duration-150 hover:scale-125 hover:ring-1 hover:ring-[#e8612a] block"
+                  style={{ backgroundColor: getColor(day.count) }}
+                  onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setTooltip({
                       x: rect.left + rect.width / 2,
                       y: rect.top - 8,
                       text: t("tooltip", { count: day.count, date: formatDate(day.date) }),
                     });
-                  }
-                }}
-                onMouseLeave={() => setTooltip(null)}
-              />
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              ) : (
+                <div
+                  key={dayIdx}
+                  className="w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: day ? getColor(0) : "transparent" }}
+                />
+              )
             ))}
           </div>
         ))}

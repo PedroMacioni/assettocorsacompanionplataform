@@ -5,7 +5,7 @@ import type { Session } from "@/lib/types";
 import Link from "next/link";
 import { SessionsClient } from "./SessionsClient";
 
-type SearchParams = { page?: string; car?: string; track?: string };
+type SearchParams = { page?: string; car?: string; track?: string; filter?: string; date?: string };
 
 export default async function SessionsPage({
   searchParams,
@@ -32,6 +32,19 @@ export default async function SessionsPage({
   if (params.car)   query = query.eq("car_id", params.car);
   if (params.track) query = query.eq("track_id", params.track);
 
+  if (params.filter === "this_week") {
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+    query = query.gte("started_at", weekStart.toISOString());
+  }
+
+  if (params.date) {
+    const dayStart = new Date(params.date + "T00:00:00.000Z");
+    const dayEnd = new Date(params.date + "T23:59:59.999Z");
+    query = query.gte("started_at", dayStart.toISOString()).lte("started_at", dayEnd.toISOString());
+  }
+
   const { data, count } = await query;
   const sessions = (data ?? []) as Session[];
   const totalPages = Math.ceil((count ?? 0) / pageSize);
@@ -53,8 +66,8 @@ export default async function SessionsPage({
       </div>
 
       {/* Active filters */}
-      {(params.car || params.track) && (
-        <div className="flex items-center gap-2 text-xs">
+      {(params.car || params.track || params.filter || params.date) && (
+        <div className="flex items-center gap-2 text-xs flex-wrap">
           <span className="text-muted-foreground">Filtrando por:</span>
           {params.car && (
             <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
@@ -64,6 +77,16 @@ export default async function SessionsPage({
           {params.track && (
             <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
               {slugToName(params.track)}
+            </span>
+          )}
+          {params.filter === "this_week" && (
+            <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
+              Esta semana
+            </span>
+          )}
+          {params.date && (
+            <span className="px-2 py-1 bg-muted border border-border rounded text-foreground">
+              {new Date(params.date + "T12:00:00Z").toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })}
             </span>
           )}
           <Link href="/sessions" className="text-primary hover:underline ml-1">
