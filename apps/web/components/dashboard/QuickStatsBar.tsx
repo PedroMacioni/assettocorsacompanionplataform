@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Map, Car, Ruler, Flag } from "lucide-react";
 import { formatDistance } from "@/lib/format";
 
@@ -8,53 +10,42 @@ interface QuickStatsBarProps {
   laps: number;
 }
 
-export function QuickStatsBar({ tracks, cars, distanceKm, laps }: QuickStatsBarProps) {
+export async function QuickStatsBar({ tracks, cars, distanceKm, laps }: QuickStatsBarProps) {
+  const t = await getTranslations("QuickStats");
+
   const stats = [
-    {
-      icon: Map,
-      value: tracks,
-      label: "pistas visitadas",
-      format: (v: number) => v.toString(),
-    },
-    {
-      icon: Car,
-      value: cars,
-      label: "carros utilizados",
-      format: (v: number) => v.toString(),
-    },
-    {
-      icon: Ruler,
-      value: distanceKm,
-      label: "percorridos",
-      format: (v: number) => formatDistance(v),
-    },
-    {
-      icon: Flag,
-      value: laps,
-      label: "voltas completadas",
-      format: (v: number) => v.toLocaleString(),
-    },
+    { icon: Map,   value: tracks.toString(),            label: t("tracks"),    href: "/tracks"  },
+    { icon: Car,   value: cars.toString(),              label: t("cars"),      href: "/garage"  },
+    { icon: Ruler, value: formatDistance(distanceKm),   label: t("distance"),  href: null       },
+    { icon: Flag,  value: laps.toLocaleString("pt-BR"), label: t("totalLaps"), href: null       },
   ];
 
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-4">
-      <div className="flex items-center justify-between divide-x divide-[#2a2a2c]">
-        {stats.map(({ icon: Icon, value, label, format }, i) => (
-          <div
-            key={label}
-            className={`flex-1 flex flex-col items-center text-center ${
-              i === 0 ? "" : "pl-4"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Icon className="w-4 h-4 text-[#6b6b72]" />
-              <span className="text-xl font-semibold text-white">
-                {format(value)}
+    <div className="bg-card border border-border rounded-md p-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
+        {stats.map(({ icon: Icon, value, label, href }, i) => {
+          const inner = (isLink: boolean) => (
+            <div className={`flex flex-col items-center text-center py-3 md:py-0 ${i === 0 ? "" : "md:pl-4"}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <Icon className={`w-4 h-4 ${isLink ? "text-muted-foreground group-hover:text-primary transition-colors" : "text-muted-foreground"}`} />
+                <span className={`text-xl font-semibold ${isLink ? "text-foreground group-hover:text-primary transition-colors" : "text-foreground"}`}>
+                  {value}
+                </span>
+              </div>
+              <span className={`text-xs ${isLink ? "text-muted-foreground group-hover:text-primary transition-colors" : "text-muted-foreground"}`}>
+                {label}
               </span>
             </div>
-            <span className="text-xs text-[#6b6b72]">{label}</span>
-          </div>
-        ))}
+          );
+
+          return href ? (
+            <Link key={label} href={href} className="group">
+              {inner(true)}
+            </Link>
+          ) : (
+            <div key={label}>{inner(false)}</div>
+          );
+        })}
       </div>
     </div>
   );

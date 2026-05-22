@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 
 export function SyncButton({ userId }: { userId: string }) {
+  const t = useTranslations("Header");
   const [state, setState] = useState<"idle" | "requested" | "error">("idle");
 
   async function requestSync() {
@@ -32,7 +34,7 @@ export function SyncButton({ userId }: { userId: string }) {
           <svg className="animate-spin" width="11" height="11" viewBox="0 0 11 11" fill="none">
             <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 20" strokeLinecap="round" />
           </svg>
-          Solicitado...
+          {t("syncing")}
         </>
       ) : state === "error" ? (
         <>
@@ -40,7 +42,7 @@ export function SyncButton({ userId }: { userId: string }) {
             <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.5" className="stroke-destructive" />
             <path d="M5.5 3.5v2.5M5.5 7.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="stroke-destructive" />
           </svg>
-          <span className="text-destructive">Erro</span>
+          <span className="text-destructive">{t("error")}</span>
         </>
       ) : (
         <>
@@ -53,7 +55,7 @@ export function SyncButton({ userId }: { userId: string }) {
               strokeLinejoin="round"
             />
           </svg>
-          Sincronizar agora
+          {t("syncNow")}
         </>
       )}
     </button>

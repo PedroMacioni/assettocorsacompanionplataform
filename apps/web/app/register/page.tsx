@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -17,6 +18,7 @@ function GoogleIcon() {
 }
 
 export default function RegisterPage() {
+  const t = useTranslations("Register");
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -87,8 +89,8 @@ export default function RegisterPage() {
 
         <div className="bg-card border border-border rounded-xl p-6 space-y-5">
           <div>
-            <h1 className="text-lg font-bold text-foreground">Crie sua conta</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Comece a registrar suas sessões gratuitamente</p>
+            <h1 className="text-lg font-bold text-foreground">{t("title")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t("subtitle")}</p>
           </div>
 
           {/* Google */}
@@ -99,13 +101,13 @@ export default function RegisterPage() {
             className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-border rounded-md text-sm font-medium text-foreground bg-muted hover:bg-muted/70 transition-colors disabled:opacity-50"
           >
             <GoogleIcon />
-            {googleLoading ? "Redirecionando..." : "Continuar com Google"}
+            {googleLoading ? t("redirecting") : t("googleButton")}
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">ou</span>
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">{t("or")}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -113,7 +115,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="name" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Nome de piloto
+                {t("driverName")}
               </label>
               <input
                 id="name"
@@ -128,7 +130,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Email
+                {t("email")}
               </label>
               <input
                 id="email"
@@ -137,12 +139,12 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-3 py-2.5 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
-                placeholder="piloto@exemplo.com"
+                placeholder={t("emailPlaceholder")}
               />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Senha
+                {t("password")}
               </label>
               <input
                 id="password"
@@ -152,7 +154,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 className="w-full px-3 py-2.5 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
-                placeholder="Mínimo 6 caracteres"
+                placeholder={t("passwordPlaceholder")}
               />
             </div>
 
@@ -167,14 +169,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? "Criando conta..." : "Criar conta grátis"}
+              {loading ? t("creating") : t("createAccount")}
             </button>
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            Já tem conta?{" "}
+            {t("hasAccount")}{" "}
             <Link href="/login" className="text-foreground hover:text-primary transition-colors">
-              Entrar
+              {t("signIn")}
             </Link>
           </p>
         </div>

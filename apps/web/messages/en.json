@@ -1,0 +1,446 @@
+{
+  "Common": {
+    "loading": "Loading...",
+    "viewAll": "View all",
+    "fullView": "Full analysis",
+    "openSession": "Open session",
+    "sessions": "sessions",
+    "laps": "laps",
+    "days": "days",
+    "day": "day",
+    "timeAgo": {
+      "daysAgo": "{count}d ago",
+      "hoursAgo": "{count}h ago",
+      "minutesAgo": "{count}m ago",
+      "now": "now"
+    }
+  },
+  "Header": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "agentOnline": "Agent online",
+    "agentOffline": "Agent not seen",
+    "lastSync": "Last sync {time}",
+    "syncNow": "Sync now",
+    "syncing": "Syncing...",
+    "error": "Error"
+  },
+  "HeroCard": {
+    "streak": "Streak",
+    "streakDays": "{count, plural, one {day} other {days}}",
+    "streakRecord": "Record: {record}",
+    "consistency": "Consistency",
+    "thisWeek": "This Week",
+    "pbsBeaten": "{count, plural, one {1 PB beaten} other {{count} PBs beaten}}",
+    "vsLastWeek": "{delta}% vs last week",
+    "viewWeekSessions": "View this week's sessions"
+  },
+  "LastSession": {
+    "title": "Last Session",
+    "lapsCount": "{count, plural, one {1 lap} other {{count} laps}}",
+    "noPbYet": "No previous PB",
+    "allSessions": "View all sessions",
+    "vsPb": "vs PB",
+    "vsPersonalBest": "vs Personal Best",
+    "badge": {
+      "pb": "New PB",
+      "improving": "Improving",
+      "consistent": "Consistent",
+      "warmup": "Warm-up"
+    }
+  },
+  "ActivityCalendar": {
+    "title": "Activity",
+    "activeDays": "active days",
+    "less": "Less",
+    "more": "More",
+    "tooltip": "{count, plural, one {1 session on {date}} other {{count} sessions on {date}}}"
+  },
+  "QuickStats": {
+    "tracks": "Tracks",
+    "cars": "Cars",
+    "distance": "km driven",
+    "totalLaps": "Laps"
+  },
+  "PaceChart": {
+    "title": "Pace Evolution",
+    "subtitle": "Last 4 weeks",
+    "fullView": "Full analysis",
+    "noData": "Not enough data",
+    "noDataHint": "Sync at least 2 sessions on a track to see the chart."
+  },
+  "PersonalRecords": {
+    "title": "Personal Records",
+    "empty": "No records yet",
+    "viewAll": "View all records"
+  },
+  "QuickNav": {
+    "sessions": "Sessions",
+    "sessionsSubtitle": "View full history",
+    "analytics": "Analytics",
+    "analyticsSubtitle": "Pace and records analysis",
+    "garage": "Garage",
+    "garageSubtitle": "Your favorite cars",
+    "settings": "Settings",
+    "settingsSubtitle": "Agent & profile"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "sessions": "Sessions",
+    "analytics": "Analytics",
+    "garage": "Garage",
+    "tracks": "Tracks",
+    "settings": "Settings",
+    "agent": "Agent",
+    "signOut": "Sign out"
+  },
+  "Login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your account to continue",
+    "googleButton": "Continue with Google",
+    "redirecting": "Redirecting...",
+    "or": "or",
+    "email": "Email",
+    "emailPlaceholder": "pilot@example.com",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create free account"
+  },
+  "Register": {
+    "title": "Create your account",
+    "subtitle": "Start recording your sessions for free",
+    "googleButton": "Continue with Google",
+    "redirecting": "Redirecting...",
+    "or": "or",
+    "driverName": "Driver name",
+    "email": "Email",
+    "emailPlaceholder": "pilot@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Minimum 6 characters",
+    "creating": "Creating account...",
+    "createAccount": "Create free account",
+    "hasAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "Settings": {
+    "title": "Settings",
+    "account": "Account",
+    "sections": {
+      "profile": "Profile",
+      "appearance": "Appearance",
+      "agentToken": "Agent Token"
+    },
+    "stats": {
+      "memberSince": "Member since",
+      "sessions": "Sessions",
+      "lastSync": "Last sync"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your public identity inside the app.",
+      "avatar": "Avatar",
+      "uploading": "Uploading…",
+      "uploadPhoto": "Upload photo",
+      "remove": "Remove",
+      "photoHint": "JPG, PNG or WebP · max 2 MB",
+      "initialsColor": "Initials color",
+      "details": "Details",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your driver name",
+      "email": "Email",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "saved": "Saved",
+      "couldNotSave": "Could not save. Please try again."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of the app.",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "language": "Language",
+      "englishName": "English",
+      "englishRegion": "United States",
+      "portugueseName": "Português",
+      "portugueseRegion": "Brasil",
+      "savingPrefs": "Saving…",
+      "savePrefs": "Save preferences",
+      "saved": "Saved"
+    },
+    "agent": {
+      "title": "Agent Token",
+      "description": "Use this token to authenticate CompanionAgent on your PC.",
+      "accessToken": "Access token",
+      "copyToken": "Copy token",
+      "copied": "Copied!",
+      "renew": "Renew",
+      "howToUse": "How to use",
+      "steps": {
+        "one": "Download and run the CompanionAgent installer",
+        "two": "Open the settings window from the system tray icon",
+        "three": "Paste this token in the \"Agent Token\" field",
+        "four": "The agent will start syncing your sessions automatically"
+      }
+    }
+  },
+  "Download": {
+    "yourCars": "Tools",
+    "title": "Desktop Agent",
+    "subtitle": "Sync your Assetto Corsa automatically",
+    "description": "The Companion Agent runs in the background on your Windows PC and sends your sessions, personal bests, and car badges to Sim Racing Companion in real time.",
+    "downloadButton": "Download for Windows",
+    "version": "Version",
+    "fileInfo": "Windows 10/11 · x64 · ~50 MB · No installer needed",
+    "allReleases": "View all releases on GitHub",
+    "steps": {
+      "title": "How to set up",
+      "one": "Download and run SimRacingCompanion.exe — it appears in the system tray",
+      "two": "Click the tray icon → Settings",
+      "three": "Sign in with your Sim Racing Companion account",
+      "four": "Done — your sessions will sync automatically"
+    },
+    "requirements": {
+      "title": "Requirements",
+      "os": "Windows 10 or 11 (64-bit)",
+      "ac": "Assetto Corsa installed via Steam",
+      "cm": "Content Manager (recommended for more data)"
+    }
+  },
+  "Garage": {
+    "title": "Garage",
+    "yourCars": "Your Cars",
+    "searchPlaceholder": "Search cars...",
+    "noResults": "No cars found",
+    "empty": {
+      "title": "No cars in your garage",
+      "description": "Sync your sessions to see your car stats."
+    },
+    "summary": {
+      "carsOne": "car",
+      "carsOther": "cars",
+      "sessionsOne": "session",
+      "sessionsOther": "sessions",
+      "driven": "driven"
+    },
+    "car": {
+      "sessions": "Sessions",
+      "bestLap": "Best Lap",
+      "distance": "Distance",
+      "laps": "Laps",
+      "favorite": "FAVORITE"
+    },
+    "sections": {
+      "recentSessions": "Recent Sessions",
+      "knownTracks": "Known Tracks",
+      "personalBests": "Personal Bests",
+      "noSessions": "No sessions yet",
+      "noTracks": "No track data"
+    },
+    "edit": {
+      "button": "Rename",
+      "title": "Rename Car",
+      "displayNameLabel": "Display name",
+      "placeholder": "E.g. Race F40",
+      "hint": "Visible only to you. Leave empty to use the original name.",
+      "save": "Save",
+      "cancel": "Cancel"
+    }
+  },
+  "Landing": {
+    "nowAvailable": "Now available",
+    "heroTitle1": "Your",
+    "heroTitle2": "Assetto Corsa",
+    "heroTitle3": "history, anywhere.",
+    "heroDescription": "Install CompanionAgent on your PC. It automatically syncs all your sessions and personal bests to the web dashboard — effortlessly.",
+    "createFreeAccount": "Create free account",
+    "alreadyHaveAccount": "I already have an account",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "features": {
+      "syncTitle": "Auto sync",
+      "syncDesc": "The agent detects new sessions and syncs in seconds, with no manual action.",
+      "historyTitle": "Full history",
+      "historyDesc": "All sessions from Content Manager organized in a dashboard accessible from any device.",
+      "pbTitle": "Personal Bests",
+      "pbDesc": "Your best times per car and track, always up to date and easy to check."
+    },
+    "howItWorks": {
+      "label": "How it works",
+      "title": "Three steps. Zero effort.",
+      "step1Title": "Create your account",
+      "step1Desc": "Register for free with Google or email.",
+      "step2Title": "Install the agent",
+      "step2Desc": "Download CompanionAgent and run it on your PC with Assetto Corsa.",
+      "step3Title": "Play normally",
+      "step3Desc": "Each session appears automatically in your dashboard."
+    },
+    "footer": "Apex — Sim Racing Companion"
+  },
+  "Sessions": {
+    "history": "History",
+    "title": "Session history",
+    "filteringBy": "Filtering by:",
+    "thisWeek": "This week",
+    "clearFilters": "Clear",
+    "noSessions": "No sessions synced",
+    "noResults": "No sessions found for the selected filters",
+    "loadingSession": "Opening session...",
+    "previous": "← Previous",
+    "next": "Next →",
+    "count": "{count, plural, one {1 session} other {{count} sessions}}",
+    "results": {
+      "label": "Sessions",
+      "count": "{count, plural, one {1 session} other {{count} sessions}}",
+      "filteredCount": "{count} of {total} sessions"
+    },
+    "filters": {
+      "title": "Filters",
+      "active": "{count, plural, one {1 active} other {{count} active}}",
+      "clear": "Clear",
+      "period": "Period",
+      "allPeriods": "Full history",
+      "thisWeek": "This week",
+      "last30Days": "Last 30 days",
+      "car": "Car",
+      "allCars": "All cars",
+      "track": "Track",
+      "allTracks": "All tracks",
+      "type": "Type",
+      "allTypes": "All types",
+      "date": "Day"
+    },
+    "table": {
+      "date": "Date",
+      "car": "Car",
+      "track": "Track",
+      "type": "Type",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
+    }
+  },
+  "Tracks": {
+    "catalogue": "Catalogue",
+    "title": "Tracks",
+    "count": "{tracks} tracks · {driven} driven",
+    "empty": {
+      "title": "No tracks found",
+      "description": "Sync your agent to populate the track catalogue from your AC installation."
+    },
+    "modal": {
+      "length": "Length",
+      "pitboxes": "Pitboxes",
+      "direction": "Direction",
+      "mySessions": "My Sessions",
+      "myStats": "My Stats",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
+    },
+    "card": {
+      "sessionOne": "session",
+      "sessionOther": "sessions",
+      "notYetDriven": "Not yet driven"
+    }
+  },
+  "Analytics": {
+    "performanceLabel": "Performance · 12-week window",
+    "title": "Driver Analytics",
+    "tabs": {
+      "overview": "Overview",
+      "pace": "Lap Pace",
+      "discipline": "Discipline",
+      "records": "Records"
+    },
+    "driverDna": "Driver DNA",
+    "sessionTrajectory": "Session Trajectory",
+    "disciplineMix": "Discipline Mix",
+    "noData": "No data",
+    "allCars": "All cars",
+    "allTracks": "All tracks",
+    "bestLapPerSession": "Best Lap Per Session",
+    "noLapData": "No lap data for selected filters",
+    "topCars": "Top Cars",
+    "topTracks": "Top Tracks",
+    "sessions": "sessions",
+    "fastest": "FASTEST",
+    "noPbs": "No personal bests recorded yet",
+    "driverLabels": {
+      "trackExplorer": "Track Explorer",
+      "veteran": "Veteran Driver",
+      "lapHunter": "Lap Hunter",
+      "consistent": "Consistent Driver"
+    },
+    "badges": {
+      "active": "ACTIVE",
+      "multiTrack": "MULTI-TRACK",
+      "consistent": "CONSISTENT"
+    }
+  },
+  "Dashboard": {
+    "noSyncRegistered": "No sync recorded",
+    "noSession": "No sessions yet",
+    "sessionsCount": "{count, plural, one {1 session} other {{count} sessions}}"
+  },
+  "EmptyState": {
+    "title": "No sessions yet",
+    "description": "Install the Companion Agent to automatically sync your Assetto Corsa history.",
+    "action": "Set up Agent"
+  },
+  "SessionDetail": {
+    "bestLap": "Best Lap",
+    "vsPb": "vs PB",
+    "pb": "PB",
+    "stats": {
+      "totalLaps": "Total Laps",
+      "valid": "Valid",
+      "distance": "Distance",
+      "lastLap": "Last Lap",
+      "avgLap": "Avg (valid)",
+      "cuts": "w/ Cuts",
+      "tyre": "Tyre"
+    },
+    "consistency": {
+      "title": "Consistency",
+      "outOf": "/100",
+      "sigma": "σ = {value}s across valid laps",
+      "excellent": "Excellent",
+      "good": "Good",
+      "regular": "Regular",
+      "variable": "Variable",
+      "inconsistent": "Inconsistent"
+    },
+    "theoretical": {
+      "title": "Theoretical Lap",
+      "potentialGain": "Potential gain: {value}"
+    },
+    "table": {
+      "validOnly": "Valid only",
+      "lapsCount": "{count, plural, one {1 lap} other {{count} laps}}",
+      "legend": {
+        "best": "Best",
+        "top25": "Top 25%",
+        "top50": "Top 50%",
+        "worst": "Worst",
+        "cut": "Cut"
+      },
+      "headers": {
+        "lap": "#",
+        "s1": "S1",
+        "s2": "S2",
+        "s3": "S3",
+        "total": "Total",
+        "gap": "Gap",
+        "tyre": "Tyre",
+        "cuts": "Cuts"
+      },
+      "ref": "REF",
+      "empty": "Lap data not available.",
+      "emptyHint": "Sync via the agent to import sector breakdown."
+    }
+  }
+}

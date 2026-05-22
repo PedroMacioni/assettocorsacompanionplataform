@@ -191,6 +191,84 @@ public sealed class LocalHistoryService : ILocalHistoryService
         return result;
     }
 
+    public SessionLapsResponse GetSessionLaps(string sessionSourceId)
+    {
+        var sources = GetSources();
+        var file = Path.Combine(sources.ContentManagerSessionsPath, $"{sessionSourceId}.json");
+        if (!File.Exists(file))
+            return new SessionLapsResponse(sessionSourceId, []);
+
+        try
+        {
+            var laps = ParseJsonLaps(sessionSourceId, file);
+            return new SessionLapsResponse(sessionSourceId, laps.Select(ToDto).ToList());
+        }
+        catch { return new SessionLapsResponse(sessionSourceId, []); }
+    }
+
+    private static List<ImportedLap> ParseJsonLaps(string sourceId, string file)
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(file));
+        var root = document.RootElement;
+        var result = new List<ImportedLap>();
+
+        if (!root.TryGetProperty("sessions", out var sessionElements) ||
+            sessionElements.ValueKind != JsonValueKind.Array)
+        {
+            return result;
+        }
+
+        var globalLapIndex = 0;
+        foreach (var session in sessionElements.EnumerateArray())
+        {
+            if (!session.TryGetProperty("laps", out var laps) ||
+                laps.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var lap in laps.EnumerateArray())
+            {
+                if (GetInt(lap, "car") != 0) continue;
+
+                var timeMs = GetInt(lap, "time");
+                if (timeMs is not > 0) continue;
+
+                int? s1 = null, s2 = null, s3 = null;
+                if (lap.TryGetProperty("sectors", out var sectors) &&
+                    sectors.ValueKind == JsonValueKind.Array &&
+                    sectors.GetArrayLength() >= 3)
+                {
+                    s1 = sectors[0].TryGetInt32(out var v0) && v0 > 0 ? v0 : null;
+                    s2 = sectors[1].TryGetInt32(out var v1) && v1 > 0 ? v1 : null;
+                    s3 = sectors[2].TryGetInt32(out var v2) && v2 > 0 ? v2 : null;
+                }
+
+                var cuts = GetInt(lap, "cuts") ?? 0;
+                var tyre = lap.TryGetProperty("tyre", out var tyreEl) && tyreEl.ValueKind == JsonValueKind.String
+                    ? tyreEl.GetString()
+                    : null;
+
+                result.Add(new ImportedLap(
+                    SessionSourceId: sourceId,
+                    LapNumber: globalLapIndex,
+                    TimeMs: timeMs.Value,
+                    S1Ms: s1,
+                    S2Ms: s2,
+                    S3Ms: s3,
+                    Cuts: cuts,
+                    Tyre: tyre));
+
+                globalLapIndex++;
+            }
+        }
+
+        return result;
+    }
+
+    private static LapDto ToDto(ImportedLap lap) =>
+        new(lap.SessionSourceId, lap.LapNumber, lap.TimeMs, lap.S1Ms, lap.S2Ms, lap.S3Ms, lap.Cuts, lap.Tyre);
+
     private static ImportedSession? ParseJsonSession(string file)
     {
         using var document = JsonDocument.Parse(File.ReadAllText(file));
@@ -523,6 +601,6 @@ public sealed class LocalHistoryService : ILocalHistoryService
     {
         return string.IsNullOrWhiteSpace(value)
             ? EmptyValue
-            : value.Trim().ToLowerInvariant();
+            : value.Trim().ToLowerInvariant().Replace('/', '-');
     }
 }

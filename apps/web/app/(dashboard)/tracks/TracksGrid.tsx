@@ -32,12 +32,28 @@ function TrackOutline({ url, name }: { url: string | null; name: string }) {
   );
 }
 
+type Translations = {
+  length: string;
+  pitboxes: string;
+  direction: string;
+  mySessions: string;
+  myStats: string;
+  laps: string;
+  distance: string;
+  bestLap: string;
+  sessionOne: string;
+  sessionOther: string;
+  notYetDriven: string;
+};
+
 function TrackModal({
   track,
   onClose,
+  tr,
 }: {
   track: TrackWithStats;
   onClose: () => void;
+  tr: Translations;
 }) {
   return (
     <div
@@ -89,7 +105,7 @@ function TrackModal({
                 <div className="flex items-center gap-1.5 mb-1">
                   <Ruler className="h-3 w-3 text-muted-foreground" />
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    Length
+                    {tr.length}
                   </p>
                 </div>
                 <p className="text-sm font-bold text-foreground">
@@ -102,7 +118,7 @@ function TrackModal({
                 <div className="flex items-center gap-1.5 mb-1">
                   <Flag className="h-3 w-3 text-muted-foreground" />
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    Pitboxes
+                    {tr.pitboxes}
                   </p>
                 </div>
                 <p className="text-sm font-bold text-foreground">{track.pitboxes}</p>
@@ -113,7 +129,7 @@ function TrackModal({
                 <div className="flex items-center gap-1.5 mb-1">
                   <RotateCcw className="h-3 w-3 text-muted-foreground" />
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    Direction
+                    {tr.direction}
                   </p>
                 </div>
                 <p className="text-sm font-bold text-foreground">{track.run}</p>
@@ -122,7 +138,7 @@ function TrackModal({
             {track.sessions > 0 && (
               <div className="bg-muted rounded-md p-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  My Sessions
+                  {tr.mySessions}
                 </p>
                 <p className="text-sm font-bold text-foreground">{track.sessions}</p>
               </div>
@@ -133,17 +149,17 @@ function TrackModal({
           {track.sessions > 0 && (
             <div className="border border-border rounded-md p-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                My Stats
+                {tr.myStats}
               </p>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Laps</p>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.laps}</p>
                   <p className="text-base font-bold text-foreground">
                     {track.total_laps.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Distance</p>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.distance}</p>
                   <p className="text-base font-bold text-foreground">
                     {track.total_distance_km >= 1000
                       ? `${(track.total_distance_km / 1000).toFixed(1)}k km`
@@ -151,7 +167,7 @@ function TrackModal({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Best Lap</p>
+                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.bestLap}</p>
                   <p className="text-base font-bold font-mono text-primary">
                     <LapTime ms={track.best_lap_ms} />
                   </p>
@@ -182,9 +198,11 @@ function TrackModal({
 export function TracksGrid({
   tracks,
   userStats,
+  translations: tr,
 }: {
   tracks: Track[];
   userStats: TopTrack[];
+  translations: Translations;
 }) {
   const [selected, setSelected] = useState<TrackWithStats | null>(null);
 
@@ -237,10 +255,10 @@ export function TracksGrid({
                 )}
                 {track.sessions > 0 ? (
                   <span className="text-[11px] text-primary font-medium">
-                    {track.sessions} {track.sessions === 1 ? "session" : "sessions"}
+                    {track.sessions} {track.sessions === 1 ? tr.sessionOne : tr.sessionOther}
                   </span>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground/50">Not yet driven</span>
+                  <span className="text-[11px] text-muted-foreground/50">{tr.notYetDriven}</span>
                 )}
               </div>
             </div>
@@ -249,7 +267,7 @@ export function TracksGrid({
       </div>
 
       {selected && (
-        <TrackModal track={selected} onClose={() => setSelected(null)} />
+        <TrackModal track={selected} onClose={() => setSelected(null)} tr={tr} />
       )}
     </>
   );

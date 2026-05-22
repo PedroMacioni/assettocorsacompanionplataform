@@ -3,17 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, List, TrendingUp, Car, MapPin, Settings, LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LayoutDashboard, List, TrendingUp, Car, MapPin, Settings, LogOut, ArrowDownToLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/sessions", label: "Sessions", icon: List },
-  { href: "/analytics", label: "Analytics", icon: TrendingUp },
-  { href: "/garage", label: "Garage", icon: Car },
-  { href: "/tracks", label: "Tracks", icon: MapPin },
-] as const;
 
 function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
   if (avatarUrl) {
@@ -39,11 +32,20 @@ function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null })
 }
 
 export function Sidebar() {
+  const t = useTranslations("Sidebar");
   const pathname = usePathname();
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const navItems = [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/sessions", label: t("sessions"), icon: List },
+    { href: "/analytics", label: t("analytics"), icon: TrendingUp },
+    { href: "/garage", label: t("garage"), icon: Car },
+    { href: "/tracks", label: t("tracks"), icon: MapPin },
+  ] as const;
 
   useEffect(() => {
     const supabase = createClient();
@@ -127,6 +129,39 @@ export function Sidebar() {
       <div className="px-3 pb-4">
         <div className="mx-1 h-px bg-border mb-3" />
 
+        {/* Download agent */}
+        {(() => {
+          const active = isActive("/download");
+          return (
+            <Link
+              href="/download"
+              className={cn(
+                "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
+                "transition-all duration-150 ease-out",
+                active
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-200",
+                  active
+                    ? "h-5 bg-primary opacity-100"
+                    : "h-0 opacity-0 group-hover:h-3 group-hover:opacity-40 bg-primary"
+                )}
+              />
+              <ArrowDownToLine
+                className={cn(
+                  "h-[15px] w-[15px] shrink-0 transition-colors duration-150",
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )}
+              />
+              {t("agent")}
+            </Link>
+          );
+        })()}
+
         {/* Settings */}
         {(() => {
           const active = isActive("/settings");
@@ -155,7 +190,7 @@ export function Sidebar() {
                   active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}
               />
-              Settings
+              {t("settings")}
             </Link>
           );
         })()}
@@ -174,7 +209,7 @@ export function Sidebar() {
             </div>
             <button
               onClick={signOut}
-              title="Sign out"
+              title={t("signOut")}
               className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive transition-colors duration-150"
             >
               <LogOut className="h-3.5 w-3.5" />

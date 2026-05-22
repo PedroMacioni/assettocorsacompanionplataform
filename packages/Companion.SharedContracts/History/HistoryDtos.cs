@@ -56,3 +56,17 @@ public sealed record HistorySourceDto(
     bool ContentManagerSessionsFound,
     string PersonalBestPath,
     bool PersonalBestFound);
+
+public sealed record LapDto(
+    string SessionSourceId,
+    int LapNumber,
+    int TimeMs,
+    int? S1Ms,
+    int? S2Ms,
+    int? S3Ms,
+    int Cuts,
+    string? Tyre);
+
+public sealed record SessionLapsResponse(
+    string SessionSourceId,
+    IReadOnlyList<LapDto> Laps);

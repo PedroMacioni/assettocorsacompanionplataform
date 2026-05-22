@@ -29,17 +29,17 @@ type Props = {
 
 export default function PaceLineChart({ data, tracks, trackLabels = {} }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11, fill: "#6b6b72" }}
+          tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={fmtMs}
-          tick={{ fontSize: 10, fill: "#6b6b72" }}
+          tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
           axisLine={false}
           tickLine={false}
           width={68}
@@ -47,12 +47,12 @@ export default function PaceLineChart({ data, tracks, trackLabels = {} }: Props)
         />
         <Tooltip
           contentStyle={{
-            background: "#161618",
-            border: "1px solid #2a2a2c",
+            background: "var(--color-card)",
+            border: "1px solid var(--color-border)",
             borderRadius: 6,
             fontSize: 12,
           }}
-          labelStyle={{ color: "#6b6b72", marginBottom: 4 }}
+          labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: 4 }}
           formatter={(val) => [typeof val === "number" ? fmtMs(val) : String(val ?? "")]}
         />
         {tracks.map((t, i) => (
@@ -72,7 +72,7 @@ export default function PaceLineChart({ data, tracks, trackLabels = {} }: Props)
           <Legend
             wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
             formatter={(v) => (
-              <span style={{ color: "#6b6b72" }}>
+              <span style={{ color: "var(--color-muted-foreground)" }}>
                 {trackLabels[String(v)] ?? String(v).replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}
               </span>
             )}

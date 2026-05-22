@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -18,6 +19,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("Login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -82,8 +84,8 @@ export default function LoginPage() {
 
         <div className="bg-card border border-border rounded-xl p-6 space-y-5">
           <div>
-            <h1 className="text-lg font-bold text-foreground">Bem-vindo de volta</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Entre na sua conta para continuar</p>
+            <h1 className="text-lg font-bold text-foreground">{t("title")}</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t("subtitle")}</p>
           </div>
 
           {/* Google */}
@@ -94,13 +96,13 @@ export default function LoginPage() {
             className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 border border-border rounded-md text-sm font-medium text-foreground bg-muted hover:bg-muted/70 transition-colors disabled:opacity-50"
           >
             <GoogleIcon />
-            {googleLoading ? "Redirecionando..." : "Continuar com Google"}
+            {googleLoading ? t("redirecting") : t("googleButton")}
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">ou</span>
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">{t("or")}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
 
@@ -108,7 +110,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Email
+                {t("email")}
               </label>
               <input
                 id="email"
@@ -118,12 +120,12 @@ export default function LoginPage() {
                 required
                 autoFocus
                 className="w-full px-3 py-2.5 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
-                placeholder="piloto@exemplo.com"
+                placeholder={t("emailPlaceholder")}
               />
             </div>
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Senha
+                {t("password")}
               </label>
               <input
                 id="password"
@@ -147,14 +149,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {loading ? "Entrando..." : "Entrar"}
+              {loading ? t("signingIn") : t("signIn")}
             </button>
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            Não tem conta?{" "}
+            {t("noAccount")}{" "}
             <Link href="/register" className="text-foreground hover:text-primary transition-colors">
-              Criar conta grátis
+              {t("createAccount")}
             </Link>
           </p>
         </div>

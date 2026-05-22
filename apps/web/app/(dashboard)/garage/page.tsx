@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/EmptyState";
-import { LapTime } from "@/components/LapTime";
 import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
-import type { Session, PersonalBest, TopCar } from "@/lib/types";
+import type { Session, PersonalBest, TopCar, UserCarPreference } from "@/lib/types";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { GarageCarList } from "./GarageCarList";
+import { EditCarNameButton } from "./EditCarNameButton";
+import { CarBannerImage } from "./CarBannerImage";
 
 type SearchParams = { car?: string };
 
@@ -13,6 +15,7 @@ export default async function GaragePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const t = await getTranslations("Garage");
   const { car: carParam } = await searchParams;
   const supabase = await createClient();
   const {
@@ -20,22 +23,25 @@ export default async function GaragePage({
   } = await supabase.auth.getUser();
   const uid = user!.id;
 
-  const carsRes = await supabase
-    .from("top_cars")
-    .select("*")
-    .eq("user_id", uid)
-    .order("sessions", { ascending: false });
+  const [carsRes, prefsRes] = await Promise.all([
+    supabase.from("top_cars").select("*").eq("user_id", uid).order("sessions", { ascending: false }),
+    supabase.from("user_car_preferences").select("*").eq("user_id", uid),
+  ]);
 
   const topCars = (carsRes.data ?? []) as TopCar[];
+  const prefs = (prefsRes.data ?? []) as UserCarPreference[];
+  const prefMap: Record<string, string | null> = Object.fromEntries(
+    prefs.map((p) => [p.car_id, p.display_name])
+  );
 
   if (topCars.length === 0) {
-    return (
-      <EmptyState title="No cars in your garage" description="Sync sessions to see your car stats." />
-    );
+    return <EmptyState title={t("empty.title")} description={t("empty.description")} />;
   }
 
   const selectedCarId = carParam ?? topCars[0].car_id;
   const selectedCar = topCars.find((c) => c.car_id === selectedCarId) ?? topCars[0];
+  const displayName = prefMap[selectedCar.car_id] ?? slugToName(selectedCar.car_id);
+  const originalName = slugToName(selectedCar.car_id);
 
   const [carSessionsRes, carPbsRes] = await Promise.all([
     supabase
@@ -57,100 +63,115 @@ export default async function GaragePage({
   const carPbs = (carPbsRes.data ?? []) as PersonalBest[];
   const knownTracks = Array.from(new Set(carSessions.map((s) => s.track_id)));
 
+  const totalSessions = topCars.reduce((sum, c) => sum + c.sessions, 0);
+  const totalDistance = topCars.reduce((sum, c) => sum + (c.total_distance_km ?? 0), 0);
+  const isFavorite = selectedCar.sessions === topCars[0].sessions && topCars.length > 1;
+
+  const carImageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-previews/${uid}`;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-          Your Cars
+      {/* Page header */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("yourCars")}
         </p>
-        <h1 className="text-2xl font-bold text-foreground">Garage</h1>
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("title")}</h1>
+        <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{topCars.length}</span>
+          <span>{topCars.length === 1 ? t("summary.carsOne") : t("summary.carsOther")}</span>
+          <span className="opacity-30">·</span>
+          <span className="font-semibold text-foreground">{totalSessions.toLocaleString()}</span>
+          <span>{totalSessions === 1 ? t("summary.sessionsOne") : t("summary.sessionsOther")}</span>
+          <span className="opacity-30">·</span>
+          <span className="font-semibold text-foreground">{formatDistance(totalDistance)}</span>
+          <span>{t("summary.driven")}</span>
+        </div>
       </div>
 
-      <div className="flex gap-6">
-        {/* Car list — left column */}
-        <div className="w-64 shrink-0 space-y-1">
-          {topCars.map((c) => {
-            const active = c.car_id === selectedCar.car_id;
-            return (
-              <Link
-                key={c.car_id}
-                href={`/garage?car=${c.car_id}`}
-                className={cn(
-                  "relative flex items-center justify-between px-3 py-3 rounded-md transition-colors",
-                  active
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                )}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-primary rounded-r-full" />
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{slugToName(c.car_id)}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{c.sessions} sessions</p>
-                </div>
-                {active && (
-                  <span className="shrink-0 ml-2 text-[10px] font-semibold text-primary uppercase tracking-wider">
-                    ●
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
+      <div className="flex gap-5">
+        {/* Car list sidebar — client component handles search */}
+        <GarageCarList
+          cars={topCars}
+          preferences={prefMap}
+          selectedCarId={selectedCar.car_id}
+          carImageBase={carImageBase}
+        />
 
-        {/* Car stats — right panel */}
-        <div className="flex-1 space-y-4">
-          {/* Car header */}
-          <div className="bg-card border border-border rounded-md p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  {selectedCar.sessions === topCars[0].sessions ? "FAVORITE · " : ""}
-                  {selectedCar.sessions} SESSIONS
-                </p>
-                <h2 className="text-2xl font-bold text-foreground">{slugToName(selectedCar.car_id)}</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-6 text-right shrink-0">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Best Lap</p>
-                  <p className="text-lg font-bold font-mono text-primary">
-                    {formatLapTime(selectedCar.best_lap_ms)}
-                  </p>
+        {/* Car detail panel */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Car banner card */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {/* Banner */}
+            <div className="h-44 relative">
+              <CarBannerImage src={`${carImageBase}/${selectedCar.car_id}.png`} alt={displayName} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between gap-4">
+                <div className="min-w-0">
+                  {isFavorite && (
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">
+                      ★ {t("car.favorite")}
+                    </p>
+                  )}
+                  <h2 className="text-2xl font-bold text-white truncate">{displayName}</h2>
+                  {prefMap[selectedCar.car_id] && (
+                    <p className="text-xs text-white/50 mt-0.5 truncate">{originalName}</p>
+                  )}
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Distance</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {formatDistance(selectedCar.total_distance_km)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Laps</p>
-                  <p className="text-lg font-bold text-foreground">
-                    {selectedCar.total_laps.toLocaleString()}
-                  </p>
+                <div className="shrink-0">
+                  <EditCarNameButton
+                    carId={selectedCar.car_id}
+                    currentDisplayName={prefMap[selectedCar.car_id] ?? null}
+                    originalName={originalName}
+                  />
                 </div>
               </div>
             </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-4 divide-x divide-border border-t border-border">
+              {[
+                { label: t("car.sessions"), value: selectedCar.sessions.toLocaleString(), mono: false },
+                { label: t("car.bestLap"), value: formatLapTime(selectedCar.best_lap_ms), mono: true, highlight: true },
+                { label: t("car.distance"), value: formatDistance(selectedCar.total_distance_km), mono: false },
+                { label: t("car.laps"), value: selectedCar.total_laps.toLocaleString(), mono: false },
+              ].map((stat) => (
+                <div key={stat.label} className="p-4 text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                    {stat.label}
+                  </p>
+                  <p
+                    className={[
+                      "text-lg font-bold",
+                      stat.mono ? "font-mono" : "",
+                      stat.highlight ? "text-primary" : "text-foreground",
+                    ].join(" ")}
+                  >
+                    {stat.value}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
 
+          {/* Sessions + Tracks */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Recent sessions */}
-            <div className="bg-card border border-border rounded-md p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                Recent Sessions
+                {t("sections.recentSessions")}
               </p>
               {carSessions.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {carSessions.slice(0, 6).map((s) => (
                     <Link
                       key={s.id}
                       href={`/sessions/${s.source_id}`}
-                      className="flex items-center justify-between py-1.5 hover:opacity-80 transition-opacity"
+                      className="flex items-center justify-between py-1.5 hover:opacity-70 transition-opacity"
                     >
-                      <div>
-                        <p className="text-xs text-foreground font-medium">{slugToName(s.track_id)}</p>
+                      <div className="min-w-0">
+                        <p className="text-xs text-foreground font-medium truncate">
+                          {slugToName(s.track_id)}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">{formatDate(s.started_at)}</p>
                       </div>
                       <p className="text-xs font-mono font-semibold text-foreground shrink-0 ml-3">
@@ -160,17 +181,16 @@ export default async function GaragePage({
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">No sessions yet</p>
+                <p className="text-sm text-muted-foreground">{t("sections.noSessions")}</p>
               )}
             </div>
 
-            {/* Known tracks */}
-            <div className="bg-card border border-border rounded-md p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                Known Tracks
+                {t("sections.knownTracks")}
               </p>
               {knownTracks.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {knownTracks.map((trackId) => {
                     const pb = carPbs.find((p) => p.track_id === trackId);
                     return (
@@ -191,29 +211,31 @@ export default async function GaragePage({
                   })}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm">No track data</p>
+                <p className="text-sm text-muted-foreground">{t("sections.noTracks")}</p>
               )}
             </div>
           </div>
 
-          {/* Personal bests for this car */}
+          {/* Personal bests */}
           {carPbs.length > 0 && (
-            <div className="bg-card border border-border rounded-md p-5">
+            <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                Personal Bests with {slugToName(selectedCar.car_id)}
+                {t("sections.personalBests")}
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {carPbs.map((pb, i) => (
                   <div
                     key={pb.id}
-                    className={`p-3 rounded-md border ${
-                      i === 0 ? "bg-primary/5 border-primary/[0.18]" : "bg-muted border-border"
+                    className={`p-3 rounded-lg border ${
+                      i === 0 ? "bg-primary/5 border-primary/20" : "bg-muted/40 border-border"
                     }`}
                   >
                     <p className="text-[10px] text-muted-foreground truncate mb-1">
                       {slugToName(pb.track_id)}
                     </p>
-                    <p className={`text-base font-bold font-mono ${i === 0 ? "text-primary" : "text-foreground"}`}>
+                    <p
+                      className={`text-base font-bold font-mono ${i === 0 ? "text-primary" : "text-foreground"}`}
+                    >
                       {formatLapTime(pb.time_ms)}
                     </p>
                   </div>

@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  User, Palette, Key, Download, Check, Copy, Eye, EyeOff,
+  User, Palette, Key, Check, Copy, Eye, EyeOff,
   RefreshCw, Sun, Moon, Globe, ChevronRight, Camera, X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -14,14 +15,7 @@ const AVATAR_COLORS = [
   "#e8612a", "#22c55e", "#3b82f6", "#8b5cf6", "#f59e0b",
 ];
 
-const SECTIONS = [
-  { id: "profile",    label: "Profile",     icon: User },
-  { id: "appearance", label: "Appearance",  icon: Palette },
-  { id: "agent",      label: "Agent Token", icon: Key },
-  { id: "download",   label: "Download",    icon: Download },
-] as const;
-
-type Section = (typeof SECTIONS)[number]["id"];
+type Section = "profile" | "appearance" | "agent";
 type Theme   = "dark" | "light";
 type Lang    = "en" | "pt-BR";
 
@@ -64,6 +58,14 @@ type Props = {
 // ─── main component ───────────────────────────────────────────────────────────
 
 export function SettingsClient(props: Props) {
+  const t = useTranslations("Settings");
+
+  const SECTIONS = [
+    { id: "profile" as const,    label: t("sections.profile"),    icon: User },
+    { id: "appearance" as const, label: t("sections.appearance"), icon: Palette },
+    { id: "agent" as const,      label: t("sections.agentToken"), icon: Key },
+  ];
+
   const [section, setSection]           = useState<Section>("profile");
   const [displayName, setDisplayName]   = useState(props.displayName);
   const [avatarColor, setAvatarColor]   = useState(props.avatarColor);
@@ -210,8 +212,11 @@ export function SettingsClient(props: Props) {
         data: { theme, lang },
       });
       if (error) throw error;
+      // Set cookie so server-side locale picks up the change
+      document.cookie = `apex-lang=${lang}; path=/; max-age=${60 * 60 * 24 * 365}`;
       setSavedAppearance(true);
-      setTimeout(() => setSavedAppearance(false), 2500);
+      // Brief delay then reload to apply the new locale server-side
+      setTimeout(() => window.location.reload(), 600);
     } catch {
       // applied locally already
     } finally {
@@ -241,9 +246,9 @@ export function SettingsClient(props: Props) {
       <div className="w-56 shrink-0 space-y-1">
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-            Settings
+            {t("title")}
           </p>
-          <h1 className="text-xl font-bold text-foreground">Account</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("account")}</h1>
         </div>
 
         {SECTIONS.map(({ id, label, icon: Icon }) => (
@@ -277,13 +282,13 @@ export function SettingsClient(props: Props) {
         {/* Account stats */}
         <div className="!mt-8 p-3.5 rounded-md bg-muted border border-border space-y-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-            Account
+            {t("account")}
           </p>
           {[
-            { label: "Member since", value: formatMemberSince(props.memberSince) },
-            { label: "Sessions", value: props.totalSessions.toLocaleString() },
+            { label: t("stats.memberSince"), value: formatMemberSince(props.memberSince) },
+            { label: t("stats.sessions"), value: props.totalSessions.toLocaleString() },
             ...(props.lastSessionAt
-              ? [{ label: "Last sync", value: timeAgo(props.lastSessionAt) }]
+              ? [{ label: t("stats.lastSync"), value: timeAgo(props.lastSessionAt) }]
               : []),
           ].map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between">
@@ -300,12 +305,12 @@ export function SettingsClient(props: Props) {
         {/* ── PROFILE ──────────────────────────────────────────────────── */}
         {section === "profile" && (
           <div className="space-y-6">
-            <SectionHeader title="Profile" description="Your public identity inside the app." />
+            <SectionHeader title={t("profile.title")} description={t("profile.description")} />
 
             {/* Avatar */}
             <div className="bg-card border border-border rounded-md p-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                Avatar
+                {t("profile.avatar")}
               </p>
               <div className="flex items-center gap-6">
                 {/* Avatar preview + upload trigger */}
@@ -349,7 +354,7 @@ export function SettingsClient(props: Props) {
                       )}
                     >
                       <Camera className="h-3 w-3" />
-                      {uploading ? "Uploading…" : "Upload photo"}
+                      {uploading ? t("profile.uploading") : t("profile.uploadPhoto")}
                     </button>
 
                     {avatarUrl && (
@@ -359,11 +364,11 @@ export function SettingsClient(props: Props) {
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-all duration-150"
                       >
                         <X className="h-3 w-3" />
-                        Remove
+                        {t("profile.remove")}
                       </button>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground">JPG, PNG or WebP · max 2 MB</p>
+                  <p className="text-[10px] text-muted-foreground">{t("profile.photoHint")}</p>
                   {uploadError && <p className="text-[11px] text-destructive mt-1">{uploadError}</p>}
                 </div>
 
@@ -383,7 +388,7 @@ export function SettingsClient(props: Props) {
               {/* Color swatches — only when no photo */}
               {!avatarUrl && (
                 <div className="mt-5 pt-5 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-3">Initials color</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t("profile.initialsColor")}</p>
                   <div className="flex gap-2">
                     {AVATAR_COLORS.map((c) => (
                       <button
@@ -407,22 +412,22 @@ export function SettingsClient(props: Props) {
             {/* Name + email */}
             <div className="bg-card border border-border rounded-md p-6 space-y-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Details
+                {t("profile.details")}
               </p>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Display name</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("profile.displayName")}</label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your driver name"
+                  placeholder={t("profile.displayNamePlaceholder")}
                   className="w-full bg-muted border border-border rounded-md px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("profile.email")}</label>
                 <input
                   type="email"
                   value={props.email}
@@ -444,12 +449,12 @@ export function SettingsClient(props: Props) {
                     : "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
                 )}
               >
-                {saving ? "Saving…" : "Save changes"}
+                {saving ? t("profile.saving") : t("profile.save")}
               </button>
               {saved && (
                 <span className="flex items-center gap-1.5 text-sm text-green-500 animate-in fade-in duration-200">
                   <Check className="h-4 w-4" />
-                  Saved
+                  {t("profile.saved")}
                 </span>
               )}
               {saveError && <span className="text-sm text-destructive">{saveError}</span>}
@@ -460,29 +465,29 @@ export function SettingsClient(props: Props) {
         {/* ── APPEARANCE ───────────────────────────────────────────────── */}
         {section === "appearance" && (
           <div className="space-y-6">
-            <SectionHeader title="Appearance" description="Customize the look and feel of the app." />
+            <SectionHeader title={t("appearance.title")} description={t("appearance.description")} />
 
             {/* Theme */}
             <div className="bg-card border border-border rounded-md p-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                Theme
+                {t("appearance.theme")}
               </p>
               <div className="grid grid-cols-2 gap-4">
-                <ThemeCard id="dark" active={theme === "dark"} onClick={() => applyTheme("dark")} />
-                <ThemeCard id="light" active={theme === "light"} onClick={() => applyTheme("light")} />
+                <ThemeCard id="dark" active={theme === "dark"} onClick={() => applyTheme("dark")} label={t("appearance.dark")} />
+                <ThemeCard id="light" active={theme === "light"} onClick={() => applyTheme("light")} label={t("appearance.light")} />
               </div>
             </div>
 
             {/* Language */}
             <div className="bg-card border border-border rounded-md p-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                Language
+                {t("appearance.language")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {(
                   [
-                    { id: "en" as Lang, label: "English", sub: "United States" },
-                    { id: "pt-BR" as Lang, label: "Português", sub: "Brasil" },
+                    { id: "en" as Lang, label: t("appearance.englishName"), sub: t("appearance.englishRegion") },
+                    { id: "pt-BR" as Lang, label: t("appearance.portugueseName"), sub: t("appearance.portugueseRegion") },
                   ] as const
                 ).map(({ id, label, sub }) => (
                   <button
@@ -520,12 +525,12 @@ export function SettingsClient(props: Props) {
                     : "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
                 )}
               >
-                {savingAppearance ? "Saving…" : "Save preferences"}
+                {savingAppearance ? t("appearance.savingPrefs") : t("appearance.savePrefs")}
               </button>
               {savedAppearance && (
                 <span className="flex items-center gap-1.5 text-sm text-green-500 animate-in fade-in duration-200">
                   <Check className="h-4 w-4" />
-                  Saved
+                  {t("appearance.saved")}
                 </span>
               )}
             </div>
@@ -535,11 +540,11 @@ export function SettingsClient(props: Props) {
         {/* ── AGENT TOKEN ──────────────────────────────────────────────── */}
         {section === "agent" && (
           <div className="space-y-6">
-            <SectionHeader title="Agent Token" description="Use this token to authenticate CompanionAgent on your PC." />
+            <SectionHeader title={t("agent.title")} description={t("agent.description")} />
 
             <div className="bg-card border border-border rounded-md p-6 space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Access token</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("agent.accessToken")}</label>
                 <div className="flex gap-2">
                   <input
                     type={tokenVisible ? "text" : "password"}
@@ -565,12 +570,12 @@ export function SettingsClient(props: Props) {
                   {copied ? (
                     <>
                       <Check className="h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">Copied!</span>
+                      <span className="text-green-500">{t("agent.copied")}</span>
                     </>
                   ) : (
                     <>
                       <Copy className="h-3.5 w-3.5" />
-                      Copy token
+                      {t("agent.copyToken")}
                     </>
                   )}
                 </button>
@@ -579,21 +584,21 @@ export function SettingsClient(props: Props) {
                   className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all duration-150"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Renew
+                  {t("agent.renew")}
                 </button>
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-md p-6">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                How to use
+                {t("agent.howToUse")}
               </p>
               <ol className="space-y-3">
                 {[
-                  "Download and run the CompanionAgent installer",
-                  "Open the settings window from the system tray icon",
-                  "Paste this token in the \"Agent Token\" field",
-                  "The agent will start syncing your sessions automatically",
+                  t("agent.steps.one"),
+                  t("agent.steps.two"),
+                  t("agent.steps.three"),
+                  t("agent.steps.four"),
                 ].map((step, i) => (
                   <li key={i} className="flex gap-3 text-sm text-muted-foreground">
                     <span className="shrink-0 w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-foreground">
@@ -607,47 +612,6 @@ export function SettingsClient(props: Props) {
           </div>
         )}
 
-        {/* ── DOWNLOAD ─────────────────────────────────────────────────── */}
-        {section === "download" && (
-          <div className="space-y-6">
-            <SectionHeader
-              title="Download CompanionAgent"
-              description="Windows background app that syncs your Assetto Corsa history."
-            />
-
-            <div className="bg-card border border-border rounded-md p-6 space-y-6">
-              <div className="space-y-4">
-                {[
-                  { title: "Install", desc: "Download and run the installer. No admin rights required.", icon: Download },
-                  { title: "Authenticate", desc: "Paste your Agent Token from the Agent Token section.", icon: Key },
-                  { title: "Race", desc: "The agent runs in the system tray and syncs sessions automatically.", icon: Check },
-                ].map(({ title, desc, icon: Icon }, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="shrink-0 w-9 h-9 rounded-md bg-primary/[0.08] border border-primary/[0.18] flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="h-px bg-border" />
-
-              <div className="flex items-center gap-3">
-                <button
-                  disabled
-                  className="px-5 py-2.5 bg-muted border border-border rounded-md text-sm font-semibold text-muted-foreground cursor-not-allowed"
-                >
-                  Coming soon — GitHub Releases
-                </button>
-                <p className="text-xs text-muted-foreground">Available for Windows 10/11</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -664,7 +628,7 @@ function SectionHeader({ title, description }: { title: string; description: str
   );
 }
 
-function ThemeCard({ id, active, onClick }: { id: "dark" | "light"; active: boolean; onClick: () => void }) {
+function ThemeCard({ id, active, onClick, label }: { id: "dark" | "light"; active: boolean; onClick: () => void; label: string }) {
   const isDark = id === "dark";
 
   return (
@@ -702,7 +666,7 @@ function ThemeCard({ id, active, onClick }: { id: "dark" | "light"; active: bool
             "text-sm font-semibold",
             isDark ? (active ? "text-white" : "text-[#6b6b72]") : (active ? "text-[#111]" : "text-[#999]")
           )}>
-            {isDark ? "Dark" : "Light"}
+            {label}
           </span>
         </div>
         {active && <Check className="h-3.5 w-3.5 text-primary" />}
