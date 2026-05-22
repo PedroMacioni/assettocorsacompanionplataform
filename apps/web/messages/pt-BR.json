@@ -148,5 +148,97 @@
       "save": "Salvar",
       "cancel": "Cancelar"
     }
+  },
+  "Login": {
+    "title": "Bem-vindo de volta",
+    "subtitle": "Entre na sua conta para continuar",
+    "googleButton": "Continuar com Google",
+    "redirecting": "Redirecionando...",
+    "or": "ou",
+    "email": "Email",
+    "emailPlaceholder": "piloto@exemplo.com",
+    "password": "Senha",
+    "signIn": "Entrar",
+    "signingIn": "Entrando...",
+    "noAccount": "Não tem conta?",
+    "createAccount": "Criar conta grátis"
+  },
+  "Register": {
+    "title": "Crie sua conta",
+    "subtitle": "Comece a registrar suas sessões gratuitamente",
+    "googleButton": "Continuar com Google",
+    "redirecting": "Redirecionando...",
+    "or": "ou",
+    "driverName": "Nome de piloto",
+    "email": "Email",
+    "emailPlaceholder": "piloto@exemplo.com",
+    "password": "Senha",
+    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "creating": "Criando conta...",
+    "createAccount": "Criar conta grátis",
+    "hasAccount": "Já tem conta?",
+    "signIn": "Entrar"
+  },
+  "Settings": {
+    "title": "Configurações",
+    "account": "Conta",
+    "sections": {
+      "profile": "Perfil",
+      "appearance": "Aparência",
+      "agentToken": "Token do Agente"
+    },
+    "stats": {
+      "memberSince": "Membro desde",
+      "sessions": "Sessões",
+      "lastSync": "Último sync"
+    },
+    "profile": {
+      "title": "Perfil",
+      "description": "Sua identidade pública dentro do app.",
+      "avatar": "Avatar",
+      "uploading": "Enviando…",
+      "uploadPhoto": "Enviar foto",
+      "remove": "Remover",
+      "photoHint": "JPG, PNG ou WebP · máx 2 MB",
+      "initialsColor": "Cor das iniciais",
+      "details": "Detalhes",
+      "displayName": "Nome de exibição",
+      "displayNamePlaceholder": "Seu nome de piloto",
+      "email": "Email",
+      "saving": "Salvando…",
+      "save": "Salvar alterações",
+      "saved": "Salvo",
+      "couldNotSave": "Não foi possível salvar. Tente novamente."
+    },
+    "appearance": {
+      "title": "Aparência",
+      "description": "Personalize a aparência do app.",
+      "theme": "Tema",
+      "dark": "Escuro",
+      "light": "Claro",
+      "language": "Idioma",
+      "englishName": "English",
+      "englishRegion": "United States",
+      "portugueseName": "Português",
+      "portugueseRegion": "Brasil",
+      "savingPrefs": "Salvando…",
+      "savePrefs": "Salvar preferências",
+      "saved": "Salvo"
+    },
+    "agent": {
+      "title": "Token do Agente",
+      "description": "Use este token para autenticar o CompanionAgent no seu PC.",
+      "accessToken": "Token de acesso",
+      "copyToken": "Copiar token",
+      "copied": "Copiado!",
+      "renew": "Renovar",
+      "howToUse": "Como usar",
+      "steps": {
+        "one": "Baixe e execute o instalador do CompanionAgent",
+        "two": "Abra a janela de configurações pelo ícone na bandeja do sistema",
+        "three": "Cole este token no campo \"Token do Agente\"",
+        "four": "O agente começará a sincronizar suas sessões automaticamente"
+      }
+    }
   }
 }

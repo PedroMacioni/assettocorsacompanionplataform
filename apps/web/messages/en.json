@@ -1,4 +1,183 @@
 {
+  "Common": {
+    "loading": "Loading...",
+    "viewAll": "View all",
+    "fullView": "Full analysis",
+    "openSession": "Open session",
+    "sessions": "sessions",
+    "laps": "laps",
+    "days": "days",
+    "day": "day"
+  },
+  "Header": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "agentOnline": "Agent online",
+    "agentOffline": "Agent not seen",
+    "lastSync": "Last sync {time}",
+    "syncNow": "Sync now",
+    "syncing": "Syncing..."
+  },
+  "HeroCard": {
+    "streak": "Streak",
+    "streakDays": "{count, plural, one {day} other {days}}",
+    "streakRecord": "Record: {record}",
+    "consistency": "Consistency",
+    "thisWeek": "This Week",
+    "pbsBeaten": "{count, plural, one {1 PB beaten} other {{count} PBs beaten}}",
+    "vsLastWeek": "{delta}% vs last week",
+    "viewWeekSessions": "View this week's sessions"
+  },
+  "LastSession": {
+    "title": "Last Session",
+    "lapsCount": "{count, plural, one {1 lap} other {{count} laps}}",
+    "noPbYet": "No previous PB",
+    "allSessions": "View all sessions",
+    "badge": {
+      "pb": "New PB",
+      "improving": "Improving",
+      "consistent": "Consistent",
+      "warmup": "Warm-up"
+    }
+  },
+  "ActivityCalendar": {
+    "title": "Activity",
+    "activeDays": "active days",
+    "less": "Less",
+    "more": "More",
+    "tooltip": "{count, plural, one {1 session on {date}} other {{count} sessions on {date}}}"
+  },
+  "QuickStats": {
+    "tracks": "Tracks",
+    "cars": "Cars",
+    "distance": "km driven",
+    "totalLaps": "Laps"
+  },
+  "PaceChart": {
+    "title": "Pace Evolution",
+    "subtitle": "Last 4 weeks",
+    "fullView": "Full analysis",
+    "noData": "Not enough data",
+    "noDataHint": "Sync at least 2 sessions on a track to see the chart."
+  },
+  "PersonalRecords": {
+    "title": "Personal Records",
+    "empty": "No records yet",
+    "viewAll": "View all records"
+  },
+  "QuickNav": {
+    "sessions": "Sessions",
+    "sessionsSubtitle": "View full history",
+    "analytics": "Analytics",
+    "analyticsSubtitle": "Pace and records analysis",
+    "garage": "Garage",
+    "garageSubtitle": "Your favorite cars",
+    "settings": "Settings",
+    "settingsSubtitle": "Agent & profile"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "sessions": "Sessions",
+    "analytics": "Analytics",
+    "garage": "Garage",
+    "tracks": "Tracks",
+    "settings": "Settings",
+    "agent": "Agent",
+    "signOut": "Sign out"
+  },
+  "Login": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to your account to continue",
+    "googleButton": "Continue with Google",
+    "redirecting": "Redirecting...",
+    "or": "or",
+    "email": "Email",
+    "emailPlaceholder": "pilot@example.com",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create free account"
+  },
+  "Register": {
+    "title": "Create your account",
+    "subtitle": "Start recording your sessions for free",
+    "googleButton": "Continue with Google",
+    "redirecting": "Redirecting...",
+    "or": "or",
+    "driverName": "Driver name",
+    "email": "Email",
+    "emailPlaceholder": "pilot@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Minimum 6 characters",
+    "creating": "Creating account...",
+    "createAccount": "Create free account",
+    "hasAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "Settings": {
+    "title": "Settings",
+    "account": "Account",
+    "sections": {
+      "profile": "Profile",
+      "appearance": "Appearance",
+      "agentToken": "Agent Token"
+    },
+    "stats": {
+      "memberSince": "Member since",
+      "sessions": "Sessions",
+      "lastSync": "Last sync"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your public identity inside the app.",
+      "avatar": "Avatar",
+      "uploading": "Uploading…",
+      "uploadPhoto": "Upload photo",
+      "remove": "Remove",
+      "photoHint": "JPG, PNG or WebP · max 2 MB",
+      "initialsColor": "Initials color",
+      "details": "Details",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your driver name",
+      "email": "Email",
+      "saving": "Saving…",
+      "save": "Save changes",
+      "saved": "Saved",
+      "couldNotSave": "Could not save. Please try again."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of the app.",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "language": "Language",
+      "englishName": "English",
+      "englishRegion": "United States",
+      "portugueseName": "Português",
+      "portugueseRegion": "Brasil",
+      "savingPrefs": "Saving…",
+      "savePrefs": "Save preferences",
+      "saved": "Saved"
+    },
+    "agent": {
+      "title": "Agent Token",
+      "description": "Use this token to authenticate CompanionAgent on your PC.",
+      "accessToken": "Access token",
+      "copyToken": "Copy token",
+      "copied": "Copied!",
+      "renew": "Renew",
+      "howToUse": "How to use",
+      "steps": {
+        "one": "Download and run the CompanionAgent installer",
+        "two": "Open the settings window from the system tray icon",
+        "three": "Paste this token in the \"Agent Token\" field",
+        "four": "The agent will start syncing your sessions automatically"
+      }
+    }
+  },
   "Download": {
     "yourCars": "Tools",
     "title": "Desktop Agent",

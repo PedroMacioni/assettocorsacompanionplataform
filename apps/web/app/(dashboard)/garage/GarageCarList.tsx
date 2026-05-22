@@ -88,7 +88,7 @@ export function GarageCarList({ cars, preferences, selectedCarId, carImageBase }
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium truncate leading-tight">{displayName}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{c.sessions} sessões</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{c.sessions} {t("summary.sessionsOther")}</p>
                 </div>
                 {active && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />}
               </Link>
