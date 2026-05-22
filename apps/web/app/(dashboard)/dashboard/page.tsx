@@ -1,18 +1,25 @@
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiCard } from "@/components/dashboard/KpiCard";
-import { LapTime } from "@/components/LapTime";
-import { formatLapTime, formatDistance, slugToName } from "@/lib/format";
+import { HeroCard } from "@/components/dashboard/HeroCard";
+import { LastSessionCard } from "@/components/dashboard/LastSessionCard";
+import { ActivityCalendar } from "@/components/dashboard/ActivityCalendar";
+import { QuickStatsBar } from "@/components/dashboard/QuickStatsBar";
+import { TopRecordsCard } from "@/components/dashboard/TopRecordsCard";
+import { QuickNavCards } from "@/components/dashboard/QuickNavCards";
+import { SyncButton } from "@/components/dashboard/SyncButton";
+import { PaceChartClient } from "@/components/charts/PaceChartClient";
+import { getSessionQualityBadge } from "@/lib/calculations";
+import { formatLapTime, slugToName } from "@/lib/format";
 import type { ProfileSummary, Session, PersonalBest, AgentStatus } from "@/lib/types";
 import Link from "next/link";
-import { PaceChartClient } from "@/components/charts/PaceChartClient";
-import { SyncButton } from "@/components/dashboard/SyncButton";
+import { Wifi, WifiOff, ExternalLink } from "lucide-react";
 
-function getGreeting(): string {
+function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "goodMorning";
+  if (h < 18) return "goodAfternoon";
+  return "goodEvening";
 }
 
 function timeAgo(iso: string): string {
@@ -20,37 +27,38 @@ function timeAgo(iso: string): string {
   const mins = Math.floor(diff / 60000);
   const hrs = Math.floor(mins / 60);
   const days = Math.floor(hrs / 24);
-  if (days > 0) return `${days}d ago`;
-  if (hrs > 0) return `${hrs}h ago`;
-  if (mins > 0) return `${mins}m ago`;
-  return "just now";
-}
-
-function formatDeltaMs(ms: number): string {
-  const sign = ms < 0 ? "" : "+";
-  return `${sign}${(ms / 1000).toFixed(3)}s`;
+  if (days > 0) return `${days}d atrás`;
+  if (hrs > 0) return `${hrs}h atrás`;
+  if (mins > 0) return `${mins}m atrás`;
+  return "agora";
 }
 
 function buildPaceData(
   sessions: { started_at: string; best_lap_ms: number; track_id: string }[],
   topTracks: string[]
 ) {
-  const dateMap = new Map<string, Record<string, number>>();
+  const weekMap = new Map<string, Record<string, number>>();
   sessions
     .filter((s) => topTracks.includes(s.track_id))
     .forEach((s) => {
-      const d = new Date(s.started_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      if (!dateMap.has(d)) dateMap.set(d, {});
-      const entry = dateMap.get(d)!;
+      const d = new Date(s.started_at);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const weekKey = weekStart.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+      if (!weekMap.has(weekKey)) weekMap.set(weekKey, {});
+      const entry = weekMap.get(weekKey)!;
       if (!entry[s.track_id] || s.best_lap_ms < entry[s.track_id]) {
         entry[s.track_id] = s.best_lap_ms;
       }
     });
-  return Array.from(dateMap.entries()).map(([date, tracks]) => ({ date, ...tracks }));
+  return Array.from(weekMap.entries()).map(([date, tracks]) => ({ date, ...tracks }));
 }
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const tHeader = await getTranslations("Header");
+  const tPace = await getTranslations("PaceChart");
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,22 +68,34 @@ export default async function DashboardPage() {
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const fourWeeksAgo = new Date(Date.now() - 28 * 86400000);
+  const eightWeeksAgo = new Date(Date.now() - 56 * 86400000);
 
-  const [summaryRes, sessionsWeekRes, lastSessionRes, paceDataRes, pbsRes, agentStatusRes] = await Promise.all([
-    supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
-    supabase.from("sessions").select("laps").eq("user_id", uid).gte("started_at", weekStart.toISOString()),
-    supabase.from("sessions").select("*").eq("user_id", uid).order("started_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase
-      .from("sessions")
-      .select("started_at, best_lap_ms, track_id")
-      .eq("user_id", uid)
-      .not("best_lap_ms", "is", null)
-      .gte("started_at", fourWeeksAgo.toISOString())
-      .order("started_at", { ascending: true }),
-    supabase.from("personal_bests").select("*").eq("user_id", uid).order("time_ms", { ascending: true }).limit(5),
-    supabase.from("agent_status").select("*").eq("user_id", uid).maybeSingle(),
-  ]);
+  const [summaryRes, sessionsWeekRes, lastSessionRes, paceDataRes, pbsRes, agentStatusRes] =
+    await Promise.all([
+      supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
+      supabase.from("sessions").select("laps").eq("user_id", uid).gte("started_at", weekStart.toISOString()),
+      supabase
+        .from("sessions")
+        .select("*")
+        .eq("user_id", uid)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("sessions")
+        .select("started_at, best_lap_ms, track_id")
+        .eq("user_id", uid)
+        .not("best_lap_ms", "is", null)
+        .gte("started_at", eightWeeksAgo.toISOString())
+        .order("started_at", { ascending: true }),
+      supabase
+        .from("personal_bests")
+        .select("*")
+        .eq("user_id", uid)
+        .order("time_ms", { ascending: true })
+        .limit(5),
+      supabase.from("agent_status").select("*").eq("user_id", uid).maybeSingle(),
+    ]);
 
   const summary = summaryRes.data as ProfileSummary | null;
   if (!summary || summary.total_sessions === 0) return <EmptyState />;
@@ -90,7 +110,8 @@ export default async function DashboardPage() {
   const weekSessions = sessionsWeek.length;
 
   let lastPb: PersonalBest | null = null;
-  let improvement: { delta_ms: number } | null = null;
+  let pbDelta: number | null = null;
+  let prevBestMs: number | null = null;
 
   if (lastSession) {
     const [pbRes, prevRes] = await Promise.all([
@@ -115,12 +136,22 @@ export default async function DashboardPage() {
             .maybeSingle()
         : Promise.resolve(null),
     ]);
+
     lastPb = pbRes.data as PersonalBest | null;
     const prev = prevRes as { data: { best_lap_ms: number } | null } | null;
-    if (prev?.data?.best_lap_ms && lastSession.best_lap_ms) {
-      improvement = { delta_ms: lastSession.best_lap_ms - prev.data.best_lap_ms };
+    prevBestMs = prev?.data?.best_lap_ms ?? null;
+
+    if (lastPb && lastSession.best_lap_ms) {
+      pbDelta = lastSession.best_lap_ms - lastPb.time_ms;
     }
   }
+
+  const qualityBadge = lastSession
+    ? getSessionQualityBadge(
+        { best_lap_ms: lastSession.best_lap_ms, laps: lastSession.laps },
+        { previousBestMs: prevBestMs }
+      )
+    : null;
 
   const trackCount: Record<string, number> = {};
   paceRaw.forEach((s) => {
@@ -133,40 +164,41 @@ export default async function DashboardPage() {
   const paceData = buildPaceData(paceRaw, topTracks);
   const trackLabels = Object.fromEntries(topTracks.map((t) => [t, slugToName(t)]));
 
-  const now = new Date();
-  const dayLabel = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
-  const dateLabel = now.toLocaleDateString("en-US", { day: "numeric", month: "long" }).toUpperCase();
   const displayName =
     user!.user_metadata?.display_name ?? user!.email?.split("@")[0] ?? "Driver";
 
+  const now = new Date();
+  const dayLabel = now.toLocaleDateString("pt-BR", { weekday: "long" }).toUpperCase();
+  const dateLabel = now.toLocaleDateString("pt-BR", { day: "numeric", month: "long" }).toUpperCase();
+
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             {dayLabel} · {dateLabel}
           </p>
           <h1 className="text-2xl font-bold text-foreground">
-            {getGreeting()}, {displayName}.
+            {tHeader(getGreetingKey())}, {displayName}.
           </h1>
         </div>
 
-        {/* Agent sync status */}
-        <div className="shrink-0 flex items-center gap-3 mt-1">
+        <div className="shrink-0 flex items-center gap-3 sm:mt-1">
           {agentStatus?.last_synced_at ? (
             <div className="text-right">
               <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <Wifi className="w-3 h-3 text-green-500" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Agente online
+                  {tHeader("agentOnline")}
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Último sync {timeAgo(agentStatus.last_synced_at)}
+                {tHeader("lastSync", { time: timeAgo(agentStatus.last_synced_at) })}
                 {agentStatus.last_sync_sessions_count > 0 && (
                   <span className="text-primary">
-                    {" "}· {agentStatus.last_sync_sessions_count} sessão{agentStatus.last_sync_sessions_count !== 1 ? "ões" : ""}
+                    {" "}· {agentStatus.last_sync_sessions_count}{" "}
+                    {agentStatus.last_sync_sessions_count !== 1 ? "sessões" : "sessão"}
                   </span>
                 )}
               </p>
@@ -174,13 +206,13 @@ export default async function DashboardPage() {
           ) : (
             <div className="text-right">
               <div className="flex items-center justify-end gap-1.5 mb-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />
+                <WifiOff className="w-3 h-3 text-muted-foreground" />
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Agente não visto
+                  {tHeader("agentOffline")}
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {lastSession ? `Última sessão ${timeAgo(lastSession.started_at)}` : "Nenhum sync registrado"}
+                {lastSession ? timeAgo(lastSession.started_at) : "Nenhum sync registrado"}
               </p>
             </div>
           )}
@@ -188,168 +220,69 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Laps this week" value={weekLaps.toLocaleString()} />
-        <KpiCard label="Sessions this week" value={weekSessions.toLocaleString()} />
-        <KpiCard
-          label="Best lap δ"
-          value={improvement ? formatDeltaMs(improvement.delta_ms) : "—"}
-          sub={improvement && lastSession ? slugToName(lastSession.track_id) : "No comparison yet"}
-          subVariant={improvement ? (improvement.delta_ms < 0 ? "positive" : "negative") : "neutral"}
-        />
-        <KpiCard
-          label="Total sessions"
-          value={summary.total_sessions.toLocaleString()}
-          sub={`${summary.unique_tracks} tracks · ${summary.unique_cars} cars`}
-        />
-      </div>
+      {/* [1] HERO CARD */}
+      <HeroCard
+        streak={{ current: 0, record: 0 }}
+        consistency={{ score: 0, trend: "stable" }}
+        weeklyDigest={{
+          laps: weekLaps,
+          sessions: weekSessions,
+          pbsBeaten: 0,
+          deltaVsLastWeek: 0,
+        }}
+      />
 
-      {/* Last session + driver stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Last session card */}
-        {lastSession ? (
-          <div className="col-span-2 bg-card border border-border rounded-md p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Last Session
-            </p>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-foreground leading-tight">
-                  {slugToName(lastSession.track_id)}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-0.5">{slugToName(lastSession.car_id)}</p>
-                <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-2">
-                  <span>{lastSession.laps} laps</span>
-                  {lastSession.session_types && (
-                    <>
-                      <span>·</span>
-                      <span>{lastSession.session_types}</span>
-                    </>
-                  )}
-                  <span>·</span>
-                  <span>{timeAgo(lastSession.started_at)}</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  Best Lap
-                </p>
-                <p className="text-2xl font-bold text-foreground font-mono">
-                  {formatLapTime(lastSession.best_lap_ms)}
-                </p>
-                {lastPb && lastSession.best_lap_ms && (() => {
-                  const delta = lastSession.best_lap_ms - lastPb.time_ms;
-                  return (
-                    <p className={`text-sm font-medium mt-1 ${delta <= 0 ? "text-green-500" : "text-destructive"}`}>
-                      {formatDeltaMs(delta)} vs PB
-                    </p>
-                  );
-                })()}
-              </div>
-            </div>
-            {lastPb && lastSession.best_lap_ms && (
-              <div className="mt-4">
-                <div className="flex justify-between text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wider">
-                  <span>vs Personal Best</span>
-                  <span>{formatLapTime(lastPb.time_ms)}</span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${
-                      lastSession.best_lap_ms <= lastPb.time_ms ? "bg-green-500" : "bg-primary"
-                    }`}
-                    style={{ width: `${Math.min(100, (lastPb.time_ms / lastSession.best_lap_ms) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+      {/* [2] LAST SESSION + [3] ACTIVITY CALENDAR */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {lastSession && qualityBadge ? (
+          <LastSessionCard
+            session={lastSession}
+            qualityBadge={qualityBadge}
+            pbTime={lastPb?.time_ms}
+            pbDelta={pbDelta}
+          />
         ) : (
-          <div className="col-span-2 bg-card border border-border rounded-md p-5 flex items-center justify-center min-h-[140px]">
-            <p className="text-muted-foreground text-sm">No sessions yet</p>
+          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 flex items-center justify-center min-h-[180px]">
+            <p className="text-[#6b6b72] text-sm">Nenhuma sessão ainda</p>
           </div>
         )}
-
-        {/* Driver stats */}
-        <div className="bg-card border border-border rounded-md p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Driver Stats
-          </p>
-          <div className="space-y-3.5">
-            {[
-              { label: "Total Laps", value: summary.total_laps.toLocaleString() },
-              { label: "Distance", value: formatDistance(summary.total_distance_km) },
-              { label: "Fastest Lap", value: formatLapTime(summary.fastest_lap_ms), mono: true },
-              { label: "Cars", value: String(summary.unique_cars) },
-              { label: "Tracks", value: String(summary.unique_tracks) },
-            ].map(({ label, value, mono }) => (
-              <div key={label} className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {label}
-                </span>
-                <span className={`text-sm font-bold text-foreground ${mono ? "font-mono" : ""}`}>
-                  {value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <ActivityCalendar sessions={[]} daysToShow={90} />
       </div>
 
-      {/* Pace evolution + personal records */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 bg-card border border-border rounded-md p-5">
+      {/* [4] QUICK STATS BAR */}
+      <QuickStatsBar
+        tracks={summary.unique_tracks}
+        cars={summary.unique_cars}
+        distanceKm={summary.total_distance_km}
+        laps={summary.total_laps}
+      />
+
+      {/* [5] PACE EVOLUTION + [6] PERSONAL RECORDS */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-2 bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                Pace Evolution
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+                {tPace("title")}
               </p>
-              <p className="text-sm text-foreground font-medium">Best lap time — last 4 weeks</p>
+              <p className="text-sm text-foreground font-medium">{tPace("subtitle")}</p>
             </div>
             <Link
               href="/analytics?tab=pace"
-              className="text-[10px] text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#6b6b72] hover:text-[#e8612a] uppercase tracking-wider transition-colors"
             >
-              Full view →
+              <ExternalLink className="w-3 h-3" />
+              {tPace("fullView")}
             </Link>
           </div>
           <PaceChartClient data={paceData} tracks={topTracks} trackLabels={trackLabels} />
         </div>
 
-        <div className="bg-card border border-border rounded-md p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Personal Records
-          </p>
-          {personalBests.length > 0 ? (
-            <div className="space-y-3">
-              {personalBests.map((pb, i) => (
-                <div key={pb.id} className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs text-foreground font-medium truncate">
-                      {slugToName(pb.car_id)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {slugToName(pb.track_id)}
-                    </p>
-                  </div>
-                  <p className={`text-sm font-bold font-mono shrink-0 ${i === 0 ? "text-primary" : "text-foreground"}`}>
-                    {formatLapTime(pb.time_ms)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">No records yet</p>
-          )}
-          <Link
-            href="/analytics?tab=records"
-            className="mt-4 block text-[10px] text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors"
-          >
-            View all →
-          </Link>
-        </div>
+        <TopRecordsCard records={personalBests} />
       </div>
+
+      {/* [7] QUICK NAV CARDS */}
+      <QuickNavCards />
     </div>
   );
 }

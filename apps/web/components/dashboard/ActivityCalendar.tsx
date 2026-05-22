@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface ActivityCalendarProps {
   sessions: Array<{
@@ -26,16 +27,15 @@ function formatDate(dateStr: string): string {
 }
 
 export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendarProps) {
+  const t = useTranslations("ActivityCalendar");
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
-  const { grid, totalActiveDays, weeks } = useMemo(() => {
-    // Build a map of date -> count
+  const { totalActiveDays, weeks } = useMemo(() => {
     const countMap = new Map<string, number>();
     sessions.forEach((s) => {
       countMap.set(s.date, s.count);
     });
 
-    // Generate array of dates for the last N days
     const dates: Array<{ date: string; count: number; dayOfWeek: number }> = [];
     const today = new Date();
     today.setHours(12, 0, 0, 0);
@@ -51,12 +51,9 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
       });
     }
 
-    // Organize into weeks (columns) for the grid
-    // Each column is a week, each row is a day of week (0-6)
     const weeksData: Array<Array<{ date: string; count: number } | null>> = [];
     let currentWeek: Array<{ date: string; count: number } | null> = Array(7).fill(null);
 
-    // Fill in empty cells at the start of first week
     const firstDayOfWeek = dates[0]?.dayOfWeek ?? 0;
     for (let i = 0; i < firstDayOfWeek; i++) {
       currentWeek[i] = null;
@@ -76,17 +73,16 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
 
     const activeDays = dates.filter((d) => d.count > 0).length;
 
-    return { grid: dates, totalActiveDays: activeDays, weeks: weeksData };
+    return { totalActiveDays: activeDays, weeks: weeksData };
   }, [sessions, daysToShow]);
 
   return (
     <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 relative">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
-        Atividade (últimos {daysToShow} dias)
+        {t("title")}
       </p>
 
-      {/* Calendar grid */}
-      <div className="flex gap-[3px] overflow-x-auto pb-2">
+      <div className="flex gap-[3px] overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
         {weeks.map((week, weekIdx) => (
           <div key={weekIdx} className="flex flex-col gap-[3px]">
             {week.map((day, dayIdx) => (
@@ -100,7 +96,7 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
                     setTooltip({
                       x: rect.left + rect.width / 2,
                       y: rect.top - 8,
-                      text: `${day.count} ${day.count === 1 ? "sessão" : "sessões"} em ${formatDate(day.date)}`,
+                      text: t("tooltip", { count: day.count, date: formatDate(day.date) }),
                     });
                   }
                 }}
@@ -111,22 +107,21 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
         ))}
       </div>
 
-      {/* Legend */}
       <div className="flex items-center justify-between mt-4">
         <p className="text-xs text-[#6b6b72]">
-          Total: <span className="text-white font-medium">{totalActiveDays}</span> dias ativos
+          <span className="text-white font-medium">{totalActiveDays}</span>{" "}
+          {t("activeDays")}
         </p>
         <div className="flex items-center gap-1 text-[10px] text-[#6b6b72]">
-          <span>Menos</span>
+          <span>{t("less")}</span>
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#1e1e20" }} />
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a40" }} />
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a80" }} />
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a" }} />
-          <span>Mais</span>
+          <span>{t("more")}</span>
         </div>
       </div>
 
-      {/* Tooltip */}
       {tooltip && (
         <div
           className="fixed z-50 px-2 py-1 bg-[#2a2a2c] text-white text-xs rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"

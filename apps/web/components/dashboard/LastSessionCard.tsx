@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { formatLapTime, slugToName } from "@/lib/format";
 import { SessionQualityBadge } from "./SessionQualityBadge";
 import type { SessionQualityBadge as BadgeType } from "@/lib/calculations";
+import { ExternalLink } from "lucide-react";
 
 interface LastSessionCardProps {
   session: {
@@ -15,7 +17,7 @@ interface LastSessionCardProps {
   };
   qualityBadge: BadgeType;
   pbTime?: number | null;
-  pbDelta?: number | null; // ms, negative = improved
+  pbDelta?: number | null;
 }
 
 function timeAgo(iso: string): string {
@@ -34,22 +36,28 @@ function formatDeltaMs(ms: number): string {
   return `${sign}${(ms / 1000).toFixed(3)}s`;
 }
 
-export function LastSessionCard({
+export async function LastSessionCard({
   session,
   qualityBadge,
   pbTime,
   pbDelta,
 }: LastSessionCardProps) {
+  const t = await getTranslations("LastSession");
+  const tCommon = await getTranslations("Common");
+
+  const badgeTypeKey = qualityBadge.type as "pb" | "improving" | "consistent" | "warmup";
+  const translatedBadge = {
+    ...qualityBadge,
+    label: t(`badge.${badgeTypeKey}`),
+  };
+
   return (
-    <Link
-      href={`/sessions/${session.id}`}
-      className="block bg-[#161618] border border-[#2a2a2c] rounded-md p-5 transition-all duration-150 hover:border-[#e8612a] hover:shadow-lg hover:shadow-[#e8612a15] hover:-translate-y-0.5"
-    >
+    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 transition-all duration-150 hover:border-[#e8612a30] hover:shadow-lg hover:shadow-[#e8612a10]">
       <div className="flex items-start justify-between gap-4 mb-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72]">
-          Última Sessão
+          {t("title")}
         </p>
-        <SessionQualityBadge badge={qualityBadge} size="sm" />
+        <SessionQualityBadge badge={translatedBadge} size="sm" />
       </div>
 
       <div className="flex items-start justify-between gap-4">
@@ -61,7 +69,7 @@ export function LastSessionCard({
             {slugToName(session.car_id)}
           </p>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-[#6b6b72] mt-3">
-            <span>{session.laps} voltas</span>
+            <span>{t("lapsCount", { count: session.laps })}</span>
             {session.session_types && (
               <>
                 <span>·</span>
@@ -89,7 +97,6 @@ export function LastSessionCard({
         </div>
       </div>
 
-      {/* Progress bar vs PB */}
       {pbTime && session.best_lap_ms && (
         <div className="mt-5">
           <div className="flex justify-between text-[10px] text-[#6b6b72] mb-1.5 uppercase tracking-wider">
@@ -108,6 +115,22 @@ export function LastSessionCard({
           </div>
         </div>
       )}
-    </Link>
+
+      <div className="mt-5 flex items-center gap-3">
+        <Link
+          href={`/sessions/${session.id}`}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#e8612a] text-white text-xs font-semibold hover:bg-[#d4521f] transition-colors"
+        >
+          {tCommon("openSession")}
+        </Link>
+        <Link
+          href="/sessions"
+          className="flex items-center gap-1.5 text-xs text-[#6b6b72] hover:text-[#e8612a] uppercase tracking-wider transition-colors"
+        >
+          <ExternalLink className="w-3 h-3" />
+          {t("allSessions")}
+        </Link>
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,91 @@
 {
+  "Common": {
+    "loading": "Carregando...",
+    "viewAll": "Ver todos",
+    "fullView": "Análise completa",
+    "openSession": "Abrir sessão",
+    "sessions": "sessões",
+    "laps": "voltas",
+    "days": "dias",
+    "day": "dia"
+  },
+  "Header": {
+    "goodMorning": "Bom dia",
+    "goodAfternoon": "Boa tarde",
+    "goodEvening": "Boa noite",
+    "agentOnline": "Agente online",
+    "agentOffline": "Agente não visto",
+    "lastSync": "Último sync {time}",
+    "syncNow": "Sincronizar agora",
+    "syncing": "Sincronizando..."
+  },
+  "HeroCard": {
+    "streak": "Streak",
+    "streakDays": "{count, plural, one {dia} other {dias}}",
+    "streakRecord": "Recorde: {record}",
+    "consistency": "Consistência",
+    "thisWeek": "Esta Semana",
+    "pbsBeaten": "{count, plural, one {1 PB batido} other {{count} PBs batidos}}",
+    "vsLastWeek": "{delta}% vs semana anterior",
+    "viewWeekSessions": "Ver sessões desta semana"
+  },
+  "LastSession": {
+    "title": "Última Sessão",
+    "lapsCount": "{count, plural, one {1 volta} other {{count} voltas}}",
+    "noPbYet": "Sem PB anterior",
+    "allSessions": "Ver todas as sessões",
+    "badge": {
+      "pb": "Novo PB",
+      "improving": "Evoluindo",
+      "consistent": "Consistente",
+      "warmup": "Aquecimento"
+    }
+  },
+  "ActivityCalendar": {
+    "title": "Atividade",
+    "activeDays": "dias ativos",
+    "less": "Menos",
+    "more": "Mais",
+    "tooltip": "{count, plural, one {1 sessão em {date}} other {{count} sessões em {date}}}"
+  },
+  "QuickStats": {
+    "tracks": "Pistas",
+    "cars": "Carros",
+    "distance": "km rodados",
+    "totalLaps": "Voltas"
+  },
+  "PaceChart": {
+    "title": "Evolução de Pace",
+    "subtitle": "Últimas 4 semanas",
+    "fullView": "Análise completa",
+    "noData": "Sem dados suficientes",
+    "noDataHint": "Sincronize pelo menos 2 sessões em uma pista para ver o gráfico."
+  },
+  "PersonalRecords": {
+    "title": "Recordes Pessoais",
+    "empty": "Nenhum recorde ainda",
+    "viewAll": "Ver todos os recordes"
+  },
+  "QuickNav": {
+    "sessions": "Sessões",
+    "sessionsSubtitle": "Ver histórico completo",
+    "analytics": "Analytics",
+    "analyticsSubtitle": "Análise de pace e recordes",
+    "garage": "Garagem",
+    "garageSubtitle": "Seus carros favoritos",
+    "settings": "Configurações",
+    "settingsSubtitle": "Agente & perfil"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "sessions": "Sessões",
+    "analytics": "Analytics",
+    "garage": "Garagem",
+    "tracks": "Pistas",
+    "settings": "Configurações",
+    "agent": "Agente",
+    "signOut": "Sair"
+  },
   "Download": {
     "yourCars": "Ferramentas",
     "title": "Agent Desktop",

@@ -1,30 +1,39 @@
 import Link from "next/link";
-import { ClipboardList, Car, Settings } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { ClipboardList, Car, Settings, TrendingUp } from "lucide-react";
 
-const navItems = [
-  {
-    href: "/sessions",
-    icon: ClipboardList,
-    title: "Sessões",
-    subtitle: "Ver histórico completo",
-  },
-  {
-    href: "/garage",
-    icon: Car,
-    title: "Garagem",
-    subtitle: "Seus carros favoritos",
-  },
-  {
-    href: "/settings",
-    icon: Settings,
-    title: "Configurações",
-    subtitle: "Agent & perfil",
-  },
-];
+export async function QuickNavCards() {
+  const t = await getTranslations("QuickNav");
 
-export function QuickNavCards() {
+  const navItems = [
+    {
+      href: "/sessions",
+      icon: ClipboardList,
+      title: t("sessions"),
+      subtitle: t("sessionsSubtitle"),
+    },
+    {
+      href: "/analytics",
+      icon: TrendingUp,
+      title: t("analytics"),
+      subtitle: t("analyticsSubtitle"),
+    },
+    {
+      href: "/garage",
+      icon: Car,
+      title: t("garage"),
+      subtitle: t("garageSubtitle"),
+    },
+    {
+      href: "/settings",
+      icon: Settings,
+      title: t("settings"),
+      subtitle: t("settingsSubtitle"),
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
       {navItems.map(({ href, icon: Icon, title, subtitle }) => (
         <Link
           key={href}
