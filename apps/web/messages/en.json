@@ -367,5 +367,57 @@
     "title": "No sessions yet",
     "description": "Install the Companion Agent to automatically sync your Assetto Corsa history.",
     "action": "Set up Agent"
+  },
+  "SessionDetail": {
+    "bestLap": "Best Lap",
+    "vsPb": "vs PB",
+    "pb": "PB",
+    "stats": {
+      "totalLaps": "Total Laps",
+      "valid": "Valid",
+      "distance": "Distance",
+      "lastLap": "Last Lap",
+      "avgLap": "Avg (valid)",
+      "cuts": "w/ Cuts",
+      "tyre": "Tyre"
+    },
+    "consistency": {
+      "title": "Consistency",
+      "outOf": "/100",
+      "sigma": "σ = {value}s across valid laps",
+      "excellent": "Excellent",
+      "good": "Good",
+      "regular": "Regular",
+      "variable": "Variable",
+      "inconsistent": "Inconsistent"
+    },
+    "theoretical": {
+      "title": "Theoretical Lap",
+      "potentialGain": "Potential gain: {value}"
+    },
+    "table": {
+      "validOnly": "Valid only",
+      "lapsCount": "{count, plural, one {1 lap} other {{count} laps}}",
+      "legend": {
+        "best": "Best",
+        "top25": "Top 25%",
+        "top50": "Top 50%",
+        "worst": "Worst",
+        "cut": "Cut"
+      },
+      "headers": {
+        "lap": "#",
+        "s1": "S1",
+        "s2": "S2",
+        "s3": "S3",
+        "total": "Total",
+        "gap": "Gap",
+        "tyre": "Tyre",
+        "cuts": "Cuts"
+      },
+      "ref": "REF",
+      "empty": "Lap data not available.",
+      "emptyHint": "Sync via the agent to import sector breakdown."
+    }
   }
 }

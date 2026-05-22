@@ -276,6 +276,58 @@
     "description": "Instale o Companion Agent para sincronizar automaticamente seu histórico do Assetto Corsa.",
     "action": "Configurar Agent"
   },
+  "SessionDetail": {
+    "bestLap": "Melhor Volta",
+    "vsPb": "vs PB",
+    "pb": "PB",
+    "stats": {
+      "totalLaps": "Total de Voltas",
+      "valid": "Válidas",
+      "distance": "Distância",
+      "lastLap": "Última Volta",
+      "avgLap": "Média (válidas)",
+      "cuts": "c/ Corte",
+      "tyre": "Pneu"
+    },
+    "consistency": {
+      "title": "Consistência",
+      "outOf": "/100",
+      "sigma": "σ = {value}s entre voltas válidas",
+      "excellent": "Excelente",
+      "good": "Bom",
+      "regular": "Regular",
+      "variable": "Variável",
+      "inconsistent": "Inconsistente"
+    },
+    "theoretical": {
+      "title": "Volta Teórica",
+      "potentialGain": "Ganho potencial: {value}"
+    },
+    "table": {
+      "validOnly": "Só válidas",
+      "lapsCount": "{count, plural, one {1 volta} other {{count} voltas}}",
+      "legend": {
+        "best": "Melhor",
+        "top25": "Top 25%",
+        "top50": "Top 50%",
+        "worst": "Pior",
+        "cut": "Corte"
+      },
+      "headers": {
+        "lap": "#",
+        "s1": "S1",
+        "s2": "S2",
+        "s3": "S3",
+        "total": "Total",
+        "gap": "Gap",
+        "tyre": "Pneu",
+        "cuts": "Cortes"
+      },
+      "ref": "REF",
+      "empty": "Dados de volta não disponíveis.",
+      "emptyHint": "Sincronize pelo agente para importar o detalhamento de setores."
+    }
+  },
   "Login": {
     "title": "Bem-vindo de volta",
     "subtitle": "Entre na sua conta para continuar",
