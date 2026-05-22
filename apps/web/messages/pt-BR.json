@@ -189,15 +189,38 @@
     "footer": "Apex — Sim Racing Companion"
   },
   "Sessions": {
-    "history": "Histórico",
-    "title": "Sessões",
+    "history": "Arquivo",
+    "title": "Histórico de sessões",
     "filteringBy": "Filtrando por:",
     "thisWeek": "Esta semana",
     "clearFilters": "Limpar",
     "noSessions": "Nenhuma sessão sincronizada",
+    "noResults": "Nenhuma sessão encontrada para os filtros selecionados",
+    "loadingSession": "Abrindo sessão...",
     "previous": "← Anterior",
     "next": "Próxima →",
     "count": "{count, plural, one {1 sessão} other {{count} sessões}}",
+    "results": {
+      "label": "Sessões",
+      "count": "{count, plural, one {1 sessão} other {{count} sessões}}",
+      "filteredCount": "{count} de {total} sessões"
+    },
+    "filters": {
+      "title": "Filtros",
+      "active": "{count, plural, one {1 ativo} other {{count} ativos}}",
+      "clear": "Limpar",
+      "period": "Período",
+      "allPeriods": "Todo o histórico",
+      "thisWeek": "Esta semana",
+      "last30Days": "Últimos 30 dias",
+      "car": "Carro",
+      "allCars": "Todos os carros",
+      "track": "Pista",
+      "allTracks": "Todas as pistas",
+      "type": "Tipo",
+      "allTypes": "Todos os tipos",
+      "date": "Dia"
+    },
     "table": {
       "date": "Data",
       "car": "Carro",

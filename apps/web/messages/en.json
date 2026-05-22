@@ -282,14 +282,37 @@
   },
   "Sessions": {
     "history": "History",
-    "title": "Sessions",
+    "title": "Session history",
     "filteringBy": "Filtering by:",
     "thisWeek": "This week",
     "clearFilters": "Clear",
     "noSessions": "No sessions synced",
+    "noResults": "No sessions found for the selected filters",
+    "loadingSession": "Opening session...",
     "previous": "← Previous",
     "next": "Next →",
     "count": "{count, plural, one {1 session} other {{count} sessions}}",
+    "results": {
+      "label": "Sessions",
+      "count": "{count, plural, one {1 session} other {{count} sessions}}",
+      "filteredCount": "{count} of {total} sessions"
+    },
+    "filters": {
+      "title": "Filters",
+      "active": "{count, plural, one {1 active} other {{count} active}}",
+      "clear": "Clear",
+      "period": "Period",
+      "allPeriods": "Full history",
+      "thisWeek": "This week",
+      "last30Days": "Last 30 days",
+      "car": "Car",
+      "allCars": "All cars",
+      "track": "Track",
+      "allTracks": "All tracks",
+      "type": "Type",
+      "allTypes": "All types",
+      "date": "Day"
+    },
     "table": {
       "date": "Date",
       "car": "Car",
