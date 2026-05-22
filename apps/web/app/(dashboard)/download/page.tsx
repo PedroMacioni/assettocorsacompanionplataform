@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ArrowDownToLine, Monitor, Gauge, CheckCircle2, ExternalLink } from "lucide-react";
 
-const RELEASE_VERSION = "v0.1.0";
+const RELEASE_VERSION = "v0.2.0";
 const DOWNLOAD_URL =
   "https://github.com/PedroMacioni/assettocorsacompanionplataform/releases/latest/download/SimRacingCompanion.exe";
 const RELEASES_URL =
