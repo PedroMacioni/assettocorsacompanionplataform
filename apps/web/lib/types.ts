@@ -69,6 +69,18 @@ export type UserCarPreference = {
   updated_at: string;
 };
 
+export type Lap = {
+  id: string;
+  session_source_id: string;
+  lap_number: number;
+  time_ms: number;
+  s1_ms: number | null;
+  s2_ms: number | null;
+  s3_ms: number | null;
+  cuts: number;
+  tyre: string | null;
+};
+
 export type AgentStatus = {
   user_id: string;
   last_synced_at: string | null;

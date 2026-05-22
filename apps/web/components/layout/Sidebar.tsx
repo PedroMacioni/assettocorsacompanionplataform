@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, List, TrendingUp, Car, MapPin, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, List, TrendingUp, Car, MapPin, Settings, LogOut, ArrowDownToLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -126,6 +126,39 @@ export function Sidebar() {
       {/* Bottom section */}
       <div className="px-3 pb-4">
         <div className="mx-1 h-px bg-border mb-3" />
+
+        {/* Download agent */}
+        {(() => {
+          const active = isActive("/download");
+          return (
+            <Link
+              href="/download"
+              className={cn(
+                "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
+                "transition-all duration-150 ease-out",
+                active
+                  ? "text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full transition-all duration-200",
+                  active
+                    ? "h-5 bg-primary opacity-100"
+                    : "h-0 opacity-0 group-hover:h-3 group-hover:opacity-40 bg-primary"
+                )}
+              />
+              <ArrowDownToLine
+                className={cn(
+                  "h-[15px] w-[15px] shrink-0 transition-colors duration-150",
+                  active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )}
+              />
+              Agent
+            </Link>
+          );
+        })()}
 
         {/* Settings */}
         {(() => {

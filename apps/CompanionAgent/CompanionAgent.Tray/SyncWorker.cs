@@ -88,8 +88,16 @@ public sealed class SyncWorker : IDisposable
             if (unsynced.Count > 0)
             {
                 await _supabase.UpsertSessionsAsync(unsynced);
+
+                var allLaps = unsynced
+                    .SelectMany(s => _history.GetSessionLaps(s.Id).Laps)
+                    .ToList();
+
+                if (allLaps.Count > 0)
+                    await _supabase.UpsertLapsAsync(allLaps);
+
                 _cache.AddSessions(unsynced.Select(s => s.Id));
-                ActivityLogged?.Invoke($"✓ {unsynced.Count} {(unsynced.Count == 1 ? "sessão nova" : "sessões novas")} sincronizadas");
+                ActivityLogged?.Invoke($"✓ {unsynced.Count} {(unsynced.Count == 1 ? "sessão nova" : "sessões novas")} sincronizadas ({allLaps.Count} voltas)");
             }
             else
             {

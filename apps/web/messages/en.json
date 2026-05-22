@@ -1,4 +1,27 @@
 {
+  "Download": {
+    "yourCars": "Tools",
+    "title": "Desktop Agent",
+    "subtitle": "Sync your Assetto Corsa automatically",
+    "description": "The Companion Agent runs in the background on your Windows PC and sends your sessions, personal bests, and car badges to Sim Racing Companion in real time.",
+    "downloadButton": "Download for Windows",
+    "version": "Version",
+    "fileInfo": "Windows 10/11 · x64 · ~50 MB · No installer needed",
+    "allReleases": "View all releases on GitHub",
+    "steps": {
+      "title": "How to set up",
+      "one": "Download and run SimRacingCompanion.exe — it appears in the system tray",
+      "two": "Click the tray icon → Settings",
+      "three": "Sign in with your Sim Racing Companion account",
+      "four": "Done — your sessions will sync automatically"
+    },
+    "requirements": {
+      "title": "Requirements",
+      "os": "Windows 10 or 11 (64-bit)",
+      "ac": "Assetto Corsa installed via Steam",
+      "cm": "Content Manager (recommended for more data)"
+    }
+  },
   "Garage": {
     "title": "Garage",
     "yourCars": "Your Cars",

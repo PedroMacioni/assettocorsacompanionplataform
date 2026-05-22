@@ -144,6 +144,37 @@ public sealed class SupabaseClient : IDisposable
         }
     }
 
+    public async Task UpsertLapsAsync(IReadOnlyList<LapDto> laps)
+    {
+        await EnsureValidTokenAsync();
+        const int batchSize = 200;
+        for (int i = 0; i < laps.Count; i += batchSize)
+        {
+            var batch = laps.Skip(i).Take(batchSize).Select(l => new
+            {
+                user_id = UserId,
+                session_source_id = l.SessionSourceId,
+                lap_number = l.LapNumber,
+                time_ms = l.TimeMs,
+                s1_ms = l.S1Ms,
+                s2_ms = l.S2Ms,
+                s3_ms = l.S3Ms,
+                cuts = l.Cuts,
+                tyre = l.Tyre
+            });
+
+            var req = BuildRequest(HttpMethod.Post, "/rest/v1/laps?on_conflict=user_id,session_source_id,lap_number");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
+            req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
+            var res = await _http.SendAsync(req);
+            if (!res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"laps {(int)res.StatusCode}: {body}", null, res.StatusCode);
+            }
+        }
+    }
+
     public async Task UpdateAgentStatusAsync(int sessionsSynced)
     {
         await EnsureValidTokenAsync();
