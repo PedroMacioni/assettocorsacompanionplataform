@@ -317,8 +317,8 @@ export default async function DashboardPage() {
             pbDelta={pbDelta}
           />
         ) : (
-          <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 flex items-center justify-center min-h-[180px]">
-            <p className="text-[#6b6b72] text-sm">Nenhuma sessão ainda</p>
+          <div className="bg-card border border-border rounded-md p-5 flex items-center justify-center min-h-[180px]">
+            <p className="text-muted-foreground text-sm">Nenhuma sessão ainda</p>
           </div>
         )}
         {/* Activity Calendar — dados reais (últimos 90 dias) */}
@@ -337,17 +337,17 @@ export default async function DashboardPage() {
 
       {/* [5] PACE EVOLUTION + [6] PERSONAL RECORDS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
-        <div className="xl:col-span-2 bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
+        <div className="xl:col-span-2 bg-card border border-border rounded-md p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                 {tPace("title")}
               </p>
               <p className="text-sm text-foreground font-medium">{tPace("subtitle")}</p>
             </div>
             <Link
               href="/analytics?tab=pace"
-              className="flex items-center gap-1.5 text-xs text-[#6b6b72] hover:text-[#e8612a] uppercase tracking-wider transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {tPace("fullView")}

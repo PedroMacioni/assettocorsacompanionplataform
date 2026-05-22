@@ -5,15 +5,12 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 interface ActivityCalendarProps {
-  sessions: Array<{
-    date: string; // YYYY-MM-DD
-    count: number;
-  }>;
+  sessions: Array<{ date: string; count: number }>;
   daysToShow?: number;
 }
 
 function getColor(count: number): string {
-  if (count === 0) return "#1e1e20";
+  if (count === 0) return "var(--color-muted)";
   if (count <= 2) return "#e8612a40";
   if (count <= 4) return "#e8612a80";
   return "#e8612a";
@@ -21,10 +18,7 @@ function getColor(count: number): string {
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr + "T12:00:00");
-  return date.toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "short",
-  });
+  return date.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 }
 
 export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendarProps) {
@@ -33,9 +27,7 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
 
   const { totalActiveDays, weeks } = useMemo(() => {
     const countMap = new Map<string, number>();
-    sessions.forEach((s) => {
-      countMap.set(s.date, s.count);
-    });
+    sessions.forEach((s) => countMap.set(s.date, s.count));
 
     const dates: Array<{ date: string; count: number; dayOfWeek: number }> = [];
     const today = new Date();
@@ -45,20 +37,14 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
-      dates.push({
-        date: dateStr,
-        count: countMap.get(dateStr) ?? 0,
-        dayOfWeek: d.getDay(),
-      });
+      dates.push({ date: dateStr, count: countMap.get(dateStr) ?? 0, dayOfWeek: d.getDay() });
     }
 
     const weeksData: Array<Array<{ date: string; count: number } | null>> = [];
     let currentWeek: Array<{ date: string; count: number } | null> = Array(7).fill(null);
 
     const firstDayOfWeek = dates[0]?.dayOfWeek ?? 0;
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      currentWeek[i] = null;
-    }
+    for (let i = 0; i < firstDayOfWeek; i++) currentWeek[i] = null;
 
     dates.forEach((d) => {
       if (d.dayOfWeek === 0 && currentWeek.some((c) => c !== null)) {
@@ -68,30 +54,26 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
       currentWeek[d.dayOfWeek] = { date: d.date, count: d.count };
     });
 
-    if (currentWeek.some((c) => c !== null)) {
-      weeksData.push(currentWeek);
-    }
+    if (currentWeek.some((c) => c !== null)) weeksData.push(currentWeek);
 
-    const activeDays = dates.filter((d) => d.count > 0).length;
-
-    return { totalActiveDays: activeDays, weeks: weeksData };
+    return { totalActiveDays: dates.filter((d) => d.count > 0).length, weeks: weeksData };
   }, [sessions, daysToShow]);
 
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5 relative">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72] mb-4">
+    <div className="bg-card border border-border rounded-md p-5 relative">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
         {t("title")}
       </p>
 
       <div className="flex gap-[3px] overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
         {weeks.map((week, weekIdx) => (
           <div key={weekIdx} className="flex flex-col gap-[3px]">
-            {week.map((day, dayIdx) => (
+            {week.map((day, dayIdx) =>
               day && day.count > 0 ? (
                 <Link
                   key={dayIdx}
                   href={`/sessions?date=${day.date}`}
-                  className="w-3 h-3 rounded-sm transition-all duration-150 hover:scale-125 hover:ring-1 hover:ring-[#e8612a] block"
+                  className="w-3 h-3 rounded-sm transition-all duration-150 hover:scale-125 hover:ring-1 hover:ring-primary block"
                   style={{ backgroundColor: getColor(day.count) }}
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -112,29 +94,29 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
                   style={{ backgroundColor: day ? getColor(0) : "transparent" }}
                 />
               )
-            ))}
+            )}
           </div>
         ))}
       </div>
 
       <div className="flex items-center justify-between mt-4">
-        <p className="text-xs text-[#6b6b72]">
-          <span className="text-white font-medium">{totalActiveDays}</span>{" "}
+        <p className="text-xs text-muted-foreground">
+          <span className="text-foreground font-medium">{totalActiveDays}</span>{" "}
           {t("activeDays")}
         </p>
-        <div className="flex items-center gap-1 text-[10px] text-[#6b6b72]">
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <span>{t("less")}</span>
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#1e1e20" }} />
+          <div className="w-3 h-3 rounded-sm bg-muted" />
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a40" }} />
           <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a80" }} />
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#e8612a" }} />
+          <div className="w-3 h-3 rounded-sm bg-primary" />
           <span>{t("more")}</span>
         </div>
       </div>
 
       {tooltip && (
         <div
-          className={`fixed z-50 px-2.5 py-1.5 bg-[#2a2a2c] border border-[#3a3a3c] text-white text-xs rounded-md shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap ${
+          className={`fixed z-50 px-2.5 py-1.5 bg-popover border border-border text-popover-foreground text-xs rounded-md shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap ${
             tooltip.below ? "" : "-translate-y-full"
           }`}
           style={{ left: tooltip.x, top: tooltip.y }}

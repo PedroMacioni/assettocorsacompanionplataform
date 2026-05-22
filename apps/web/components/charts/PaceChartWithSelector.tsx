@@ -33,7 +33,7 @@ export function PaceChartWithSelector({ data, tracks, trackLabels }: Props) {
           <select
             value={selectedTrack}
             onChange={(e) => setSelectedTrack(e.target.value)}
-            className="text-xs bg-[#1e1e20] border border-[#2a2a2c] rounded px-2 py-1.5 text-[#6b6b72] focus:outline-none focus:border-[#e8612a] transition-colors"
+            className="text-xs bg-muted border border-border text-muted-foreground rounded px-2 py-1.5 focus:outline-none focus:border-primary focus:text-foreground transition-colors"
           >
             <option value="all">Todas as pistas</option>
             {tracks.map((trackId) => (
