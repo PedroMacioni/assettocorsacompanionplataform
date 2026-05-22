@@ -29,7 +29,7 @@ function formatDate(dateStr: string): string {
 
 export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendarProps) {
   const t = useTranslations("ActivityCalendar");
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; below: boolean; text: string } | null>(null);
 
   const { totalActiveDays, weeks } = useMemo(() => {
     const countMap = new Map<string, number>();
@@ -95,9 +95,11 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
                   style={{ backgroundColor: getColor(day.count) }}
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
+                    const below = rect.top < 120;
                     setTooltip({
                       x: rect.left + rect.width / 2,
-                      y: rect.top - 8,
+                      y: below ? rect.bottom + 6 : rect.top - 8,
+                      below,
                       text: t("tooltip", { count: day.count, date: formatDate(day.date) }),
                     });
                   }}
@@ -132,7 +134,9 @@ export function ActivityCalendar({ sessions, daysToShow = 90 }: ActivityCalendar
 
       {tooltip && (
         <div
-          className="fixed z-50 px-2 py-1 bg-[#2a2a2c] text-white text-xs rounded shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          className={`fixed z-50 px-2.5 py-1.5 bg-[#2a2a2c] border border-[#3a3a3c] text-white text-xs rounded-md shadow-lg pointer-events-none transform -translate-x-1/2 whitespace-nowrap ${
+            tooltip.below ? "" : "-translate-y-full"
+          }`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
           {tooltip.text}

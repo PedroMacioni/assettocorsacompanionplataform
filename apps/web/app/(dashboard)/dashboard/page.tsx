@@ -247,7 +247,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 animate-in fade-in duration-500">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             {dayLabel} · {dateLabel}
@@ -294,6 +294,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* [1] HERO CARD — dados reais */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
       <HeroCard
         streak={streak}
         consistency={consistencyResult}
@@ -304,9 +305,10 @@ export default async function DashboardPage() {
           deltaVsLastWeek,
         }}
       />
+      </div>
 
       {/* [2] LAST SESSION + [3] ACTIVITY CALENDAR */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
         {lastSession ? (
           <LastSessionCard
             session={lastSession}
@@ -324,15 +326,17 @@ export default async function DashboardPage() {
       </div>
 
       {/* [4] QUICK STATS BAR */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
       <QuickStatsBar
         tracks={summary.unique_tracks}
         cars={summary.unique_cars}
         distanceKm={summary.total_distance_km}
         laps={summary.total_laps}
       />
+      </div>
 
       {/* [5] PACE EVOLUTION + [6] PERSONAL RECORDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
         <div className="xl:col-span-2 bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -356,7 +360,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* [7] QUICK NAV CARDS */}
-      <QuickNavCards />
+      <div className="animate-in fade-in duration-500 delay-500">
+        <QuickNavCards />
+      </div>
     </div>
   );
 }
