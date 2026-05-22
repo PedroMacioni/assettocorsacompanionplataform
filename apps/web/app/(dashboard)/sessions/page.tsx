@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
 import { LapTime } from "@/components/LapTime";
+import { Pagination } from "@/components/ui/pagination";
 import { formatDistance, formatDate, slugToName } from "@/lib/format";
 import type { Session } from "@/lib/types";
 import Link from "next/link";
@@ -31,7 +32,7 @@ export default async function SessionsPage({
 }) {
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1"));
-  const pageSize = 50;
+  const pageSize = 10;
   const from = (page - 1) * pageSize;
 
   const supabase = await createClient();
@@ -140,29 +141,12 @@ export default async function SessionsPage({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 pt-2">
-          {page > 1 && (
-            <Link
-              href={`/sessions?page=${page - 1}`}
-              className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
-            >
-              ← Prev
-            </Link>
-          )}
-          <span className="text-xs text-muted-foreground">
-            {page} / {totalPages}
-          </span>
-          {page < totalPages && (
-            <Link
-              href={`/sessions?page=${page + 1}`}
-              className="px-3 py-1.5 border border-border rounded-md text-xs text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
-            >
-              Next →
-            </Link>
-          )}
-        </div>
-      )}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        baseUrl="/sessions"
+        queryParams={{ car: params.car, track: params.track }}
+      />
     </div>
   );
 }
