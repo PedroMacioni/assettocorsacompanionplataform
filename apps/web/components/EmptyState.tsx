@@ -5,7 +5,7 @@ type Props = { title?: string; description?: string; action?: { label: string; h
 export function EmptyState({
   title = "Your data will appear here",
   description = "Install CompanionAgent to automatically sync your Assetto Corsa history.",
-  action = { label: "Download CompanionAgent", href: "/settings#download" },
+  action = { label: "Configurar Agent", href: "/download" },
 }: Props) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center gap-4">

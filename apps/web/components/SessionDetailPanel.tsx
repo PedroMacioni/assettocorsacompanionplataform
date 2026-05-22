@@ -94,7 +94,7 @@ export function SessionDetailPanel({
   data: SessionPanelData | null;
   onClose: () => void;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -143,11 +143,11 @@ export function SessionDetailPanel({
   const s3P25 = percentile(s3Sorted, 25), s3P75 = percentile(s3Sorted, 75);
 
   const stats = [
-    { label: "Voltas",    value: String(s.laps) },
-    { label: "Válidas",   value: hasLaps ? `${validLaps.length} / ${laps.length}` : String(s.laps) },
-    { label: "Distância", value: formatDistance(s.distance_km) },
-    { label: "Melhor",    value: formatLapTime(bestLapMs), hero: true },
-    { label: "Última",    value: formatLapTime(s.last_lap_ms) },
+    { label: "Voltas",      value: String(s.laps) },
+    { label: "Válidas",     value: hasLaps ? `${validLaps.length} / ${laps.length}` : String(s.laps) },
+    { label: "Distância",   value: formatDistance(s.distance_km) },
+    { label: "Melhor",      value: formatLapTime(bestLapMs), hero: true },
+    { label: "Última",      value: formatLapTime(s.last_lap_ms) },
     {
       label: "Teórica",
       value: formatLapTime(theoretical),
@@ -160,22 +160,21 @@ export function SessionDetailPanel({
         ? consistency < 500 ? "Excelente" : consistency < 1500 ? "Bom" : "Variável"
         : undefined,
     },
-    { label: "c/ Corte", value: hasLaps ? String(cutLaps) : "—" },
+    { label: "c/ Corte",    value: hasLaps ? String(cutLaps) : "—" },
   ];
 
   return (
-    <>
-      {/* Backdrop */}
+    /* Backdrop */
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8"
+      style={{ backdropFilter: "blur(6px)", backgroundColor: "rgba(0,0,0,0.65)" }}
+      onClick={onClose}
+    >
+      {/* Modal */}
       <div
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Slide panel */}
-      <div
-        ref={panelRef}
-        className="fixed right-0 top-0 h-screen z-50 flex flex-col bg-background border-l border-border shadow-2xl"
-        style={{ width: "min(800px, 90vw)" }}
+        className="relative w-full flex flex-col bg-background border border-border rounded-2xl shadow-2xl overflow-hidden"
+        style={{ maxWidth: 900, maxHeight: "90vh" }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border shrink-0">
@@ -192,11 +191,11 @@ export function SessionDetailPanel({
             <p className="text-xs text-muted-foreground mt-1">{formatDate(s.started_at)}</p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             {pb && bestLapMs && pbDelta !== null && (
-              <div className="text-right mr-2">
+              <div className="text-right">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">vs PB</p>
-                <p className={`text-lg font-bold font-mono ${pbDelta <= 0 ? "text-green-400" : "text-red-400"}`}>
+                <p className={`text-xl font-bold font-mono ${pbDelta <= 0 ? "text-green-400" : "text-red-400"}`}>
                   {formatDelta(pbDelta)}
                 </p>
                 <p className="text-[10px] text-muted-foreground">PB: {formatLapTime(pb.time_ms)}</p>
@@ -204,24 +203,24 @@ export function SessionDetailPanel({
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
           {/* Stats grid */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-3">
             {stats.map(({ label, value, hero, sub }) => (
-              <div key={label} className="bg-card border border-border rounded-lg p-3">
+              <div key={label} className="bg-card border border-border rounded-xl p-3.5">
                 <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                   {label}
                 </p>
-                <p className={`font-bold leading-tight ${hero ? "text-xl font-mono text-primary" : "text-base text-foreground"}`}>
+                <p className={`font-bold leading-tight ${hero ? "text-2xl font-mono text-primary" : "text-base text-foreground"}`}>
                   {value}
                 </p>
                 {sub && <p className="text-[9px] text-muted-foreground mt-0.5">{sub}</p>}
@@ -232,9 +231,9 @@ export function SessionDetailPanel({
           {/* Lap table */}
           {hasLaps ? (
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Voltas</p>
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   {(
                     [
                       ["purple", "Melhor"],
@@ -244,22 +243,22 @@ export function SessionDetailPanel({
                       ["grey",   "Corte"],
                     ] as [SectorColor, string][]
                   ).map(([c, l]) => (
-                    <span key={c} className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                      <span className={`w-1.5 h-1.5 rounded-full ${SECTOR_DOT[c]}`} />
+                    <span key={c} className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                      <span className={`w-2 h-2 rounded-full ${SECTOR_DOT[c]}`} />
                       {l}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       {["#", "S1", "S2", "S3", "Total", "Gap", "Pneu", "Cortes"].map((h, i) => (
                         <th
                           key={h}
-                          className={`px-2.5 py-2 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i > 0 ? "text-right" : "text-left"}`}
+                          className={`px-3 py-2.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i > 0 ? "text-right" : "text-left"}`}
                         >
                           {h}
                         </th>
@@ -278,23 +277,23 @@ export function SessionDetailPanel({
                       return (
                         <tr
                           key={lap.id}
-                          className={`border-b border-border last:border-0 transition-colors ${isBest ? "bg-primary/5" : "hover:bg-muted/30"}`}
+                          className={`border-b border-border last:border-0 transition-colors ${isBest ? "bg-primary/[0.06]" : "hover:bg-muted/30"}`}
                         >
-                          <td className="px-2.5 py-1.5 text-muted-foreground">
-                            <span className={isBest ? "text-primary font-semibold" : ""}>{lap.lap_number + 1}</span>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            <span className={isBest ? "text-primary font-bold" : ""}>{lap.lap_number + 1}</span>
                           </td>
-                          <td className={`px-2.5 py-1.5 text-right font-mono ${SECTOR_TEXT[c1]}`}>{formatSector(lap.s1_ms)}</td>
-                          <td className={`px-2.5 py-1.5 text-right font-mono ${SECTOR_TEXT[c2]}`}>{formatSector(lap.s2_ms)}</td>
-                          <td className={`px-2.5 py-1.5 text-right font-mono ${SECTOR_TEXT[c3]}`}>{formatSector(lap.s3_ms)}</td>
-                          <td className={`px-2.5 py-1.5 text-right font-mono font-semibold ${cut ? "text-muted-foreground/50 line-through" : isBest ? "text-primary" : "text-foreground"}`}>
+                          <td className={`px-3 py-2 text-right font-mono ${SECTOR_TEXT[c1]}`}>{formatSector(lap.s1_ms)}</td>
+                          <td className={`px-3 py-2 text-right font-mono ${SECTOR_TEXT[c2]}`}>{formatSector(lap.s2_ms)}</td>
+                          <td className={`px-3 py-2 text-right font-mono ${SECTOR_TEXT[c3]}`}>{formatSector(lap.s3_ms)}</td>
+                          <td className={`px-3 py-2 text-right font-mono font-semibold ${cut ? "text-muted-foreground/50 line-through" : isBest ? "text-primary" : "text-foreground"}`}>
                             {formatLapTime(lap.time_ms)}
                           </td>
-                          <td className={`px-2.5 py-1.5 text-right font-mono ${cut ? "text-muted-foreground/40" : gap === 0 ? "text-primary" : "text-muted-foreground"}`}>
+                          <td className={`px-3 py-2 text-right font-mono ${cut ? "text-muted-foreground/40" : gap === 0 ? "text-primary" : "text-muted-foreground"}`}>
                             {cut ? "—" : gap === null ? "—" : gap === 0 ? "REF" : formatDelta(gap)}
                           </td>
-                          <td className="px-2.5 py-1.5 text-right text-muted-foreground font-mono">{lap.tyre ?? "—"}</td>
-                          <td className={`px-2.5 py-1.5 text-right ${lap.cuts > 0 ? "text-red-400 font-semibold" : "text-muted-foreground/50"}`}>
-                            {lap.cuts}
+                          <td className="px-3 py-2 text-right text-muted-foreground font-mono uppercase text-[10px]">{lap.tyre ?? "—"}</td>
+                          <td className={`px-3 py-2 text-right ${lap.cuts > 0 ? "text-red-400 font-semibold" : "text-muted-foreground/40"}`}>
+                            {lap.cuts > 0 ? lap.cuts : "—"}
                           </td>
                         </tr>
                       );
@@ -305,26 +304,32 @@ export function SessionDetailPanel({
 
               {/* Theoretical best breakdown */}
               {theoretical !== null && (
-                <div className="mt-2 bg-card border border-border rounded-lg px-4 py-2.5 flex flex-wrap gap-5 items-center">
+                <div className="mt-3 bg-card border border-border rounded-xl px-5 py-3 flex flex-wrap gap-6 items-center">
                   <div>
                     <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Volta Teórica</p>
-                    <p className="font-mono font-bold text-foreground mt-0.5">{formatLapTime(theoretical)}</p>
+                    <p className="font-mono font-bold text-lg text-foreground mt-0.5">{formatLapTime(theoretical)}</p>
                   </div>
-                  <div className="flex gap-3 text-xs font-mono text-muted-foreground">
-                    <span><span className="text-purple-400">S1</span> {formatSector(bestS1)}</span>
-                    <span className="opacity-40">+</span>
-                    <span><span className="text-purple-400">S2</span> {formatSector(bestS2)}</span>
-                    <span className="opacity-40">+</span>
-                    <span><span className="text-purple-400">S3</span> {formatSector(bestS3)}</span>
+                  <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground">
+                    <span><span className="text-purple-400 font-semibold">S1</span> {formatSector(bestS1)}</span>
+                    <span className="opacity-30 text-xs">+</span>
+                    <span><span className="text-purple-400 font-semibold">S2</span> {formatSector(bestS2)}</span>
+                    <span className="opacity-30 text-xs">+</span>
+                    <span><span className="text-purple-400 font-semibold">S3</span> {formatSector(bestS3)}</span>
                   </div>
+                  {bestLapMs && (
+                    <div className="ml-auto text-right">
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">Ganho potencial</p>
+                      <p className="font-mono font-semibold text-green-400">{formatDelta(theoretical - bestLapMs)}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-lg p-5 text-center">
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
               <p className="text-sm text-muted-foreground">Dados de volta não disponíveis.</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Sincronize pelo agente para importar o detalhamento.
+                Sincronize pelo agente para importar o detalhamento de setores.
               </p>
             </div>
           )}
@@ -332,17 +337,17 @@ export function SessionDetailPanel({
           {/* Other sessions at same track */}
           {trackSessions.length > 0 && (
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                 Outras sessões — {slugToName(s.track_id)}
               </p>
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       {["Data", "Carro", "Tipo", "Voltas", "Melhor"].map((h, i) => (
                         <th
                           key={h}
-                          className={`px-3 py-2 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i >= 3 ? "text-right" : "text-left"}`}
+                          className={`px-3 py-2.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i >= 3 ? "text-right" : "text-left"}`}
                         >
                           {h}
                         </th>
@@ -364,8 +369,11 @@ export function SessionDetailPanel({
               </div>
             </div>
           )}
+
+          {/* Bottom padding */}
+          <div className="h-1" />
         </div>
       </div>
-    </>
+    </div>
   );
 }

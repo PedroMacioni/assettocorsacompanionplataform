@@ -173,7 +173,31 @@ public sealed class MainForm : Form
             });
         };
 
-        syncCard.Controls.AddRange(new Control[] { _stateLabel, _syncBtn });
+        var resyncBtn = new Button
+        {
+            Text      = "Re-sync voltas",
+            Location  = new Point(14, 58),
+            Size      = new Size(110, 26),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.FromArgb(28, 28, 28),
+            ForeColor = TxtSec,
+            Cursor    = Cursors.Hand,
+            Font      = new Font("Segoe UI", 8f)
+        };
+        resyncBtn.FlatAppearance.BorderColor        = Border;
+        resyncBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(38, 38, 38);
+        resyncBtn.Click += (_, _) =>
+        {
+            resyncBtn.Enabled = false;
+            _syncBtn.Enabled  = false;
+            _ = _worker.ForceResyncLapsAsync().ContinueWith(_ =>
+            {
+                if (IsDisposed || !IsHandleCreated) return;
+                BeginInvoke(() => { resyncBtn.Enabled = true; _syncBtn.Enabled = true; });
+            });
+        };
+
+        syncCard.Controls.AddRange(new Control[] { _stateLabel, _syncBtn, resyncBtn });
 
         // ── Activity log card ─────────────────────────────────────────────
         var logCard = MakeCard(12, 220, 436, 232);

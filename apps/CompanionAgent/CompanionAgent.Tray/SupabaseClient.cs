@@ -15,6 +15,7 @@ public sealed class SupabaseClient : IDisposable
     private string _accessToken = "";
     private string _refreshToken = "";
     private DateTimeOffset _tokenExpiry;
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     public event Action<string, string>? TokensRefreshed;
 
@@ -201,13 +202,15 @@ public sealed class SupabaseClient : IDisposable
     public async Task UpsertTracksAsync(
         IReadOnlyList<TrackDto> tracks,
         IReadOnlyDictionary<string, string> outlineUrls,
-        Action<int, int>? onBatchProgress = null)
+        Action<int, int>? onBatchProgress = null,
+        CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
-        const int batchSize = 1;
+        const int batchSize = 50;
 
         for (int i = 0; i < tracks.Count; i += batchSize)
         {
+            ct.ThrowIfCancellationRequested();
             var batch = tracks.Skip(i).Take(batchSize).Select(t =>
             {
                 var obj = new Dictionary<string, object?>
@@ -231,11 +234,10 @@ public sealed class SupabaseClient : IDisposable
             req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
             req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var res = await _http.SendAsync(req, cts.Token);
+            var res = await _http.SendAsync(req, ct);
             if (!res.IsSuccessStatusCode)
             {
-                var body = await res.Content.ReadAsStringAsync(cts.Token);
+                var body = await res.Content.ReadAsStringAsync(ct);
                 throw new HttpRequestException($"tracks {(int)res.StatusCode}: {body}", null, res.StatusCode);
             }
 
@@ -243,7 +245,7 @@ public sealed class SupabaseClient : IDisposable
         }
     }
 
-    public async Task<bool> UploadCarBadgeAsync(string carId, byte[] imageBytes)
+    public async Task<bool> UploadCarBadgeAsync(string carId, byte[] imageBytes, CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
         var storagePath = $"{UserId}/{carId}.png";
@@ -251,11 +253,11 @@ public sealed class SupabaseClient : IDisposable
         req.Headers.Add("x-upsert", "true");
         req.Content = new ByteArrayContent(imageBytes);
         req.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        var res = await _http.SendAsync(req);
+        var res = await _http.SendAsync(req, ct);
         return res.IsSuccessStatusCode;
     }
 
-    public async Task<string?> UploadTrackOutlineAsync(string trackId, byte[] imageBytes)
+    public async Task<string?> UploadTrackOutlineAsync(string trackId, byte[] imageBytes, CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
         var storagePath = $"{trackId}/map.png";
@@ -263,7 +265,7 @@ public sealed class SupabaseClient : IDisposable
         req.Headers.Add("x-upsert", "true");
         req.Content = new ByteArrayContent(imageBytes);
         req.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-        var res = await _http.SendAsync(req);
+        var res = await _http.SendAsync(req, ct);
         if (!res.IsSuccessStatusCode) return null;
         return $"{_url}/storage/v1/object/public/track-outlines/{storagePath}";
     }
@@ -284,14 +286,25 @@ public sealed class SupabaseClient : IDisposable
 
     private async Task EnsureValidTokenAsync()
     {
-        if (_tokenExpiry - DateTimeOffset.UtcNow < TimeSpan.FromMinutes(5) && !string.IsNullOrEmpty(_refreshToken))
+        if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5) || string.IsNullOrEmpty(_refreshToken))
+            return;
+
+        await _refreshLock.WaitAsync();
+        try
         {
+            if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5) || string.IsNullOrEmpty(_refreshToken))
+                return;
+
             try { await RefreshTokenAsync(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
                 ClearTokens();
                 throw new HttpRequestException("Sessão expirada — faça login novamente nas configurações", ex, System.Net.HttpStatusCode.Unauthorized);
             }
+        }
+        finally
+        {
+            _refreshLock.Release();
         }
     }
 
@@ -320,5 +333,9 @@ public sealed class SupabaseClient : IDisposable
         catch { return ("", "", DateTimeOffset.MinValue); }
     }
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose()
+    {
+        _http.Dispose();
+        _refreshLock.Dispose();
+    }
 }

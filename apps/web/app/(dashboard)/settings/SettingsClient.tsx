@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  User, Palette, Key, Download, Check, Copy, Eye, EyeOff,
+  User, Palette, Key, Check, Copy, Eye, EyeOff,
   RefreshCw, Sun, Moon, Globe, ChevronRight, Camera, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +18,6 @@ const SECTIONS = [
   { id: "profile",    label: "Profile",     icon: User },
   { id: "appearance", label: "Appearance",  icon: Palette },
   { id: "agent",      label: "Agent Token", icon: Key },
-  { id: "download",   label: "Download",    icon: Download },
 ] as const;
 
 type Section = (typeof SECTIONS)[number]["id"];
@@ -607,47 +606,6 @@ export function SettingsClient(props: Props) {
           </div>
         )}
 
-        {/* ── DOWNLOAD ─────────────────────────────────────────────────── */}
-        {section === "download" && (
-          <div className="space-y-6">
-            <SectionHeader
-              title="Download CompanionAgent"
-              description="Windows background app that syncs your Assetto Corsa history."
-            />
-
-            <div className="bg-card border border-border rounded-md p-6 space-y-6">
-              <div className="space-y-4">
-                {[
-                  { title: "Install", desc: "Download and run the installer. No admin rights required.", icon: Download },
-                  { title: "Authenticate", desc: "Paste your Agent Token from the Agent Token section.", icon: Key },
-                  { title: "Race", desc: "The agent runs in the system tray and syncs sessions automatically.", icon: Check },
-                ].map(({ title, desc, icon: Icon }, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="shrink-0 w-9 h-9 rounded-md bg-primary/[0.08] border border-primary/[0.18] flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="h-px bg-border" />
-
-              <div className="flex items-center gap-3">
-                <button
-                  disabled
-                  className="px-5 py-2.5 bg-muted border border-border rounded-md text-sm font-semibold text-muted-foreground cursor-not-allowed"
-                >
-                  Coming soon — GitHub Releases
-                </button>
-                <p className="text-xs text-muted-foreground">Available for Windows 10/11</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
