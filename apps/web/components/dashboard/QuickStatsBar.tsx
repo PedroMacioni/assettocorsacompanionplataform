@@ -22,10 +22,14 @@ export async function QuickStatsBar({ tracks, cars, distanceKm, laps }: QuickSta
 
   return (
     <div className="bg-card border border-border rounded-md p-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
+      <div className="grid grid-cols-2 md:grid-cols-4">
         {stats.map(({ icon: Icon, value, label, href }, i) => {
           const inner = (isLink: boolean) => (
-            <div className={`flex flex-col items-center text-center py-3 md:py-0 ${i === 0 ? "" : "md:pl-4"}`}>
+            <div className={[
+              "flex flex-col items-center text-center py-3 md:py-0",
+              i > 0 ? "md:pl-4 md:border-l md:border-border" : "",
+              i >= 2 ? "border-t border-border md:border-t-0" : "",
+            ].join(" ")}>
               <div className="flex items-center gap-2 mb-1">
                 <Icon className={`w-4 h-4 ${isLink ? "text-muted-foreground group-hover:text-primary transition-colors" : "text-muted-foreground"}`} />
                 <span className={`text-xl font-semibold ${isLink ? "text-foreground group-hover:text-primary transition-colors" : "text-foreground"}`}>

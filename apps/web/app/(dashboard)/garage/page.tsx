@@ -89,7 +89,7 @@ export default async function GaragePage({
         </div>
       </div>
 
-      <div className="flex gap-5">
+      <div className="flex flex-col lg:flex-row gap-5">
         {/* Car list sidebar — client component handles search */}
         <GarageCarList
           cars={topCars}
@@ -129,14 +129,19 @@ export default async function GaragePage({
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-4 divide-x divide-border border-t border-border">
+            <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-border">
               {[
                 { label: t("car.sessions"), value: selectedCar.sessions.toLocaleString(), mono: false },
                 { label: t("car.bestLap"), value: formatLapTime(selectedCar.best_lap_ms), mono: true, highlight: true },
                 { label: t("car.distance"), value: formatDistance(selectedCar.total_distance_km), mono: false },
                 { label: t("car.laps"), value: selectedCar.total_laps.toLocaleString(), mono: false },
-              ].map((stat) => (
-                <div key={stat.label} className="p-4 text-center">
+              ].map((stat, i) => (
+                <div key={stat.label} className={[
+                  "p-4 text-center",
+                  i > 0 ? "sm:border-l sm:border-border" : "",
+                  i >= 2 ? "border-t border-border sm:border-t-0" : "",
+                  i === 1 ? "border-l border-border sm:border-l-0" : "",
+                ].join(" ")}>
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                     {stat.label}
                   </p>
@@ -155,7 +160,7 @@ export default async function GaragePage({
           </div>
 
           {/* Sessions + Tracks */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                 {t("sections.recentSessions")}

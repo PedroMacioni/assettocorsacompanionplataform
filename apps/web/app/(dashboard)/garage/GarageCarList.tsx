@@ -43,7 +43,7 @@ export function GarageCarList({ cars, preferences, selectedCarId, carImageBase }
     : cars;
 
   return (
-    <div className="w-56 shrink-0 flex flex-col gap-2">
+    <div className="w-full lg:w-56 lg:shrink-0 flex flex-col gap-2">
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
         <input
@@ -62,7 +62,7 @@ export function GarageCarList({ cars, preferences, selectedCarId, carImageBase }
         )}
       </div>
 
-      <div className="space-y-0.5">
+      <div className="flex flex-row lg:flex-col gap-1 overflow-x-auto pb-1 lg:overflow-visible lg:pb-0 lg:space-y-0.5 scrollbar-none">
         {filtered.length === 0 ? (
           <p className="text-xs text-muted-foreground px-3 py-4 text-center">{t("noResults")}</p>
         ) : (
@@ -74,7 +74,8 @@ export function GarageCarList({ cars, preferences, selectedCarId, carImageBase }
                 key={c.car_id}
                 href={`/garage?car=${c.car_id}`}
                 className={cn(
-                  "relative flex items-center gap-2.5 px-3 py-2.5 rounded-md transition-colors group",
+                  "relative flex items-center gap-2.5 px-3 py-2.5 rounded-md transition-colors group shrink-0 lg:shrink",
+                  "min-w-[160px] lg:min-w-0",
                   active
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"

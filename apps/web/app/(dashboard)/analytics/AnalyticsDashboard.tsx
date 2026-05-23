@@ -154,12 +154,12 @@ export function AnalyticsDashboard({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px transition-colors ${
+            className={`whitespace-nowrap shrink-0 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px transition-colors ${
               activeTab === tab.id
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -172,7 +172,7 @@ export function AnalyticsDashboard({
 
       {/* Tab: Overview */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Driver DNA */}
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
@@ -273,7 +273,7 @@ export function AnalyticsDashboard({
 
       {/* Tab: Discipline */}
       {activeTab === "discipline" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-md p-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
               {tAnalytics("topCars")}

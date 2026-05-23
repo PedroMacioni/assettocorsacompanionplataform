@@ -52,12 +52,12 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
         <SessionQualityBadge badge={translatedBadge} size="sm" />
       </div>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-bold text-foreground leading-tight">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h3 className="text-xl font-bold text-foreground leading-tight truncate">
             {slugToName(session.track_id)}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">{slugToName(session.car_id)}</p>
+          <p className="text-sm text-muted-foreground mt-1 truncate">{slugToName(session.car_id)}</p>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-3">
             <span>{t("lapsCount", { count: session.laps })}</span>
             {session.session_types && (
@@ -71,8 +71,8 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
           </div>
         </div>
 
-        <div className="text-right shrink-0">
-          <p className="text-3xl font-bold text-foreground font-mono">
+        <div className="sm:text-right shrink-0">
+          <p className="text-2xl sm:text-3xl font-bold text-foreground font-mono">
             {formatLapTime(session.best_lap_ms)}
           </p>
           {pbDelta !== null && pbDelta !== undefined && (

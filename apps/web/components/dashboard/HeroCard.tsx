@@ -22,14 +22,14 @@ export function HeroCard({ streak, consistency, weeklyDigest }: HeroCardProps) {
     <div className="bg-card border border-border rounded-xl p-6 transition-all duration-150 hover:shadow-lg hover:shadow-primary/5">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Streak */}
-        <div className="flex flex-col items-center justify-center text-center p-4 rounded-lg bg-muted">
+        <div className="flex flex-col items-center justify-center text-center p-3 md:p-4 rounded-lg bg-muted">
           <div className="flex items-center gap-2 mb-2">
             <Flame className={`w-5 h-5 ${streak.current > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {t("streak")}
             </span>
           </div>
-          <p className="text-5xl font-bold text-foreground mb-1">{streak.current}</p>
+          <p className="text-4xl md:text-5xl font-bold text-foreground mb-1">{streak.current}</p>
           <p className="text-sm text-muted-foreground">
             {streak.current === 1 ? tCommon("day") : tCommon("days")}
           </p>
@@ -39,7 +39,7 @@ export function HeroCard({ streak, consistency, weeklyDigest }: HeroCardProps) {
         </div>
 
         {/* Consistency Score */}
-        <div className="flex flex-col items-center justify-center text-center p-4 rounded-lg bg-muted">
+        <div className="flex flex-col items-center justify-center text-center p-3 md:p-4 rounded-lg bg-muted">
           <div className="flex items-center gap-2 mb-2">
             <TrendIcon
               className={`w-4 h-4 ${
@@ -50,7 +50,7 @@ export function HeroCard({ streak, consistency, weeklyDigest }: HeroCardProps) {
               {t("consistency")}
             </span>
           </div>
-          <p className="text-5xl font-bold text-foreground mb-1">{consistency.score}</p>
+          <p className="text-4xl md:text-5xl font-bold text-foreground mb-1">{consistency.score}</p>
           <p className="text-sm" style={{ color: consistencyLevel.color }}>/100</p>
           <div className="w-full mt-3">
             <div className="h-2 bg-border rounded-full overflow-hidden">
@@ -66,7 +66,7 @@ export function HeroCard({ streak, consistency, weeklyDigest }: HeroCardProps) {
         </div>
 
         {/* Weekly Digest */}
-        <div className="flex flex-col items-center justify-center text-center p-4 rounded-lg bg-muted">
+        <div className="flex flex-col items-center justify-center text-center p-3 md:p-4 rounded-lg bg-muted">
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
             {t("thisWeek")}
           </span>

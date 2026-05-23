@@ -241,9 +241,37 @@ export function SettingsClient(props: Props) {
   // ── render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex gap-8 max-w-5xl">
-      {/* Left nav */}
-      <div className="w-56 shrink-0 space-y-1">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 max-w-5xl">
+
+      {/* Mobile: page title + horizontal tabs */}
+      <div className="lg:hidden">
+        <div className="mb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+            {t("title")}
+          </p>
+          <h1 className="text-xl font-bold text-foreground">{t("account")}</h1>
+        </div>
+        <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
+          {SECTIONS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setSection(id)}
+              className={cn(
+                "whitespace-nowrap shrink-0 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px transition-colors",
+                section === id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: left nav sidebar */}
+      <div className="hidden lg:block w-56 shrink-0 space-y-1">
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             {t("title")}

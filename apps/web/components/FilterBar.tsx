@@ -65,7 +65,7 @@ export function FilterBar({
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{children}</div>
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">{children}</div>
     </section>
   );
 }

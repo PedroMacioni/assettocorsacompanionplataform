@@ -339,8 +339,8 @@ export default async function DashboardPage() {
       </div>
 
       {/* [5] PACE EVOLUTION + [6] PERSONAL RECORDS */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
-        <div className="xl:col-span-2 bg-card border border-border rounded-md p-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
+        <div className="lg:col-span-2 bg-card border border-border rounded-md p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">

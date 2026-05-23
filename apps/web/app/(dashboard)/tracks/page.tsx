@@ -38,7 +38,7 @@ export default async function TracksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             {t("catalogue")}
