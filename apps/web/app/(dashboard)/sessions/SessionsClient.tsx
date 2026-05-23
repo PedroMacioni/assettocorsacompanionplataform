@@ -6,6 +6,7 @@ import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/for
 import type { Session } from "@/lib/types";
 import { SessionDetailPanel, type SessionPanelData } from "@/components/SessionDetailPanel";
 import { PageLoader } from "@/components/PageLoader";
+import { cn } from "@/lib/utils";
 
 const SESSION_BADGE: Record<string, string> = {
   Hotlap: "bg-primary/[0.12] text-primary border border-primary/[0.18]",
@@ -35,7 +36,6 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
 
   const openSession = useCallback(async (sourceId: string) => {
     if (loadingId) return;
-
     setLoadingId(sourceId);
     try {
       const res = await fetch(`/api/sessions/${sourceId}`);
@@ -49,19 +49,20 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {/* ── Desktop: tabela ────────────────────────────────────────────── */}
+      <div className="hidden md:block overflow-hidden rounded-lg border border-border bg-card">
         <div className="apex-scroll overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
             <thead>
               <tr className="border-b border-border">
                 {[
-                  { label: t("table.date"), right: false },
-                  { label: t("table.car"), right: false },
-                  { label: t("table.track"), right: false },
-                  { label: t("table.type"), right: false },
-                  { label: t("table.laps"), right: true },
-                  { label: t("table.distance"), right: true },
-                  { label: t("table.bestLap"), right: true },
+                  { label: t("table.date"),     right: false },
+                  { label: t("table.car"),      right: false },
+                  { label: t("table.track"),    right: false },
+                  { label: t("table.type"),     right: false },
+                  { label: t("table.laps"),     right: true  },
+                  { label: t("table.distance"), right: true  },
+                  { label: t("table.bestLap"),  right: true  },
                 ].map(({ label, right }) => (
                   <th
                     key={label}
@@ -75,10 +76,7 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
             <tbody>
               {sessions.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-14 text-center text-sm text-muted-foreground"
-                  >
+                  <td colSpan={7} className="px-4 py-14 text-center text-sm text-muted-foreground">
                     {t("noResults")}
                   </td>
                 </tr>
@@ -109,6 +107,62 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ── Mobile: lista de cards ─────────────────────────────────────── */}
+      <div className="md:hidden">
+        {sessions.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card px-4 py-14 text-center text-sm text-muted-foreground">
+            {t("noResults")}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
+            {sessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => openSession(s.source_id)}
+                disabled={!!loadingId}
+                className={cn(
+                  "w-full text-left px-4 py-3.5 transition-colors",
+                  "hover:bg-muted/60 active:bg-muted",
+                  loadingId === s.source_id && "opacity-60"
+                )}
+              >
+                {/* Linha 1: carro + tempo */}
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {slugToName(s.car_id)}
+                  </p>
+                  <p className="text-sm font-bold font-mono text-foreground shrink-0">
+                    {formatLapTime(s.best_lap_ms)}
+                  </p>
+                </div>
+
+                {/* Linha 2: pista + data */}
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="text-xs text-muted-foreground truncate">
+                    {slugToName(s.track_id)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground shrink-0">
+                    {formatDate(s.started_at)}
+                  </p>
+                </div>
+
+                {/* Linha 3: badge + voltas + distância */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <SessionBadge type={s.session_types} />
+                  <span className="text-[10px] text-muted-foreground">
+                    {s.laps} {t("table.laps").toLowerCase()}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">·</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatDistance(s.distance_km)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {loadingId && <PageLoader overlay size="md" label={t("loadingSession")} />}
