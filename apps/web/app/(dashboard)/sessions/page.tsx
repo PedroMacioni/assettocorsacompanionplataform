@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { ListChecks } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
+import { Pagination } from "@/components/ui/pagination";
 import { slugToName } from "@/lib/format";
 import type { Session, TopCar, TopTrack } from "@/lib/types";
 import { SessionsClient } from "./SessionsClient";
@@ -40,22 +40,6 @@ function includeSelected(
   return [{ value: selected, label: labelFor(selected) }, ...options];
 }
 
-function buildPageHref(
-  targetPage: number,
-  params: Pick<SearchParams, "car" | "track" | "type" | "date"> & { filter?: PeriodFilter }
-) {
-  const next = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) next.set(key, value);
-  });
-
-  if (targetPage > 1) next.set("page", String(targetPage));
-
-  const query = next.toString();
-  return query ? `/sessions?${query}` : "/sessions";
-}
-
 export default async function SessionsPage({
   searchParams,
 }: {
@@ -64,7 +48,7 @@ export default async function SessionsPage({
   const t = await getTranslations("Sessions");
   const params = await searchParams;
   const page = parsePage(params.page);
-  const pageSize = 50;
+  const pageSize = 10;
   const from = (page - 1) * pageSize;
   const period = normalizePeriod(params.filter);
 
@@ -171,14 +155,6 @@ export default async function SessionsPage({
     return <EmptyState title={t("noSessions")} />;
   }
 
-  const pageParams = {
-    car: params.car,
-    track: params.track,
-    type: params.type,
-    date: params.date,
-    filter: selectedPeriod,
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -222,27 +198,18 @@ export default async function SessionsPage({
 
       <SessionsClient sessions={sessions} />
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          {page > 1 && (
-            <Link
-              href={buildPageHref(page - 1, pageParams)}
-              className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-            >
-              {t("previous")}
-            </Link>
-          )}
-          <span className="text-xs text-muted-foreground">{page} / {totalPages}</span>
-          {page < totalPages && (
-            <Link
-              href={buildPageHref(page + 1, pageParams)}
-              className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-            >
-              {t("next")}
-            </Link>
-          )}
-        </div>
-      )}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        baseUrl="/sessions"
+        queryParams={{
+          car: params.car,
+          track: params.track,
+          type: params.type,
+          date: params.date,
+          filter: selectedPeriod,
+        }}
+      />
     </div>
   );
 }
