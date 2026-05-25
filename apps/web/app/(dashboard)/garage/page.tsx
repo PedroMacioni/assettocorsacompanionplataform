@@ -26,6 +26,7 @@ export default async function GaragePage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const uid = user.id;
+  const carImageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-previews/${uid}`;
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -127,6 +128,7 @@ export default async function GaragePage({
           availableClasses={availableClasses}
           availableBrands={availableBrands}
           totalCars={allCars.length}
+          carImageBase={carImageBase}
         />
       </Suspense>
     </div>

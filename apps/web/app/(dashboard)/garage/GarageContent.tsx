@@ -14,6 +14,7 @@ interface Props {
   availableClasses: string[];
   availableBrands: string[];
   totalCars: number;
+  carImageBase: string;
 }
 
 export function GarageContent({
@@ -23,6 +24,7 @@ export function GarageContent({
   availableClasses,
   availableBrands,
   totalCars,
+  carImageBase,
 }: Props) {
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
   const [localPrefMap, setLocalPrefMap] = useState(prefMap);
@@ -64,6 +66,7 @@ export function GarageContent({
           car={selectedCar}
           specs={specsMap[selectedCar.car_id] ?? null}
           pref={localPrefMap[selectedCar.car_id] ?? null}
+          carImageSrc={`${carImageBase}/${selectedCar.car_id}.png`}
           onClose={() => setSelectedCarId(null)}
           onFavoriteChange={handleFavoriteChange}
         />
