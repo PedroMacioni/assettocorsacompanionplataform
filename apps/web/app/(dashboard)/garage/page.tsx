@@ -1,14 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/EmptyState";
-import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
-import type { Session, PersonalBest, TopCar, UserCarPreference } from "@/lib/types";
-import Link from "next/link";
-import { GarageCarList } from "./GarageCarList";
-import { EditCarNameButton } from "./EditCarNameButton";
-import { CarBannerImage } from "./CarBannerImage";
+import { formatDistance } from "@/lib/format";
+import type { TopCar, CarSpecs, UserCarPreference } from "@/lib/types";
+import { GarageContent } from "./GarageContent";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-type SearchParams = { car?: string };
+type SearchParams = {
+  search?: string;
+  class?: string;
+  brand?: string;
+  favorites?: string;
+  recent?: string;
+};
 
 export default async function GaragePage({
   searchParams,
@@ -16,58 +21,83 @@ export default async function GaragePage({
   searchParams: Promise<SearchParams>;
 }) {
   const t = await getTranslations("Garage");
-  const { car: carParam } = await searchParams;
+  const params = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const uid = user!.id;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const uid = user.id;
 
-  const [carsRes, prefsRes] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [carsRes, prefsRes, specsRes, recentRes] = await Promise.all([
     supabase.from("top_cars").select("*").eq("user_id", uid).order("sessions", { ascending: false }),
     supabase.from("user_car_preferences").select("*").eq("user_id", uid),
+    supabase.from("car_specs").select("*"),
+    params.recent === "1"
+      ? supabase
+          .from("sessions")
+          .select("car_id")
+          .eq("user_id", uid)
+          .gte("started_at", thirtyDaysAgo)
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const topCars = (carsRes.data ?? []) as TopCar[];
+  const allCars = (carsRes.data ?? []) as TopCar[];
   const prefs = (prefsRes.data ?? []) as UserCarPreference[];
-  const prefMap: Record<string, string | null> = Object.fromEntries(
-    prefs.map((p) => [p.car_id, p.display_name])
+  const allSpecs = (specsRes.data ?? []) as CarSpecs[];
+
+  const prefMap: Record<string, UserCarPreference> = Object.fromEntries(
+    prefs.map((p) => [p.car_id, p])
+  );
+  const specsMap: Record<string, CarSpecs> = Object.fromEntries(
+    allSpecs.map((s) => [s.car_id, s])
   );
 
-  if (topCars.length === 0) {
+  if (allCars.length === 0) {
     return <EmptyState title={t("empty.title")} description={t("empty.description")} />;
   }
 
-  const selectedCarId = carParam ?? topCars[0].car_id;
-  const selectedCar = topCars.find((c) => c.car_id === selectedCarId) ?? topCars[0];
-  const displayName = prefMap[selectedCar.car_id] ?? slugToName(selectedCar.car_id);
-  const originalName = slugToName(selectedCar.car_id);
+  const recentCarIds = new Set(
+    (recentRes.data ?? []).map((s: { car_id: string }) => s.car_id)
+  );
 
-  const [carSessionsRes, carPbsRes] = await Promise.all([
-    supabase
-      .from("sessions")
-      .select("*")
-      .eq("user_id", uid)
-      .eq("car_id", selectedCar.car_id)
-      .order("started_at", { ascending: false })
-      .limit(10),
-    supabase
-      .from("personal_bests")
-      .select("*")
-      .eq("user_id", uid)
-      .eq("car_id", selectedCar.car_id)
-      .order("time_ms", { ascending: true }),
-  ]);
+  let filtered = allCars;
 
-  const carSessions = (carSessionsRes.data ?? []) as Session[];
-  const carPbs = (carPbsRes.data ?? []) as PersonalBest[];
-  const knownTracks = Array.from(new Set(carSessions.map((s) => s.track_id)));
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    filtered = filtered.filter((c) => {
+      const pref = prefMap[c.car_id];
+      const name = (pref?.display_name ?? specsMap[c.car_id]?.name ?? c.car_id).toLowerCase();
+      return name.includes(q) || c.car_id.includes(q);
+    });
+  }
 
-  const totalSessions = topCars.reduce((sum, c) => sum + c.sessions, 0);
-  const totalDistance = topCars.reduce((sum, c) => sum + (c.total_distance_km ?? 0), 0);
-  const isFavorite = selectedCar.sessions === topCars[0].sessions && topCars.length > 1;
+  if (params.class) {
+    filtered = filtered.filter((c) => specsMap[c.car_id]?.class === params.class);
+  }
 
-  const carImageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-previews/${uid}`;
+  if (params.brand) {
+    filtered = filtered.filter((c) => specsMap[c.car_id]?.brand === params.brand);
+  }
+
+  if (params.favorites === "1") {
+    filtered = filtered.filter((c) => prefMap[c.car_id]?.is_favorite === true);
+  }
+
+  if (params.recent === "1") {
+    filtered = filtered.filter((c) => recentCarIds.has(c.car_id));
+  }
+
+  const availableClasses = Array.from(
+    new Set(allCars.map((c) => specsMap[c.car_id]?.class).filter(Boolean) as string[])
+  ).sort();
+
+  const availableBrands = Array.from(
+    new Set(allCars.map((c) => specsMap[c.car_id]?.brand).filter(Boolean) as string[])
+  ).sort();
+
+  const totalSessions = allCars.reduce((sum, c) => sum + c.sessions, 0);
+  const totalDistance = allCars.reduce((sum, c) => sum + (c.total_distance_km ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -78,8 +108,8 @@ export default async function GaragePage({
         </p>
         <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{topCars.length}</span>
-          <span>{topCars.length === 1 ? t("summary.carsOne") : t("summary.carsOther")}</span>
+          <span className="font-semibold text-foreground">{allCars.length}</span>
+          <span>{allCars.length === 1 ? t("summary.carsOne") : t("summary.carsOther")}</span>
           <span className="opacity-30">·</span>
           <span className="font-semibold text-foreground">{totalSessions.toLocaleString()}</span>
           <span>{totalSessions === 1 ? t("summary.sessionsOne") : t("summary.sessionsOther")}</span>
@@ -89,167 +119,16 @@ export default async function GaragePage({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-5">
-        {/* Car list sidebar — client component handles search */}
-        <GarageCarList
-          cars={topCars}
-          preferences={prefMap}
-          selectedCarId={selectedCar.car_id}
-          carImageBase={carImageBase}
+      <Suspense>
+        <GarageContent
+          cars={filtered}
+          specsMap={specsMap}
+          prefMap={prefMap}
+          availableClasses={availableClasses}
+          availableBrands={availableBrands}
+          totalCars={allCars.length}
         />
-
-        {/* Car detail panel */}
-        <div className="flex-1 min-w-0 space-y-4">
-          {/* Car banner card */}
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            {/* Banner */}
-            <div className="h-44 relative">
-              <CarBannerImage src={`${carImageBase}/${selectedCar.car_id}.png`} alt={displayName} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between gap-4">
-                <div className="min-w-0">
-                  {isFavorite && (
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">
-                      ★ {t("car.favorite")}
-                    </p>
-                  )}
-                  <h2 className="text-2xl font-bold text-white truncate">{displayName}</h2>
-                  {prefMap[selectedCar.car_id] && (
-                    <p className="text-xs text-white/50 mt-0.5 truncate">{originalName}</p>
-                  )}
-                </div>
-                <div className="shrink-0">
-                  <EditCarNameButton
-                    carId={selectedCar.car_id}
-                    currentDisplayName={prefMap[selectedCar.car_id] ?? null}
-                    originalName={originalName}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Stats row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-border">
-              {[
-                { label: t("car.sessions"), value: selectedCar.sessions.toLocaleString(), mono: false },
-                { label: t("car.bestLap"), value: formatLapTime(selectedCar.best_lap_ms), mono: true, highlight: true },
-                { label: t("car.distance"), value: formatDistance(selectedCar.total_distance_km), mono: false },
-                { label: t("car.laps"), value: selectedCar.total_laps.toLocaleString(), mono: false },
-              ].map((stat, i) => (
-                <div key={stat.label} className={[
-                  "p-4 text-center",
-                  i > 0 ? "sm:border-l sm:border-border" : "",
-                  i >= 2 ? "border-t border-border sm:border-t-0" : "",
-                  i === 1 ? "border-l border-border sm:border-l-0" : "",
-                ].join(" ")}>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                    {stat.label}
-                  </p>
-                  <p
-                    className={[
-                      "text-lg font-bold",
-                      stat.mono ? "font-mono" : "",
-                      stat.highlight ? "text-primary" : "text-foreground",
-                    ].join(" ")}
-                  >
-                    {stat.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sessions + Tracks */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                {t("sections.recentSessions")}
-              </p>
-              {carSessions.length > 0 ? (
-                <div className="space-y-1">
-                  {carSessions.slice(0, 6).map((s) => (
-                    <Link
-                      key={s.id}
-                      href={`/sessions/${s.source_id}`}
-                      className="flex items-center justify-between py-1.5 hover:opacity-70 transition-opacity"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-xs text-foreground font-medium truncate">
-                          {slugToName(s.track_id)}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">{formatDate(s.started_at)}</p>
-                      </div>
-                      <p className="text-xs font-mono font-semibold text-foreground shrink-0 ml-3">
-                        {formatLapTime(s.best_lap_ms)}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("sections.noSessions")}</p>
-              )}
-            </div>
-
-            <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                {t("sections.knownTracks")}
-              </p>
-              {knownTracks.length > 0 ? (
-                <div className="space-y-1">
-                  {knownTracks.map((trackId) => {
-                    const pb = carPbs.find((p) => p.track_id === trackId);
-                    return (
-                      <div key={trackId} className="flex items-center justify-between py-1.5">
-                        <Link
-                          href={`/sessions?car=${selectedCar.car_id}&track=${trackId}`}
-                          className="text-xs text-foreground font-medium hover:text-primary transition-colors truncate"
-                        >
-                          {slugToName(trackId)}
-                        </Link>
-                        {pb && (
-                          <p className="text-xs font-mono font-semibold text-primary shrink-0 ml-3">
-                            {formatLapTime(pb.time_ms)}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("sections.noTracks")}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Personal bests */}
-          {carPbs.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                {t("sections.personalBests")}
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {carPbs.map((pb, i) => (
-                  <div
-                    key={pb.id}
-                    className={`p-3 rounded-lg border ${
-                      i === 0 ? "bg-primary/5 border-primary/20" : "bg-muted/40 border-border"
-                    }`}
-                  >
-                    <p className="text-[10px] text-muted-foreground truncate mb-1">
-                      {slugToName(pb.track_id)}
-                    </p>
-                    <p
-                      className={`text-base font-bold font-mono ${i === 0 ? "text-primary" : "text-foreground"}`}
-                    >
-                      {formatLapTime(pb.time_ms)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      </Suspense>
     </div>
   );
 }

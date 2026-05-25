@@ -10,9 +10,10 @@ interface Props {
   carId: string;
   currentDisplayName: string | null;
   originalName: string;
+  variant?: "dark" | "default";
 }
 
-export function EditCarNameButton({ carId, currentDisplayName, originalName }: Props) {
+export function EditCarNameButton({ carId, currentDisplayName, originalName, variant = "dark" }: Props) {
   const t = useTranslations("Garage.edit");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -44,7 +45,11 @@ export function EditCarNameButton({ carId, currentDisplayName, originalName }: P
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
+        className={
+          variant === "dark"
+            ? "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors backdrop-blur-sm"
+            : "flex items-center gap-1 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+        }
       >
         <Pencil className="w-3 h-3" />
         {t("button")}

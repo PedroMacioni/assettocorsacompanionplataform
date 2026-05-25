@@ -62,13 +62,6 @@ export type Track = {
   outline_url: string | null;
 };
 
-export type UserCarPreference = {
-  user_id: string;
-  car_id: string;
-  display_name: string | null;
-  updated_at: string;
-};
-
 export type Lap = {
   id: string;
   session_source_id: string;
@@ -86,4 +79,47 @@ export type AgentStatus = {
   last_synced_at: string | null;
   last_sync_sessions_count: number;
   sync_requested_at: string | null;
+};
+
+export type UserCarPreference = {
+  user_id: string;
+  car_id: string;
+  display_name: string | null;
+  is_favorite: boolean;
+  updated_at: string;
+};
+
+export type CarSpecs = {
+  car_id: string;
+  name: string;
+  brand: string | null;
+  class: string | null;
+  year: number | null;
+  bhp: number | null;
+  torque: number | null;
+  weight: number | null;
+  top_speed: number | null;
+  drivetrain: string | null;
+  acceleration: number | null;
+  updated_at: string;
+};
+
+export type SetupData = {
+  [section: string]: {
+    VALUE?: number;
+    [key: string]: number | string | undefined;
+  };
+};
+
+export type CarSetup = {
+  id: string;
+  user_id: string;
+  car_id: string;
+  track_id: string;
+  name: string;
+  data: SetupData;
+  best_lap_ms: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
