@@ -196,6 +196,12 @@ public sealed class SyncWorker : IDisposable
             using var badgesCts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
             try { await SyncCarBadgesAsync(badgesCts.Token); } catch { /* non-fatal */ }
 
+            using var specsCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            try { await SyncCarSpecsAsync(specsCts.Token); } catch { /* non-fatal */ }
+
+            using var setupsCts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+            try { await SyncCarSetupsAsync(setupsCts.Token); } catch { /* non-fatal */ }
+
             ActivityLogged?.Invoke("─────────────────────────────────────");
             ActivityLogged?.Invoke("✓ Agente pronto · abra o dashboard para ver seus dados");
         }
@@ -330,6 +336,212 @@ public sealed class SyncWorker : IDisposable
         ActivityLogged?.Invoke(uploaded.Count > 0
             ? $"✓ {uploaded.Count}/{attempted.Count} badges de carros enviados"
             : $"✓ Badges de carros: nenhum novo para enviar");
+    }
+
+    private async Task SyncCarSpecsAsync(CancellationToken ct = default)
+    {
+        var carsPath = FindAcCarsPath();
+        if (carsPath == null) return;
+
+        var carIds = _history.GetHistory().Sessions
+            .Select(s => s.CarId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(id => !_cache.SyncedCarSpecIds.Contains(id))
+            .ToList();
+
+        if (carIds.Count == 0) return;
+
+        ActivityLogged?.Invoke($"↑ Lendo specs de carros (0/{carIds.Count})...");
+
+        var specs = new List<object>();
+        var synced = new List<string>();
+
+        for (int i = 0; i < carIds.Count; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var carId = carIds[i];
+            var uiCarPath = Path.Combine(carsPath, carId, "ui", "ui_car.json");
+            if (!File.Exists(uiCarPath)) continue;
+
+            try
+            {
+                var spec = ParseUiCarJson(carId, uiCarPath);
+                if (spec != null) specs.Add(spec);
+                synced.Add(carId);
+            }
+            catch { /* skip malformed files */ }
+
+            if ((i + 1) % 10 == 0 || i == carIds.Count - 1)
+                ActivityLogged?.Invoke($"↑ Lendo specs de carros ({i + 1}/{carIds.Count})...");
+        }
+
+        if (specs.Count > 0)
+        {
+            await _supabase.UpsertCarSpecsAsync(specs);
+            _cache.MarkCarSpecsSynced(synced);
+            ActivityLogged?.Invoke($"✓ {specs.Count} specs de carros sincronizadas");
+        }
+        else
+        {
+            ActivityLogged?.Invoke("✓ Specs: nenhuma nova para sincronizar");
+        }
+    }
+
+    private async Task SyncCarSetupsAsync(CancellationToken ct = default)
+    {
+        var setupsBasePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Assetto Corsa", "setups");
+
+        if (!Directory.Exists(setupsBasePath)) return;
+
+        var iniFiles = Directory.GetFiles(setupsBasePath, "*.ini", SearchOption.AllDirectories);
+        if (iniFiles.Length == 0) return;
+
+        var setups = new List<object>();
+
+        foreach (var iniPath in iniFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                // Structure: setups/<car_id>/<track_id>/<name>.ini
+                var relative = Path.GetRelativePath(setupsBasePath, iniPath);
+                var parts = relative.Split(Path.DirectorySeparatorChar);
+                if (parts.Length != 3) continue;
+
+                var carId = parts[0];
+                var trackId = parts[1];
+                var setupName = Path.GetFileNameWithoutExtension(parts[2]);
+
+                var data = ParseIniFile(iniPath);
+                if (data.Count == 0) continue;
+
+                setups.Add(new
+                {
+                    user_id = _supabase.UserId,
+                    car_id = carId,
+                    track_id = trackId,
+                    name = setupName,
+                    data,
+                    updated_at = File.GetLastWriteTimeUtc(iniPath).ToString("o")
+                });
+            }
+            catch { /* skip malformed files */ }
+        }
+
+        if (setups.Count > 0)
+        {
+            await _supabase.UpsertCarSetupsAsync(setups);
+            ActivityLogged?.Invoke($"✓ {setups.Count} setups sincronizados");
+        }
+        else
+        {
+            ActivityLogged?.Invoke("✓ Setups: nenhum encontrado");
+        }
+    }
+
+    private static object? ParseUiCarJson(string carId, string path)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        var root = doc.RootElement;
+
+        var name = root.TryGetProperty("name", out var n) ? n.GetString() : null;
+        if (string.IsNullOrWhiteSpace(name)) name = carId;
+
+        var brand = root.TryGetProperty("brand", out var b) ? b.GetString() : null;
+        var carClass = root.TryGetProperty("class", out var c) ? c.GetString() : null;
+        var drivetrain = root.TryGetProperty("drivetrain", out var d) ? d.GetString() : null;
+
+        int? year = null;
+        if (root.TryGetProperty("year", out var y))
+            year = y.ValueKind == System.Text.Json.JsonValueKind.Number ? y.GetInt32()
+                 : int.TryParse(y.GetString(), out var yi) ? yi : null;
+
+        int? bhp = null, torque = null, weight = null, topSpeed = null, acceleration = null;
+
+        if (root.TryGetProperty("specs", out var specs))
+        {
+            bhp       = ParseSpecInt(specs, "bhp");
+            torque    = ParseSpecInt(specs, "torque");
+            weight    = ParseSpecInt(specs, "weight");
+            topSpeed  = ParseSpecInt(specs, "topspeed");
+
+            if (specs.TryGetProperty("acceleration", out var acc))
+            {
+                var accStr = acc.GetString() ?? "";
+                // "3.1s" → 31
+                var numStr = new string(accStr.Where(ch => ch == '.' || char.IsDigit(ch)).ToArray());
+                if (double.TryParse(numStr, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var accVal))
+                    acceleration = (int)Math.Round(accVal * 10);
+            }
+        }
+
+        return new
+        {
+            car_id = carId,
+            name,
+            brand,
+            @class = carClass,
+            year,
+            bhp,
+            torque,
+            weight,
+            top_speed = topSpeed,
+            drivetrain,
+            acceleration,
+            updated_at = DateTimeOffset.UtcNow
+        };
+    }
+
+    private static int? ParseSpecInt(System.Text.Json.JsonElement specs, string key)
+    {
+        if (!specs.TryGetProperty(key, out var el)) return null;
+        var str = el.GetString() ?? "";
+        // extract first number: "565 bhp" → 565, "1250 kg" → 1250
+        var numStr = new string(str.TakeWhile(ch => char.IsDigit(ch) || ch == '.').ToArray()).Trim();
+        return int.TryParse(numStr, out var v) ? v : null;
+    }
+
+    private static Dictionary<string, Dictionary<string, object>> ParseIniFile(string path)
+    {
+        var result = new Dictionary<string, Dictionary<string, object>>(StringComparer.OrdinalIgnoreCase);
+        string? currentSection = null;
+
+        foreach (var rawLine in File.ReadLines(path))
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrEmpty(line) || line.StartsWith(';') || line.StartsWith('#')) continue;
+
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                currentSection = line[1..^1].Trim();
+                if (!result.ContainsKey(currentSection))
+                    result[currentSection] = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                continue;
+            }
+
+            if (currentSection == null) continue;
+
+            var eqIdx = line.IndexOf('=');
+            if (eqIdx < 1) continue;
+
+            var key = line[..eqIdx].Trim();
+            var val = line[(eqIdx + 1)..].Trim();
+
+            // ignore comment suffix
+            var commentIdx = val.IndexOf(';');
+            if (commentIdx >= 0) val = val[..commentIdx].Trim();
+
+            if (double.TryParse(val, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var numVal))
+                result[currentSection][key] = numVal;
+            else
+                result[currentSection][key] = val;
+        }
+
+        return result;
     }
 
     private static string? FindAcCarsPath()

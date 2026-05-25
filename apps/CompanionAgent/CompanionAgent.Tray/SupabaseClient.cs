@@ -270,6 +270,44 @@ public sealed class SupabaseClient : IDisposable
         return $"{_url}/storage/v1/object/public/track-outlines/{storagePath}";
     }
 
+    public async Task UpsertCarSpecsAsync(IReadOnlyList<object> specs)
+    {
+        await EnsureValidTokenAsync();
+        const int batchSize = 50;
+        for (int i = 0; i < specs.Count; i += batchSize)
+        {
+            var batch = specs.Skip(i).Take(batchSize).ToList();
+            var req = BuildRequest(HttpMethod.Post, "/rest/v1/car_specs?on_conflict=car_id");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
+            req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
+            var res = await _http.SendAsync(req);
+            if (!res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"car_specs {(int)res.StatusCode}: {body}", null, res.StatusCode);
+            }
+        }
+    }
+
+    public async Task UpsertCarSetupsAsync(IReadOnlyList<object> setups)
+    {
+        await EnsureValidTokenAsync();
+        const int batchSize = 50;
+        for (int i = 0; i < setups.Count; i += batchSize)
+        {
+            var batch = setups.Skip(i).Take(batchSize).ToList();
+            var req = BuildRequest(HttpMethod.Post, "/rest/v1/car_setups?on_conflict=user_id,car_id,track_id,name");
+            req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
+            req.Content = new StringContent(JsonSerializer.Serialize(batch), Encoding.UTF8, "application/json");
+            var res = await _http.SendAsync(req);
+            if (!res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"car_setups {(int)res.StatusCode}: {body}", null, res.StatusCode);
+            }
+        }
+    }
+
     public async Task<DateTimeOffset?> GetSyncRequestedAtAsync()
     {
         await EnsureValidTokenAsync();
