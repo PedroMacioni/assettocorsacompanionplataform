@@ -20,6 +20,12 @@ function fmtMs(ms: number): string {
   return `${m}:${s.toString().padStart(2, "0")}.${cs.toString().padStart(2, "0")}`;
 }
 
+function fmtMsShort(ms: number): string {
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 type DataPoint = Record<string, string | number | null>;
 
 type Props = {
@@ -42,19 +48,23 @@ export default function PaceLineChart({ data, tracks, trackLabels = {} }: Props)
     return () => ro.disconnect();
   }, []);
 
-  const isMobile = containerWidth < 480;
+  const isVerySmall = containerWidth < 360;
+  const isMobile = containerWidth < 520;
 
-  const yAxisWidth = isMobile ? 50 : 68;
-  const chartHeight = isMobile ? 200 : 280;
+  const yAxisWidth = isVerySmall ? 0 : isMobile ? 40 : 68;
+  const chartHeight = isVerySmall ? 160 : isMobile ? 200 : 280;
   const xAxisFontSize = isMobile ? 9 : 11;
   const yAxisFontSize = isMobile ? 9 : 10;
   const xAxisInterval = isMobile ? "preserveStartEnd" : 0;
-  const margin = isMobile
-    ? { top: 4, right: 4, bottom: 4, left: 0 }
+  const margin = isVerySmall
+    ? { top: 4, right: 4, bottom: 4, left: 4 }
+    : isMobile
+    ? { top: 4, right: 8, bottom: 4, left: 4 }
     : { top: 4, right: 8, bottom: 4, left: 8 };
+  const tickFormatter = isVerySmall ? () => "" : isMobile ? fmtMsShort : fmtMs;
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} style={{ overflow: "hidden" }}>
       <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart data={data} margin={margin}>
           <XAxis
@@ -65,8 +75,8 @@ export default function PaceLineChart({ data, tracks, trackLabels = {} }: Props)
             interval={xAxisInterval}
           />
           <YAxis
-            tickFormatter={fmtMs}
-            tick={{ fontSize: yAxisFontSize, fill: "var(--color-muted-foreground)" }}
+            tickFormatter={tickFormatter}
+            tick={isVerySmall ? false : { fontSize: yAxisFontSize, fill: "var(--color-muted-foreground)" }}
             axisLine={false}
             tickLine={false}
             width={yAxisWidth}
