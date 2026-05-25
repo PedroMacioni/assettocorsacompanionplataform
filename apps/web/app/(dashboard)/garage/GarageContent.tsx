@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { GarageFilters } from "./GarageFilters";
 import { GarageGrid } from "./GarageGrid";
-import { CarDetailModal } from "./CarDetailModal";
+import { CarDetail } from "./CarDetailModal";
 import { EmptyState } from "@/components/EmptyState";
 import type { TopCar, CarSpecs, UserCarPreference } from "@/lib/types";
 
@@ -29,14 +29,32 @@ export function GarageContent({
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
   const [localPrefMap, setLocalPrefMap] = useState(prefMap);
 
-  const selectedCar = selectedCarId ? cars.find((c) => c.car_id === selectedCarId) ?? null : null;
+  const selectedCar = selectedCarId
+    ? (cars.find((c) => c.car_id === selectedCarId) ?? null)
+    : null;
 
   const handleFavoriteChange = useCallback((carId: string, isFavorite: boolean) => {
     setLocalPrefMap((prev) => ({
       ...prev,
-      [carId]: { ...(prev[carId] ?? { user_id: "", car_id: carId, display_name: null, updated_at: "" }), is_favorite: isFavorite },
+      [carId]: {
+        ...(prev[carId] ?? { user_id: "", car_id: carId, display_name: null, updated_at: "" }),
+        is_favorite: isFavorite,
+      },
     }));
   }, []);
+
+  if (selectedCar) {
+    return (
+      <CarDetail
+        car={selectedCar}
+        specs={specsMap[selectedCar.car_id] ?? null}
+        pref={localPrefMap[selectedCar.car_id] ?? null}
+        carImageSrc={`${carImageBase}/${selectedCar.car_id}.png`}
+        onClose={() => setSelectedCarId(null)}
+        onFavoriteChange={handleFavoriteChange}
+      />
+    );
+  }
 
   return (
     <>
@@ -58,17 +76,6 @@ export function GarageContent({
           specsMap={specsMap}
           prefMap={localPrefMap}
           onSelect={setSelectedCarId}
-        />
-      )}
-
-      {selectedCar && (
-        <CarDetailModal
-          car={selectedCar}
-          specs={specsMap[selectedCar.car_id] ?? null}
-          pref={localPrefMap[selectedCar.car_id] ?? null}
-          carImageSrc={`${carImageBase}/${selectedCar.car_id}.png`}
-          onClose={() => setSelectedCarId(null)}
-          onFavoriteChange={handleFavoriteChange}
         />
       )}
     </>
