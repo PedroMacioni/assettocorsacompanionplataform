@@ -208,8 +208,14 @@ public sealed class SyncWorker : IDisposable
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
         {
             _consecutiveFailures++;
-            ActivityLogged?.Invoke($"✗ Erro: Token inválido (401 Unauthorized)");
-            StateChanged?.Invoke(SyncState.Error, "Token inválido — abra as configurações");
+            ActivityLogged?.Invoke($"✗ Erro: {ex.Message}");
+            StateChanged?.Invoke(SyncState.Error, "Conta desconectada — abra as configurações");
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            _consecutiveFailures++;
+            ActivityLogged?.Invoke($"✗ Erro de dados: {ex.Message}");
+            StateChanged?.Invoke(SyncState.Error, "Erro nos dados de sincronização");
         }
         catch (Exception ex)
         {

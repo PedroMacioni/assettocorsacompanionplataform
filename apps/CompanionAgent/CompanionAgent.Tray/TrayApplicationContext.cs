@@ -20,7 +20,15 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _supabase = new SupabaseClient(_settings.SupabaseUrl, _settings.SupabaseAnonKey);
         if (!string.IsNullOrEmpty(_settings.UserToken))
+        {
             _supabase.SetTokens(_settings.UserToken, _settings.RefreshToken);
+            if (!_supabase.IsConfigured)
+            {
+                _settings.UserToken = "";
+                _settings.RefreshToken = "";
+                SettingsStore.Save(_settings);
+            }
+        }
 
         _historyService = new LocalHistoryService();
         _historyService.SetCustomPaths(_settings.CustomSessionsPath, _settings.CustomPersonalBestPath);

@@ -19,7 +19,7 @@ public sealed class SupabaseClient : IDisposable
 
     public event Action<string, string>? TokensRefreshed;
 
-    public bool IsConfigured => !string.IsNullOrEmpty(_accessToken);
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_accessToken) && Guid.TryParse(UserId, out _);
     public string UserId { get; private set; } = "";
 
     public SupabaseClient(string url, string anonKey)
@@ -39,9 +39,12 @@ public sealed class SupabaseClient : IDisposable
 
     public void SetTokens(string accessToken, string refreshToken)
     {
-        _accessToken = accessToken;
-        _refreshToken = refreshToken;
-        (UserId, UserEmail, _tokenExpiry) = ParseJwt(accessToken);
+        _accessToken = accessToken.Trim();
+        _refreshToken = refreshToken.Trim();
+        (UserId, UserEmail, _tokenExpiry) = ParseJwt(_accessToken);
+
+        if (!Guid.TryParse(UserId, out _))
+            ClearTokens();
     }
 
     public string UserEmail { get; private set; } = "";
@@ -58,6 +61,7 @@ public sealed class SupabaseClient : IDisposable
         var at = doc.RootElement.GetProperty("access_token").GetString()!;
         var rt = doc.RootElement.GetProperty("refresh_token").GetString()!;
         SetTokens(at, rt);
+        if (!IsConfigured) return null;
         return (at, rt);
     }
 
@@ -324,14 +328,32 @@ public sealed class SupabaseClient : IDisposable
 
     private async Task EnsureValidTokenAsync()
     {
-        if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5) || string.IsNullOrEmpty(_refreshToken))
+        if (!IsConfigured)
+            throw new HttpRequestException("Conta desconectada — faça login novamente nas configurações", null, System.Net.HttpStatusCode.Unauthorized);
+
+        if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5))
             return;
+
+        if (string.IsNullOrEmpty(_refreshToken))
+        {
+            ClearTokens();
+            throw new HttpRequestException("Sessão expirada — faça login novamente nas configurações", null, System.Net.HttpStatusCode.Unauthorized);
+        }
 
         await _refreshLock.WaitAsync();
         try
         {
-            if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5) || string.IsNullOrEmpty(_refreshToken))
+            if (!IsConfigured)
+                throw new HttpRequestException("Conta desconectada — faça login novamente nas configurações", null, System.Net.HttpStatusCode.Unauthorized);
+
+            if (_tokenExpiry - DateTimeOffset.UtcNow >= TimeSpan.FromMinutes(5))
                 return;
+
+            if (string.IsNullOrEmpty(_refreshToken))
+            {
+                ClearTokens();
+                throw new HttpRequestException("Sessão expirada — faça login novamente nas configurações", null, System.Net.HttpStatusCode.Unauthorized);
+            }
 
             try { await RefreshTokenAsync(); }
             catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
@@ -360,8 +382,7 @@ public sealed class SupabaseClient : IDisposable
         {
             var parts = jwt.Split('.');
             if (parts.Length < 2) return ("", "", DateTimeOffset.MinValue);
-            var payload = parts[1].PadRight(parts[1].Length + (4 - parts[1].Length % 4) % 4, '=');
-            using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(payload)));
+            using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(Base64UrlDecode(parts[1])));
             var root  = doc.RootElement;
             var sub   = root.TryGetProperty("sub",   out var s) ? s.GetString() ?? "" : "";
             var email = root.TryGetProperty("email", out var em) ? em.GetString() ?? "" : "";
@@ -369,6 +390,13 @@ public sealed class SupabaseClient : IDisposable
             return (sub, email, DateTimeOffset.FromUnixTimeSeconds(exp));
         }
         catch { return ("", "", DateTimeOffset.MinValue); }
+    }
+
+    private static byte[] Base64UrlDecode(string value)
+    {
+        var base64 = value.Replace('-', '+').Replace('_', '/');
+        base64 = base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '=');
+        return Convert.FromBase64String(base64);
     }
 
     public void Dispose()

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ProfileSummary } from "@/lib/types";
-import { SettingsClient } from "./SettingsClient";
+import { SettingsClient, type ConnectedDevice } from "./SettingsClient";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -8,13 +8,22 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const summaryRes = await supabase
-    .from("profile_summary")
-    .select("total_sessions, last_session_at")
-    .eq("user_id", user!.id)
-    .maybeSingle();
+  const [summaryRes, deviceRes] = await Promise.all([
+    supabase
+      .from("profile_summary")
+      .select("total_sessions, last_session_at")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+    supabase
+      .from("agent_devices")
+      .select("id, device_name, platform, app_version, paired_at, last_seen_at, last_synced_at, status")
+      .eq("user_id", user!.id)
+      .eq("status", "connected")
+      .maybeSingle(),
+  ]);
 
   const summary = summaryRes.data as Pick<ProfileSummary, "total_sessions" | "last_session_at"> | null;
+  const connectedDevice = (deviceRes.data as ConnectedDevice | null) ?? null;
 
   return (
     <SettingsClient
@@ -28,6 +37,7 @@ export default async function SettingsPage() {
       memberSince={user!.created_at}
       totalSessions={summary?.total_sessions ?? 0}
       lastSessionAt={summary?.last_session_at ?? null}
+      connectedDevice={connectedDevice}
     />
   );
 }

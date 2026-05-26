@@ -564,7 +564,7 @@
     "sections": {
       "profile": "Perfil",
       "appearance": "Aparência",
-      "agentToken": "Token do Agente"
+      "agent": "Computador Conectado"
     },
     "stats": {
       "memberSince": "Membro desde",
@@ -605,19 +605,21 @@
       "saved": "Salvo"
     },
     "agent": {
-      "title": "Token do Agente",
-      "description": "Use este token para autenticar o CompanionAgent no seu PC.",
-      "accessToken": "Token de acesso",
-      "copyToken": "Copiar token",
-      "copied": "Copiado!",
-      "renew": "Renovar",
-      "howToUse": "Como usar",
-      "steps": {
-        "one": "Baixe e execute o instalador do CompanionAgent",
-        "two": "Abra a janela de configurações pelo ícone na bandeja do sistema",
-        "three": "Cole este token no campo \"Token do Agente\"",
-        "four": "O agente começará a sincronizar suas sessões automaticamente"
-      }
+      "title": "Computador Conectado",
+      "description": "Gerencie o Apex Agent instalado no seu PC com Windows.",
+      "deviceLabel": "Computador",
+      "platform": "Plataforma",
+      "version": "Versão",
+      "connectedSince": "Conectado desde",
+      "lastSeen": "Visto por último",
+      "deviceId": "ID do dispositivo",
+      "neverSeen": "Nunca",
+      "disconnectButton": "Desconectar",
+      "disconnecting": "Desconectando…",
+      "disconnectNote": "Desconectar remove este computador da sua conta. O agente parará de sincronizar na próxima tentativa.",
+      "noDevice": "Nenhum computador conectado",
+      "noDeviceDescription": "Baixe e abra o Apex Agent no seu PC com Windows para conectá-lo à sua conta.",
+      "downloadAgent": "Baixar agente"
     }
   },
   "Profile": {

@@ -250,7 +250,7 @@
     "sections": {
       "profile": "Profile",
       "appearance": "Appearance",
-      "agentToken": "Agent Token"
+      "agent": "Connected Computer"
     },
     "stats": {
       "memberSince": "Member since",
@@ -291,19 +291,21 @@
       "saved": "Saved"
     },
     "agent": {
-      "title": "Agent Token",
-      "description": "Use this token to authenticate CompanionAgent on your PC.",
-      "accessToken": "Access token",
-      "copyToken": "Copy token",
-      "copied": "Copied!",
-      "renew": "Renew",
-      "howToUse": "How to use",
-      "steps": {
-        "one": "Download and run the CompanionAgent installer",
-        "two": "Open the settings window from the system tray icon",
-        "three": "Paste this token in the \"Agent Token\" field",
-        "four": "The agent will start syncing your sessions automatically"
-      }
+      "title": "Connected Computer",
+      "description": "Manage the Apex Agent installed on your Windows PC.",
+      "deviceLabel": "Computer",
+      "platform": "Platform",
+      "version": "Version",
+      "connectedSince": "Connected since",
+      "lastSeen": "Last seen",
+      "deviceId": "Device ID",
+      "neverSeen": "Never",
+      "disconnectButton": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "disconnectNote": "Disconnecting removes this computer from your account. The agent will stop syncing on its next attempt.",
+      "noDevice": "No computer connected",
+      "noDeviceDescription": "Download and open the Apex Agent on your Windows PC to connect it to your account.",
+      "downloadAgent": "Download agent"
     }
   },
   "Download": {

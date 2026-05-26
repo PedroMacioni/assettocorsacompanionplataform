@@ -1,5 +1,8 @@
 # Spec: CompanionAgent (EXE)
 
+> Superseded for the next desktop generation by `specs/09-agent-modernization.md`.
+> The current WinForms tray app remains the production fallback while the WinUI 3 agent is built.
+
 ## Visão geral
 
 O CompanionAgent é um processo Windows que roda em segundo plano como system tray. O usuário o instala uma vez, configura o token, e ele passa a sincronizar automaticamente toda vez que o Assetto Corsa é usado.

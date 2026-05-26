@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  User, Palette, Key, Check, Copy, Eye, EyeOff,
-  RefreshCw, Sun, Moon, Globe, ChevronRight, Camera, X,
+  User, Palette, Monitor, Check,
+  Sun, Moon, Globe, ChevronRight, Camera, X, Laptop, AlertCircle,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -18,6 +18,17 @@ const AVATAR_COLORS = [
 type Section = "profile" | "appearance" | "agent";
 type Theme   = "dark" | "light";
 type Lang    = "en" | "pt-BR";
+
+export type ConnectedDevice = {
+  id: string;
+  device_name: string;
+  platform: string;
+  app_version: string | null;
+  paired_at: string;
+  last_seen_at: string | null;
+  last_synced_at: string | null;
+  status: "connected" | "revoked";
+};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +51,14 @@ function formatMemberSince(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function shortId(uuid: string): string {
+  return uuid.replace(/-/g, "").slice(0, 8).toUpperCase();
+}
+
 // ─── props ────────────────────────────────────────────────────────────────────
 
 type Props = {
@@ -53,6 +72,7 @@ type Props = {
   memberSince: string;
   totalSessions: number;
   lastSessionAt: string | null;
+  connectedDevice: ConnectedDevice | null;
 };
 
 // ─── main component ───────────────────────────────────────────────────────────
@@ -63,7 +83,7 @@ export function SettingsClient(props: Props) {
   const SECTIONS = [
     { id: "profile" as const,    label: t("sections.profile"),    icon: User },
     { id: "appearance" as const, label: t("sections.appearance"), icon: Palette },
-    { id: "agent" as const,      label: t("sections.agentToken"), icon: Key },
+    { id: "agent" as const,      label: t("sections.agent"),      icon: Monitor },
   ];
 
   const [section, setSection]           = useState<Section>("profile");
@@ -74,14 +94,12 @@ export function SettingsClient(props: Props) {
   const [uploadError, setUploadError]   = useState("");
   const [theme, setTheme]               = useState<Theme>("dark");
   const [lang, setLang]                 = useState<Lang>("en");
-  const [token, setToken]               = useState("");
-  const [tokenVisible, setTokenVisible] = useState(false);
   const [saving, setSaving]             = useState(false);
   const [saved, setSaved]               = useState(false);
   const [saveError, setSaveError]       = useState("");
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [savedAppearance, setSavedAppearance]   = useState(false);
-  const [copied, setCopied]             = useState(false);
+  const [disconnecting, setDisconnecting]       = useState(false);
   const fileInputRef                    = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -90,11 +108,6 @@ export function SettingsClient(props: Props) {
     setTheme(t);
     setLang(l);
     applyThemeToDom(t);
-
-    const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setToken(data.session.access_token);
-    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -224,18 +237,24 @@ export function SettingsClient(props: Props) {
     }
   }
 
-  // ── token actions ─────────────────────────────────────────────────────────────
+  // ── disconnect ────────────────────────────────────────────────────────────────
 
-  function copyToken() {
-    navigator.clipboard.writeText(token);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function renewToken() {
-    const supabase = createClient();
-    const { data } = await supabase.auth.refreshSession();
-    if (data.session) setToken(data.session.access_token);
+  async function disconnect() {
+    setDisconnecting(true);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("agent_devices")
+        .update({
+          status: "revoked",
+          revoked_at: new Date().toISOString(),
+          revoked_by: "web",
+        })
+        .eq("user_id", props.userId);
+      window.location.reload();
+    } finally {
+      setDisconnecting(false);
+    }
   }
 
   // ── render ────────────────────────────────────────────────────────────────────
