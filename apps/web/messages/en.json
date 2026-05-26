@@ -24,7 +24,8 @@
     "lastSync": "Last sync {time}",
     "syncNow": "Sync now",
     "syncing": "Syncing...",
-    "error": "Error"
+    "error": "Error",
+    "synced": "Synced"
   },
   "HeroCard": {
     "streak": "Streak",

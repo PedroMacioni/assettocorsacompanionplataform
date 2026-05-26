@@ -1,9 +1,31 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
-import type { ProfileSummary, Session, PersonalBest, TopCar, TopTrack } from "@/lib/types";
+import {
+  getProfileSummary,
+  getSessionsForAnalytics,
+  getTopCars,
+  getTopTracks,
+  getPersonalBests,
+} from "@/lib/queries";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 
 type SearchParams = { tab?: string };
+
+// Loading skeleton
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 bg-muted rounded w-1/4" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-muted rounded-xl" />
+        ))}
+      </div>
+      <div className="h-80 bg-muted rounded-xl" />
+    </div>
+  );
+}
 
 export default async function AnalyticsPage({
   searchParams,
@@ -17,28 +39,30 @@ export default async function AnalyticsPage({
   } = await supabase.auth.getUser();
   const uid = user!.id;
 
-  const twelveWeeksAgo = new Date(Date.now() - 84 * 86400000).toISOString();
+  return (
+    <Suspense fallback={<AnalyticsSkeleton />}>
+      <AnalyticsContent userId={uid} initialTab={tab ?? "overview"} />
+    </Suspense>
+  );
+}
 
-  const [summaryRes, sessionsRes, carsRes, tracksRes, pbsRes] = await Promise.all([
-    supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
-    supabase
-      .from("sessions")
-      .select("started_at, best_lap_ms, track_id, car_id, session_types, laps")
-      .eq("user_id", uid)
-      .gte("started_at", twelveWeeksAgo)
-      .order("started_at", { ascending: true }),
-    supabase.from("top_cars").select("*").eq("user_id", uid).order("sessions", { ascending: false }).limit(10),
-    supabase.from("top_tracks").select("*").eq("user_id", uid).order("sessions", { ascending: false }).limit(10),
-    supabase.from("personal_bests").select("*").eq("user_id", uid).order("time_ms", { ascending: true }),
+async function AnalyticsContent({
+  userId,
+  initialTab,
+}: {
+  userId: string;
+  initialTab: string;
+}) {
+  // All queries in parallel (cached)
+  const [summary, sessions, topCars, topTracks, personalBests] = await Promise.all([
+    getProfileSummary(userId),
+    getSessionsForAnalytics(userId, 12), // 12 weeks
+    getTopCars(userId, 10),
+    getTopTracks(userId, 10),
+    getPersonalBests(userId),
   ]);
 
-  const summary = summaryRes.data as ProfileSummary | null;
   if (!summary || summary.total_sessions === 0) return <EmptyState />;
-
-  const sessions = (sessionsRes.data ?? []) as Session[];
-  const topCars = (carsRes.data ?? []) as TopCar[];
-  const topTracks = (tracksRes.data ?? []) as TopTrack[];
-  const personalBests = (pbsRes.data ?? []) as PersonalBest[];
 
   return (
     <AnalyticsDashboard
@@ -47,7 +71,7 @@ export default async function AnalyticsPage({
       topCars={topCars}
       topTracks={topTracks}
       personalBests={personalBests}
-      initialTab={tab ?? "overview"}
+      initialTab={initialTab}
     />
   );
 }

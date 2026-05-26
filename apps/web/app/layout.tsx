@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -24,15 +25,23 @@ export const metadata: Metadata = {
   description: "Your Assetto Corsa history, anywhere.",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-BR" className={`${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased dark`}>
+      <Suspense fallback={null}>
+        <RootLayoutBody>{children}</RootLayoutBody>
+      </Suspense>
+    </html>
+  );
+}
+
+async function RootLayoutBody({ children }: { children: React.ReactNode }) {
   const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
   return (
-    <html lang={locale} className={`${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased dark`}>
-      <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>{children}</ThemeProvider>
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <body className="min-h-full flex flex-col" data-locale={locale}>
+      <NextIntlClientProvider messages={messages}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </NextIntlClientProvider>
+    </body>
   );
 }

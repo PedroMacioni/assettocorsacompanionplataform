@@ -1,21 +1,42 @@
+import { Suspense } from "react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
+import { HeroCard } from "@/components/dashboard/HeroCard";
 import { LastSessionCard } from "@/components/dashboard/LastSessionCard";
 import { ActivityCalendar } from "@/components/dashboard/ActivityCalendar";
 import { QuickStatsBar } from "@/components/dashboard/QuickStatsBar";
-import { RecentRecordsCard } from "@/components/dashboard/RecentRecordsCard";
-import { ComboProgressCard } from "@/components/dashboard/ComboProgressCard";
+import { TopRecordsCard } from "@/components/dashboard/TopRecordsCard";
 import { QuickNavCards } from "@/components/dashboard/QuickNavCards";
 import { SyncButton } from "@/components/dashboard/SyncButton";
+import { PaceChartWithSelector } from "@/components/charts/PaceChartWithSelector";
 import {
+  calculateStreak,
+  getSessionDates,
+  calculateConsistencyScore,
   getSessionQualityBadge,
   calculateAvgLapTime,
   calculateStdDev,
 } from "@/lib/calculations";
-import type { ProfileSummary, Session, PersonalBest, AgentStatus } from "@/lib/types";
-import type { ComboData } from "@/components/dashboard/ComboProgressCard";
-import { Wifi, WifiOff } from "lucide-react";
+import { slugToName } from "@/lib/format";
+import {
+  getProfileSummary,
+  getPersonalBests,
+  getAgentStatus,
+  getAllSessionDates,
+  getLastSession,
+  getSessionsForPaceChart,
+  getSessionsForCalendar,
+  getSessionsWithLaps,
+  getRecentSessionSourceIds,
+  getNewPersonalBests,
+  getLapTimesForConsistency,
+  getSessionLapTimes,
+  getPersonalBestForCombo,
+  getPreviousBestLap,
+} from "@/lib/queries";
+import Link from "next/link";
+import { Wifi, WifiOff, ExternalLink } from "lucide-react";
 
 function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   const h = new Date().getHours();
@@ -24,58 +45,67 @@ function getGreetingKey(): "goodMorning" | "goodAfternoon" | "goodEvening" {
   return "goodEvening";
 }
 
-function buildCombosData(
-  sessions: { started_at: string; best_lap_ms: number; car_id: string; track_id: string }[],
-  locale: string,
-  defaultCar?: string,
-  defaultTrack?: string
-): { combos: ComboData[]; initialIndex: number } {
-  const countMap = new Map<string, { car_id: string; track_id: string; count: number }>();
-  sessions.forEach((s) => {
-    const key = `${s.car_id}||${s.track_id}`;
-    if (!countMap.has(key)) countMap.set(key, { car_id: s.car_id, track_id: s.track_id, count: 0 });
-    countMap.get(key)!.count++;
-  });
-
-  const topCombos = [...countMap.values()]
-    .filter((c) => c.count >= 2)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  if (topCombos.length === 0) return { combos: [], initialIndex: 0 };
-
-  const combos: ComboData[] = topCombos.map((combo) => ({
-    car_id: combo.car_id,
-    track_id: combo.track_id,
-    sessions: sessions
-      .filter((s) => s.car_id === combo.car_id && s.track_id === combo.track_id)
-      .map((s) => ({
-        date: new Date(s.started_at).toLocaleDateString(locale, { day: "numeric", month: "short" }),
-        best_lap_ms: s.best_lap_ms,
-      })),
-  }));
-
-  const initialIndex = defaultCar && defaultTrack
-    ? Math.max(0, combos.findIndex((c) => c.car_id === defaultCar && c.track_id === defaultTrack))
-    : 0;
-
-  return { combos, initialIndex };
+function buildPaceData(
+  sessions: { started_at: string; best_lap_ms: number; track_id: string }[],
+  topTracks: string[],
+  locale: string
+) {
+  const weekMap = new Map<string, Record<string, number>>();
+  sessions
+    .filter((s) => topTracks.includes(s.track_id))
+    .forEach((s) => {
+      const d = new Date(s.started_at);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const weekKey = weekStart.toLocaleDateString(locale, { day: "numeric", month: "short" });
+      if (!weekMap.has(weekKey)) weekMap.set(weekKey, {});
+      const entry = weekMap.get(weekKey)!;
+      if (!entry[s.track_id] || s.best_lap_ms < entry[s.track_id]) {
+        entry[s.track_id] = s.best_lap_ms;
+      }
+    });
+  return Array.from(weekMap.entries()).map(([date, tracks]) => ({ date, ...tracks }));
 }
 
-function SectionDivider({ label }: { label: string }) {
+// Loading skeleton for dashboard sections
+function DashboardSkeleton() {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-border" />
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 bg-muted rounded w-1/3" />
+      <div className="h-40 bg-muted rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="h-48 bg-muted rounded" />
+        <div className="h-48 bg-muted rounded" />
+      </div>
     </div>
   );
 }
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const uid = user!.id;
+
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent userId={uid} userEmail={user!.email} userDisplayName={user!.user_metadata?.display_name} />
+    </Suspense>
+  );
+}
+
+async function DashboardContent({
+  userId,
+  userEmail,
+  userDisplayName,
+}: {
+  userId: string;
+  userEmail?: string | null;
+  userDisplayName?: string;
+}) {
   const tHeader = await getTranslations("Header");
+  const tPace = await getTranslations("PaceChart");
   const tCommon = await getTranslations("Common");
   const tDash = await getTranslations("Dashboard");
   const locale = await getLocale();
@@ -91,126 +121,136 @@ export default async function DashboardPage() {
     return tCommon("timeAgo.now");
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const uid = user!.id;
-
   const now = new Date();
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
-  const yearAgo = new Date(Date.now() - 365 * 86400000);
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
 
-  // ── Batch 1 ─────────────────────────────────────────────────────────────
+  const lastWeekStart = new Date(weekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  const eightWeeksAgo = new Date(Date.now() - 56 * 86400000);
+
+  // ── Batch 1: All cached queries in parallel ────────────────────────────────
   const [
-    summaryRes,
-    lastSessionRes,
-    recentPbsRes,
-    agentStatusRes,
-    activityRawRes,
-    allSessionsRes,
+    summary,
+    sessionsWeek,
+    lastSession,
+    paceRaw,
+    personalBests,
+    agentStatus,
+    allSessionDates,
+    lastWeekSessions,
+    newPbs,
+    activityRaw,
+    recentSourceIds,
   ] = await Promise.all([
-    supabase.from("profile_summary").select("*").eq("user_id", uid).maybeSingle(),
-    supabase.from("sessions").select("*").eq("user_id", uid).order("started_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("personal_bests").select("*").eq("user_id", uid).order("synced_at", { ascending: false }).limit(8),
-    supabase.from("agent_status").select("*").eq("user_id", uid).maybeSingle(),
-    supabase.from("sessions").select("started_at").eq("user_id", uid).gte("started_at", ninetyDaysAgo.toISOString()),
-    supabase
-      .from("sessions")
-      .select("started_at, best_lap_ms, car_id, track_id")
-      .eq("user_id", uid)
-      .not("best_lap_ms", "is", null)
-      .gte("started_at", yearAgo.toISOString())
-      .order("started_at", { ascending: true })
-      .limit(300),
+    getProfileSummary(userId),
+    getSessionsWithLaps(userId, weekStart),
+    getLastSession(userId),
+    getSessionsForPaceChart(userId, eightWeeksAgo),
+    getPersonalBests(userId, 5),
+    getAgentStatus(userId),
+    getAllSessionDates(userId),
+    getSessionsWithLaps(userId, lastWeekStart, weekStart),
+    getNewPersonalBests(userId, weekStart),
+    getSessionsForCalendar(userId, 90),
+    getRecentSessionSourceIds(userId, 10),
   ]);
 
-  const summary = summaryRes.data as ProfileSummary | null;
   if (!summary || summary.total_sessions === 0) return <EmptyState />;
 
-  const lastSession = lastSessionRes.data as Session | null;
-  const recentPbs = (recentPbsRes.data ?? []) as PersonalBest[];
-  const agentStatus = agentStatusRes.data as AgentStatus | null;
+  const weekLaps = sessionsWeek.reduce((sum, s) => sum + (s.laps ?? 0), 0);
+  const weekSessions = sessionsWeek.length;
+
+  // Streak
+  const streak = calculateStreak(getSessionDates(allSessionDates));
+
+  // Weekly delta
+  const lastWeekLaps = lastWeekSessions.reduce((sum, s) => sum + (s.laps ?? 0), 0);
+  const deltaVsLastWeek =
+    lastWeekLaps > 0
+      ? Math.round(((weekLaps - lastWeekLaps) / lastWeekLaps) * 100)
+      : weekLaps > 0
+      ? 100
+      : 0;
+
+  // PBs batidos esta semana
+  const pbsBeaten = newPbs.length;
 
   // Activity calendar
   const activityMap = new Map<string, number>();
-  (activityRawRes.data ?? []).forEach((s: { started_at: string }) => {
+  activityRaw.forEach((s) => {
     const date = s.started_at.split("T")[0];
     activityMap.set(date, (activityMap.get(date) ?? 0) + 1);
   });
   const activityData = Array.from(activityMap.entries()).map(([date, count]) => ({ date, count }));
 
-  // Combo progress data
-  const allSessions = (allSessionsRes.data ?? []) as {
-    started_at: string;
-    best_lap_ms: number;
-    car_id: string;
-    track_id: string;
-  }[];
-  const { combos, initialIndex } = buildCombosData(
-    allSessions,
-    locale,
-    lastSession?.car_id,
-    lastSession?.track_id
-  );
-
-  // ── Batch 2: depends on lastSession ────────────────────────────────────
-  let lastPb: PersonalBest | null = null;
+  // ── Batch 2: Queries that depend on lastSession and recentSourceIds ────────
+  let lastPb = null;
   let pbDelta: number | null = null;
   let prevBestMs: number | null = null;
+  let consistencyResult = { score: 0, trend: "stable" as "up" | "down" | "stable" };
   let qualityBadge = getSessionQualityBadge({ best_lap_ms: null, laps: 0 }, {});
 
-  const [sessionLapsRes, pbRes, comboHistoryRes] = await Promise.all([
+  const [consistencyLaps, sessionLaps, pbData, prevBest] = await Promise.all([
+    recentSourceIds.length > 0
+      ? getLapTimesForConsistency(userId, recentSourceIds, 40)
+      : Promise.resolve([]),
     lastSession?.source_id
-      ? supabase.from("laps").select("time_ms").eq("user_id", uid).eq("session_source_id", lastSession.source_id).eq("cuts", 0).gt("time_ms", 0)
-      : Promise.resolve({ data: [] as { time_ms: number }[] }),
+      ? getSessionLapTimes(userId, lastSession.source_id)
+      : Promise.resolve([]),
     lastSession
-      ? supabase.from("personal_bests").select("*").eq("user_id", uid).eq("car_id", lastSession.car_id).eq("track_id", lastSession.track_id).maybeSingle()
-      : Promise.resolve({ data: null }),
+      ? getPersonalBestForCombo(userId, lastSession.car_id, lastSession.track_id)
+      : Promise.resolve(null),
     lastSession?.best_lap_ms
-      ? supabase
-          .from("sessions")
-          .select("started_at, best_lap_ms")
-          .eq("user_id", uid)
-          .eq("car_id", lastSession.car_id)
-          .eq("track_id", lastSession.track_id)
-          .not("best_lap_ms", "is", null)
-          .lt("started_at", lastSession.started_at)
-          .order("started_at", { ascending: false })
-          .limit(3)
-      : Promise.resolve({ data: [] as { started_at: string; best_lap_ms: number }[] }),
+      ? getPreviousBestLap(userId, lastSession.car_id, lastSession.track_id, lastSession.started_at)
+      : Promise.resolve(null),
   ]);
 
-  let comboHistory: { started_at: string; best_lap_ms: number }[] = [];
+  // Consistency score (últimas até 20 voltas válidas)
+  const consistencyLapTimes = consistencyLaps.map((l) => l.time_ms).slice(-20);
+  if (consistencyLapTimes.length >= 2) {
+    const { score, trend } = calculateConsistencyScore(consistencyLapTimes);
+    consistencyResult = { score, trend };
+  }
 
+  // Session quality badge com std dev real
   if (lastSession) {
-    lastPb = pbRes.data as PersonalBest | null;
-    const history = (comboHistoryRes.data ?? []) as { started_at: string; best_lap_ms: number }[];
-    prevBestMs = history[0]?.best_lap_ms ?? null;
-    comboHistory = history;
+    lastPb = pbData;
+    prevBestMs = prevBest;
 
     if (lastPb && lastSession.best_lap_ms) {
       pbDelta = lastSession.best_lap_ms - lastPb.time_ms;
     }
 
-    const sessionLapTimes = (sessionLapsRes.data ?? []).map((l: { time_ms: number }) => l.time_ms);
+    const sessionLapTimes = sessionLaps.map((l) => l.time_ms);
+    const currentSessionAvgMs = calculateAvgLapTime(sessionLapTimes);
+    const currentSessionStdDev = calculateStdDev(sessionLapTimes);
+
     qualityBadge = getSessionQualityBadge(
       { best_lap_ms: lastSession.best_lap_ms, laps: lastSession.laps },
       {
         previousBestMs: prevBestMs,
-        currentSessionAvgMs: calculateAvgLapTime(sessionLapTimes),
-        currentSessionStdDev: calculateStdDev(sessionLapTimes),
+        currentSessionAvgMs,
+        currentSessionStdDev,
       }
     );
   }
 
-  // Weekday distribution (Sun=0 … Sat=6) from 90-day activity data
-  const weekdayDist = Array(7).fill(0) as number[];
-  (activityRawRes.data ?? []).forEach((s: { started_at: string }) => {
-    weekdayDist[new Date(s.started_at).getDay()]++;
+  // Pace chart
+  const trackCount: Record<string, number> = {};
+  paceRaw.forEach((s) => {
+    trackCount[s.track_id] = (trackCount[s.track_id] ?? 0) + 1;
   });
+  const topTracks = Object.entries(trackCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map((e) => e[0]);
+  const paceData = buildPaceData(paceRaw, topTracks, locale);
+  const trackLabels = Object.fromEntries(topTracks.map((t) => [t, slugToName(t)]));
 
-  const displayName =
-    user!.user_metadata?.display_name ?? user!.email?.split("@")[0] ?? "Driver";
+  const displayName = userDisplayName ?? userEmail?.split("@")[0] ?? "Driver";
 
   const dayLabel = now.toLocaleDateString(locale, { weekday: "long" }).toUpperCase();
   const dateLabel = now.toLocaleDateString(locale, { day: "numeric", month: "long" }).toUpperCase();
@@ -259,35 +299,44 @@ export default async function DashboardPage() {
               </p>
             </div>
           )}
-          <SyncButton userId={uid} />
+          <SyncButton userId={userId} />
         </div>
       </div>
 
-      {/* ATIVIDADE */}
-      <SectionDivider label={tDash("sectionActivity")} />
+      {/* [1] HERO CARD — dados reais */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+        <HeroCard
+          streak={streak}
+          consistency={consistencyResult}
+          weeklyDigest={{
+            laps: weekLaps,
+            sessions: weekSessions,
+            pbsBeaten,
+            deltaVsLastWeek,
+          }}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+      {/* [2] LAST SESSION + [3] ACTIVITY CALENDAR */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
         {lastSession ? (
           <LastSessionCard
             session={lastSession}
             qualityBadge={qualityBadge}
             pbTime={lastPb?.time_ms}
             pbDelta={pbDelta}
-            comboHistory={comboHistory}
           />
         ) : (
           <div className="bg-card border border-border rounded-md p-5 flex items-center justify-center min-h-[180px]">
             <p className="text-muted-foreground text-sm">{tDash("noSession")}</p>
           </div>
         )}
-        <ActivityCalendar
-          sessions={activityData}
-          daysToShow={90}
-          weekdayDist={weekdayDist}
-        />
+        {/* Activity Calendar — dados reais (últimos 90 dias) */}
+        <ActivityCalendar sessions={activityData} daysToShow={90} />
       </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
+      {/* [4] QUICK STATS BAR */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
         <QuickStatsBar
           tracks={summary.unique_tracks}
           cars={summary.unique_cars}
@@ -296,20 +345,31 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* PERFORMANCE */}
-      <SectionDivider label={tDash("sectionPerformance")} />
+      {/* [5] PACE EVOLUTION + [6] PERSONAL RECORDS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
+        <div className="lg:col-span-2 bg-card border border-border rounded-md p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                {tPace("title")}
+              </p>
+              <p className="text-sm text-foreground font-medium">{tPace("subtitle")}</p>
+            </div>
+            <Link
+              href="/analytics?tab=pace"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              {tPace("fullView")}
+            </Link>
+          </div>
+          <PaceChartWithSelector data={paceData} tracks={topTracks} trackLabels={trackLabels} />
+        </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-200">
-        <RecentRecordsCard records={recentPbs} />
+        <TopRecordsCard records={personalBests} />
       </div>
 
-      {combos.length > 0 && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 delay-300">
-          <ComboProgressCard combos={combos} initialComboIndex={initialIndex} />
-        </div>
-      )}
-
-      {/* NAVEGAÇÃO */}
+      {/* [7] QUICK NAV CARDS */}
       <div className="animate-in fade-in duration-500 delay-500">
         <QuickNavCards />
       </div>

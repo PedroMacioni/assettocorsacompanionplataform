@@ -15,26 +15,20 @@ type SearchParams = {
   page?: string;
 };
 
-const PAGE_SIZE = 10;
-
-function parsePage(value?: string): number {
-  const parsed = Number.parseInt(value ?? "1", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
+const ITEMS_PER_PAGE = 12;
 
 export default async function GaragePage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const t = await getTranslations("Garage");
   const params = await searchParams;
-  const currentPage = parsePage(params.page);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const uid = user.id;
-  const thirtyDaysAgo = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [carsRes, prefsRes, specsRes, recentRes] = await Promise.all([
     supabase.from("top_cars").select("*").eq("user_id", uid).order("sessions", { ascending: false }),
@@ -61,6 +55,7 @@ export default async function GaragePage({
   );
 
   if (allCars.length === 0) {
+    const t = await getTranslations("Garage");
     return <EmptyState title={t("empty.title")} description={t("empty.description")} />;
   }
 
@@ -95,12 +90,6 @@ export default async function GaragePage({
     filtered = filtered.filter((c) => recentCarIds.has(c.car_id));
   }
 
-  filtered = filtered.sort((a, b) => {
-    const aFav = prefMap[a.car_id]?.is_favorite ? 1 : 0;
-    const bFav = prefMap[b.car_id]?.is_favorite ? 1 : 0;
-    return bFav - aFav;
-  });
-
   const availableClasses = Array.from(
     new Set(allCars.map((c) => specsMap[c.car_id]?.class).filter(Boolean) as string[])
   ).sort();
@@ -111,15 +100,27 @@ export default async function GaragePage({
 
   const totalSessions = allCars.reduce((sum, c) => sum + c.sessions, 0);
   const totalDistance = allCars.reduce((sum, c) => sum + (c.total_distance_km ?? 0), 0);
-  const filteredCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Pagination
+  const currentPage = Math.max(1, parseInt(params.page ?? "1", 10));
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedCars = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const queryParams: Record<string, string | undefined> = {
+    search: params.search,
+    class: params.class,
+    brand: params.brand,
+    favorites: params.favorites,
+    recent: params.recent,
+  };
 
   return (
     <Suspense>
       <GarageContent
-        cars={paginated}
+        cars={paginatedCars}
         specsMap={specsMap}
         prefMap={prefMap}
         availableClasses={availableClasses}
@@ -127,15 +128,9 @@ export default async function GaragePage({
         totalCars={allCars.length}
         totalSessions={totalSessions}
         totalDistance={totalDistance}
-        currentPage={safePage}
+        currentPage={currentPage}
         totalPages={totalPages}
-        queryParams={{
-          search: params.search,
-          class: params.class,
-          brand: params.brand,
-          favorites: params.favorites,
-          recent: params.recent,
-        }}
+        queryParams={queryParams}
       />
     </Suspense>
   );
