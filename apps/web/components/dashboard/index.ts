@@ -6,5 +6,8 @@ export { SessionQualityBadge } from "./SessionQualityBadge";
 export { LastSessionCard } from "./LastSessionCard";
 export { PaceEvolutionCard } from "./PaceEvolutionCard";
 export { TopRecordsCard } from "./TopRecordsCard";
+export { RecentRecordsCard } from "./RecentRecordsCard";
+export { ComboProgressCard } from "./ComboProgressCard";
+export type { ComboData } from "./ComboProgressCard";
 export { QuickStatsBar } from "./QuickStatsBar";
 export { QuickNavCards } from "./QuickNavCards";

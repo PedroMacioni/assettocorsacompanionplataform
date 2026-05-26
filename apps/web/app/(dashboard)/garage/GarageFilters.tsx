@@ -1,21 +1,23 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
-import { Search, X, ChevronDown, ChevronUp, Star, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Car, Tag, Star, Clock, Search } from "lucide-react";
+import { FilterBar, FilterControl } from "@/components/FilterBar";
 
 interface Props {
   availableClasses: string[];
   availableBrands: string[];
-  totalCars: number;
-  filteredCount: number;
 }
 
-export function GarageFilters({ availableClasses, availableBrands, totalCars, filteredCount }: Props) {
+const inputClassName =
+  "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-input/30";
+
+export function GarageFilters({ availableClasses, availableBrands }: Props) {
+  const t = useTranslations("Garage");
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const search = searchParams.get("search") ?? "";
   const classFilter = searchParams.get("class") ?? "";
@@ -23,166 +25,108 @@ export function GarageFilters({ availableClasses, availableBrands, totalCars, fi
   const favoritesOnly = searchParams.get("favorites") === "1";
   const recentOnly = searchParams.get("recent") === "1";
 
-  const hasActiveFilters = search || classFilter || brandFilter || favoritesOnly || recentOnly;
+  const activeCount = [search, classFilter, brandFilter, favoritesOnly, recentOnly].filter(Boolean).length;
 
-  const pushParam = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      router.push(`?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams]
-  );
+  function navigate(nextParams: URLSearchParams) {
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
-  const clearAll = useCallback(() => {
-    router.push("?", { scroll: false });
-  }, [router]);
+  function updateFilter(key: string, value: string) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (value) {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+    next.delete("page");
+    navigate(next);
+  }
+
+  function clearFilters() {
+    navigate(new URLSearchParams());
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Search + filter toggle row */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            value={search}
-            onChange={(e) => pushParam("search", e.target.value)}
-            placeholder="Buscar carro..."
-            className="w-full bg-muted/60 border border-border rounded-lg pl-9 pr-8 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
-          />
-          {search && (
-            <button
-              onClick={() => pushParam("search", "")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        <button
-          onClick={() => setFiltersOpen((v) => !v)}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
-            filtersOpen || (hasActiveFilters && !search)
-              ? "border-primary/40 bg-primary/5 text-primary"
-              : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/40"
-          )}
-        >
-          Filtros
-          {filtersOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
-      {/* Expandable filter row */}
-      {filtersOpen && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <Select
-            value={classFilter}
-            onChange={(v) => pushParam("class", v)}
-            placeholder="Classe"
-            options={availableClasses}
-          />
-          <Select
-            value={brandFilter}
-            onChange={(v) => pushParam("brand", v)}
-            placeholder="Marca"
-            options={availableBrands}
-          />
-          <Toggle
-            active={favoritesOnly}
-            onClick={() => pushParam("favorites", favoritesOnly ? "" : "1")}
-            icon={<Star className="w-3.5 h-3.5" />}
-            label="Favoritos"
-          />
-          <Toggle
-            active={recentOnly}
-            onClick={() => pushParam("recent", recentOnly ? "" : "1")}
-            icon={<Clock className="w-3.5 h-3.5" />}
-            label="Sessões recentes"
-          />
-          {hasActiveFilters && (
-            <button
-              onClick={clearAll}
-              className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-            >
-              Limpar filtros
-            </button>
-          )}
-        </div>
-      )}
-
-      {hasActiveFilters && filteredCount < totalCars && (
-        <p className="text-xs text-muted-foreground">
-          Exibindo <span className="font-semibold text-foreground">{filteredCount}</span> de{" "}
-          <span className="font-semibold text-foreground">{totalCars}</span> carros
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  placeholder,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  options: string[];
-}) {
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "appearance-none pr-7 pl-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer",
-          "focus:outline-none focus:ring-1 focus:ring-primary/40",
-          value
-            ? "border-primary/40 bg-primary/5 text-primary"
-            : "border-border bg-card text-muted-foreground hover:text-foreground"
-        )}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-    </div>
-  );
-}
-
-function Toggle({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
-        active
-          ? "border-primary/40 bg-primary/5 text-primary"
-          : "border-border bg-card text-muted-foreground hover:text-foreground"
-      )}
+    <FilterBar
+      title={t("filters.title")}
+      activeLabel={activeCount > 0 ? t("filters.active", { count: activeCount }) : undefined}
+      clearLabel={t("filters.clear")}
+      canClear={activeCount > 0}
+      onClear={clearFilters}
     >
-      {icon}
-      {label}
-    </button>
+      <FilterControl
+        label={t("filters.search")}
+        icon={<Search className="size-3" aria-hidden="true" />}
+      >
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => updateFilter("search", e.target.value)}
+          placeholder={t("searchPlaceholder")}
+          className={inputClassName}
+        />
+      </FilterControl>
+
+      <FilterControl
+        label={t("filters.class")}
+        icon={<Tag className="size-3" aria-hidden="true" />}
+      >
+        <select
+          value={classFilter}
+          onChange={(e) => updateFilter("class", e.target.value)}
+          className={inputClassName}
+        >
+          <option value="">{t("filters.allClasses")}</option>
+          {availableClasses.map((cls) => (
+            <option key={cls} value={cls}>{cls}</option>
+          ))}
+        </select>
+      </FilterControl>
+
+      <FilterControl
+        label={t("filters.brand")}
+        icon={<Car className="size-3" aria-hidden="true" />}
+      >
+        <select
+          value={brandFilter}
+          onChange={(e) => updateFilter("brand", e.target.value)}
+          className={inputClassName}
+        >
+          <option value="">{t("filters.allBrands")}</option>
+          {availableBrands.map((brand) => (
+            <option key={brand} value={brand}>{brand}</option>
+          ))}
+        </select>
+      </FilterControl>
+
+      <FilterControl
+        label={t("filters.favorites")}
+        icon={<Star className="size-3" aria-hidden="true" />}
+      >
+        <select
+          value={favoritesOnly ? "1" : ""}
+          onChange={(e) => updateFilter("favorites", e.target.value)}
+          className={inputClassName}
+        >
+          <option value="">{t("filters.allCars")}</option>
+          <option value="1">{t("filters.onlyFavorites")}</option>
+        </select>
+      </FilterControl>
+
+      <FilterControl
+        label={t("filters.recent")}
+        icon={<Clock className="size-3" aria-hidden="true" />}
+      >
+        <select
+          value={recentOnly ? "1" : ""}
+          onChange={(e) => updateFilter("recent", e.target.value)}
+          className={inputClassName}
+        >
+          <option value="">{t("filters.allCars")}</option>
+          <option value="1">{t("filters.recentOnly")}</option>
+        </select>
+      </FilterControl>
+    </FilterBar>
   );
 }

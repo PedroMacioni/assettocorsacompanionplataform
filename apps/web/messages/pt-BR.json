@@ -43,6 +43,7 @@
     "allSessions": "Ver todas as sessões",
     "vsPb": "vs PB",
     "vsPersonalBest": "vs Personal Best",
+    "comboHistory": "Histórico nesta combo",
     "badge": {
       "pb": "Novo PB",
       "improving": "Evoluindo",
@@ -52,13 +53,17 @@
   },
   "ActivityCalendar": {
     "title": "Atividade",
-    "activeDays": "dias ativos",
+    "activeDays": "dias ativos (90 dias)",
     "less": "Menos",
     "more": "Mais",
-    "tooltip": "{count, plural, one {1 sessão em {date}} other {{count} sessões em {date}}}"
+    "tooltip": "{count, plural, one {1 sessão em {date}} other {{count} sessões em {date}}}",
+    "statDays": "dias ativos",
+    "daysLabel": "dias",
+    "weekdayTitle": "Dia da semana"
   },
   "QuickStats": {
     "tracks": "Pistas",
+    "friends": "Amigos",
     "cars": "Carros",
     "distance": "km rodados",
     "totalLaps": "Voltas"
@@ -74,6 +79,18 @@
     "title": "Recordes Pessoais",
     "empty": "Nenhum recorde ainda",
     "viewAll": "Ver todos os recordes"
+  },
+  "RecentRecords": {
+    "title": "Records Recentes",
+    "viewAll": "Ver todos",
+    "empty": "Nenhum recorde ainda"
+  },
+  "ComboProgress": {
+    "title": "Evolução na Combo",
+    "needMoreSessions": "Rode pelo menos 2 sessões nesta combo para ver a evolução",
+    "improved": "{delta}s de melhora",
+    "noImprovement": "Sem melhora registrada",
+    "sessionsCount": "{count} sessões"
   },
   "QuickNav": {
     "sessions": "Sessões",
@@ -91,9 +108,110 @@
     "analytics": "Analytics",
     "garage": "Garagem",
     "tracks": "Pistas",
+    "friends": "Amigos",
     "settings": "Configurações",
     "agent": "Agente",
+    "profile": "Perfil",
     "signOut": "Sair"
+  },
+  "Friends": {
+    "eyebrow": "Social",
+    "title": "Amigos",
+    "description": "Encontre pilotos, envie convites e gerencie quem pode comparar dados com você.",
+    "addDriver": "Adicionar piloto",
+    "yourDrivers": "Seus pilotos",
+    "connected": "{count, plural, one {# piloto conectado} other {# pilotos conectados}}",
+    "waitingResponse": "Aguardando resposta",
+    "incomingTitle": "{count, plural, one {Solicitação recebida} other {Solicitações recebidas}}",
+    "outgoingTitle": "{count, plural, one {# solicitação enviada} other {# solicitações enviadas}}",
+    "stats": {
+      "friends": "Amigos",
+      "incoming": "Recebidos",
+      "outgoing": "Enviados"
+    },
+    "card": {
+      "since": "desde {date}",
+      "sessions": "Sessões",
+      "laps": "Voltas",
+      "best": "Melhor",
+      "removeMenu": "Remover amigo"
+    },
+    "removeConfirm": {
+      "title": "Remover amigo?",
+      "description": "<b>{name}</b> será removido da sua lista de amigos e não poderá mais ver o seu perfil.",
+      "confirm": "Remover",
+      "cancel": "Cancelar"
+    },
+    "modal": {
+      "title": "Adicionar piloto",
+      "subtitle": "Busque por username ou nome",
+      "placeholder": "Buscar piloto...",
+      "hint": "Encontre pilotos pelo nome ou @username",
+      "minChars": "Digite pelo menos 2 caracteres.",
+      "noResults": "Nenhum piloto encontrado.",
+      "error": "Não foi possível buscar usuários."
+    },
+    "noDriversTitle": "Nenhum piloto ainda",
+    "noDriversDesc": "Conecte-se com outros pilotos e compare seus tempos na pista",
+    "search": {
+      "title": "Buscar pilotos",
+      "hint": "Busque por username ou nome publico.",
+      "placeholder": "Digite pelo menos 2 caracteres...",
+      "button": "Buscar",
+      "minChars": "Digite pelo menos 2 caracteres para buscar.",
+      "empty": "Nenhum piloto encontrado."
+    },
+    "sections": {
+      "friends": "Seus amigos",
+      "incoming": "Solicitações recebidas",
+      "outgoing": "Solicitações enviadas"
+    },
+    "empty": {
+      "friends": "Você ainda não tem amigos adicionados.",
+      "incoming": "Nenhuma solicitação recebida.",
+      "outgoing": "Nenhuma solicitação enviada."
+    },
+    "actions": {
+      "add": "Adicionar",
+      "accept": "Aceitar",
+      "decline": "Recusar",
+      "remove": "Remover",
+      "cancel": "Cancelar",
+      "cancelRequest": "Cancelar",
+      "sent": "Enviado",
+      "pending": "Pendente",
+      "friend": "Amigo",
+      "viewProfile": "Ver perfil"
+    },
+    "status": {
+      "pending": "Pendente",
+      "accepted": "Amigo",
+      "declined": "Recusado",
+      "blocked": "Bloqueado"
+    },
+    "meta": {
+      "friend": "Amizade aceita",
+      "received": "Pedido recebido",
+      "sent": "Pedido enviado"
+    },
+    "filters": {
+      "title": "Filtros",
+      "active": "{count, plural, one {# filtro ativo} other {# filtros ativos}}",
+      "clear": "Limpar",
+      "search": "Buscar",
+      "searchPlaceholder": "Nome ou @username...",
+      "sort": "Ordenar por",
+      "sortName": "Nome",
+      "sortSessions": "Mais sessões",
+      "sortBest": "Melhor volta",
+      "showing": "{shown} de {total} pilotos",
+      "noResults": "Nenhum piloto encontrado",
+      "noResultsHint": "Tente um nome ou username diferente."
+    },
+    "errors": {
+      "search": "Não foi possível buscar usuários.",
+      "action": "Não foi possível concluir a ação."
+    }
   },
   "Download": {
     "yourCars": "Ferramentas",
@@ -156,6 +274,30 @@
       "hint": "Visível apenas para você. Deixe em branco para usar o nome original.",
       "save": "Salvar",
       "cancel": "Cancelar"
+    },
+    "filters": {
+      "title": "Filtros",
+      "active": "{count} ativos",
+      "clear": "Limpar",
+      "search": "Buscar",
+      "class": "Classe",
+      "allClasses": "Todas as classes",
+      "brand": "Marca",
+      "allBrands": "Todas as marcas",
+      "favorites": "Favoritos",
+      "allCars": "Todos",
+      "onlyFavorites": "Apenas favoritos",
+      "recent": "Recentes",
+      "recentOnly": "Últimos 30 dias"
+    },
+    "table": {
+      "car": "Carro",
+      "class": "Classe",
+      "brand": "Marca",
+      "sessions": "Sessões",
+      "laps": "Voltas",
+      "distance": "Distância",
+      "bestLap": "Melhor Volta"
     }
   },
   "Landing": {
@@ -235,9 +377,40 @@
     "catalogue": "Catálogo",
     "title": "Pistas",
     "count": "{tracks} pistas · {driven} dirigidas",
+    "noResults": "Nenhuma pista encontrada",
     "empty": {
       "title": "Nenhuma pista encontrada",
       "description": "Sincronize o agente para popular o catálogo de pistas da sua instalação do AC."
+    },
+    "results": {
+      "label": "Pistas",
+      "count": "{tracks} pistas · {driven} dirigidas"
+    },
+    "filters": {
+      "title": "Filtros",
+      "active": "{count} ativos",
+      "clear": "Limpar",
+      "search": "Buscar",
+      "searchPlaceholder": "Buscar pista...",
+      "country": "País",
+      "allCountries": "Todos os países",
+      "status": "Status",
+      "allTracks": "Todas as pistas",
+      "drivenOnly": "Já dirigidas",
+      "notYetDriven": "Nunca dirigidas"
+    },
+    "table": {
+      "track": "Pista",
+      "location": "Localização",
+      "length": "Comprimento",
+      "sessions": "Sessões",
+      "laps": "Voltas",
+      "distance": "Distância",
+      "bestLap": "Melhor Volta"
+    },
+    "detail": {
+      "back": "Voltar para pistas",
+      "specs": "Especificações"
     },
     "modal": {
       "length": "Comprimento",
@@ -292,7 +465,9 @@
   "Dashboard": {
     "noSyncRegistered": "Nenhum sync registrado",
     "noSession": "Nenhuma sessão ainda",
-    "sessionsCount": "{count, plural, one {1 sessão} other {{count} sessões}}"
+    "sessionsCount": "{count, plural, one {1 sessão} other {{count} sessões}}",
+    "sectionActivity": "Atividade",
+    "sectionPerformance": "Performance"
   },
   "EmptyState": {
     "title": "Nenhuma sessão ainda",
@@ -300,6 +475,7 @@
     "action": "Configurar Agent"
   },
   "SessionDetail": {
+    "backToSessions": "Voltar para sessões",
     "bestLap": "Melhor Volta",
     "vsPb": "vs PB",
     "pb": "PB",
@@ -442,5 +618,58 @@
         "four": "O agente começará a sincronizar suas sessões automaticamente"
       }
     }
+  },
+  "Profile": {
+    "title": "Perfil",
+    "memberSince": "Membro desde {date}",
+    "lastSession": "Última sessão {time}",
+    "editProfile": "Editar perfil",
+    "sectionFavorites": "Favoritos",
+    "sectionRecords": "Recordes Pessoais",
+    "sectionActivity": "Atividade",
+    "favoriteCar": "Carro favorito",
+    "favoriteTrack": "Pista favorita",
+    "noFavoriteCar": "Nenhum carro favorito definido",
+    "noFavoriteCarHint": "Vá para Garagem e marque um carro como favorito",
+    "noFavoriteTrack": "Nenhuma pista favorita definida",
+    "noFavoriteTrackHint": "Em breve — defina sua pista favorita",
+    "goToGarage": "Ir para Garagem",
+    "sessions": "Sessões",
+    "laps": "Voltas",
+    "bestLap": "Melhor Volta",
+    "records": {
+      "title": "Recordes Pessoais",
+      "empty": "Nenhum recorde pessoal ainda",
+      "rank": "#",
+      "car": "Carro",
+      "track": "Pista",
+      "time": "Tempo",
+      "date": "Data",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "showing": "{from}–{to} de {total}"
+    },
+    "changeButton": "Trocar",
+    "chooseFavorite": "Escolher favorito",
+    "noFavoriteCarHint": "Clique para escolher seu carro favorito",
+    "noFavoriteTrackHint2": "Clique para escolher sua pista favorita",
+    "carPickerTitle": "Escolher carro favorito",
+    "trackPickerTitle": "Escolher pista favorita",
+    "pickerSearch": "Buscar...",
+    "pickerSessions": "{count} sessões",
+    "backToFriends": "Voltar para amigos",
+    "sectionRecentSessions": "Sessões Recentes",
+    "uniqueTracks": "Pistas",
+    "uniqueCars": "Carros",
+    "kmDriven": "km rodados",
+    "col": {
+      "date": "Data",
+      "car": "Carro",
+      "track": "Pista",
+      "bestLap": "Melhor volta",
+      "distance": "Distância",
+      "type": "Tipo"
+    },
+    "noSessions": "Nenhuma sessão ainda"
   }
 }

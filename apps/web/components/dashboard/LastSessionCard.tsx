@@ -18,6 +18,7 @@ interface LastSessionCardProps {
   qualityBadge: BadgeType;
   pbTime?: number | null;
   pbDelta?: number | null;
+  comboHistory?: { started_at: string; best_lap_ms: number }[];
 }
 
 function formatDeltaMs(ms: number): string {
@@ -25,7 +26,7 @@ function formatDeltaMs(ms: number): string {
   return `${sign}${(ms / 1000).toFixed(3)}s`;
 }
 
-export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }: LastSessionCardProps) {
+export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta, comboHistory }: LastSessionCardProps) {
   const t = await getTranslations("LastSession");
   const tCommon = await getTranslations("Common");
 
@@ -40,11 +41,15 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
     return tCommon("timeAgo.now");
   }
 
+  function shortDate(iso: string): string {
+    return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+  }
+
   const badgeTypeKey = qualityBadge.type as "pb" | "improving" | "consistent" | "warmup";
   const translatedBadge = { ...qualityBadge, label: t(`badge.${badgeTypeKey}`) };
 
   return (
-    <div className="bg-card border border-border rounded-md p-5 transition-all duration-150 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+    <div className="bg-card border border-border rounded-md p-5 transition-all duration-150 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 flex flex-col">
       <div className="flex items-start justify-between gap-4 mb-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {t("title")}
@@ -98,9 +103,40 @@ export async function LastSessionCard({ session, qualityBadge, pbTime, pbDelta }
         </div>
       )}
 
+      {/* Histórico nesta combo */}
+      {comboHistory && comboHistory.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-border flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
+            {t("comboHistory")}
+          </p>
+          <div className="space-y-2">
+            {comboHistory.map((h, i) => {
+              const delta = pbTime ? h.best_lap_ms - pbTime : null;
+              return (
+                <div key={i} className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{shortDate(h.started_at)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-foreground">{formatLapTime(h.best_lap_ms)}</span>
+                    {delta !== null && (
+                      <span
+                        className={`text-[10px] font-mono w-16 text-right ${
+                          delta <= 0 ? "text-green-500" : "text-muted-foreground"
+                        }`}
+                      >
+                        {delta <= 0 ? "PB" : `+${(delta / 1000).toFixed(3)}s`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="mt-5 flex items-center gap-3">
         <Link
-          href={`/sessions/${session.id}`}
+          href={`/sessions?car=${session.car_id}&track=${session.track_id}`}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
         >
           {tCommon("openSession")}

@@ -1,11 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
 import type { Session } from "@/lib/types";
-import { SessionDetailPanel, type SessionPanelData } from "@/components/SessionDetailPanel";
-import { PageLoader } from "@/components/PageLoader";
 import { cn } from "@/lib/utils";
 
 const SESSION_BADGE: Record<string, string> = {
@@ -29,23 +26,14 @@ function SessionBadge({ type }: { type: string | null }) {
   );
 }
 
-export function SessionsClient({ sessions }: { sessions: Session[] }) {
+interface Props {
+  sessions: Session[];
+  loadingId: string | null;
+  onSelect: (sourceId: string) => void;
+}
+
+export function SessionsClient({ sessions, loadingId, onSelect }: Props) {
   const t = useTranslations("Sessions");
-  const [panel, setPanel] = useState<SessionPanelData | null>(null);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-
-  const openSession = useCallback(async (sourceId: string) => {
-    if (loadingId) return;
-    setLoadingId(sourceId);
-    try {
-      const res = await fetch(`/api/sessions/${sourceId}`);
-      if (res.ok) setPanel(await res.json());
-    } finally {
-      setLoadingId(null);
-    }
-  }, [loadingId]);
-
-  const closePanel = useCallback(() => setPanel(null), []);
 
   return (
     <>
@@ -84,7 +72,7 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
                 sessions.map((s) => (
                   <tr
                     key={s.id}
-                    onClick={() => openSession(s.source_id)}
+                    onClick={() => onSelect(s.source_id)}
                     aria-busy={loadingId === s.source_id}
                     className="group cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-muted/60"
                   >
@@ -120,7 +108,7 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
             {sessions.map((s) => (
               <button
                 key={s.id}
-                onClick={() => openSession(s.source_id)}
+                onClick={() => onSelect(s.source_id)}
                 disabled={!!loadingId}
                 className={cn(
                   "w-full text-left px-4 py-3.5 transition-colors",
@@ -128,7 +116,6 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
                   loadingId === s.source_id && "opacity-60"
                 )}
               >
-                {/* Linha 1: carro + tempo */}
                 <div className="flex items-center justify-between gap-3 mb-1">
                   <p className="text-sm font-semibold text-foreground truncate">
                     {slugToName(s.car_id)}
@@ -138,7 +125,6 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
                   </p>
                 </div>
 
-                {/* Linha 2: pista + data */}
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <p className="text-xs text-muted-foreground truncate">
                     {slugToName(s.track_id)}
@@ -148,7 +134,6 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
                   </p>
                 </div>
 
-                {/* Linha 3: badge + voltas + distância */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <SessionBadge type={s.session_types} />
                   <span className="text-[10px] text-muted-foreground">
@@ -164,9 +149,6 @@ export function SessionsClient({ sessions }: { sessions: Session[] }) {
           </div>
         )}
       </div>
-
-      {loadingId && <PageLoader overlay size="md" label={t("loadingSession")} />}
-      <SessionDetailPanel data={panel} onClose={closePanel} />
     </>
   );
 }

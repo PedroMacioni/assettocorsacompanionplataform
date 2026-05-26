@@ -1,10 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
-import { LapTime } from "@/components/LapTime";
 import { slugToName } from "@/lib/format";
 import type { PersonalBest } from "@/lib/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { PersonalBestsTable, type EnrichedPB } from "../profile/PersonalBestsTable";
 
 export default async function PersonalBestsPage() {
   const supabase = await createClient();
@@ -20,34 +18,16 @@ export default async function PersonalBestsPage() {
 
   if (bests.length === 0) return <EmptyState title="Nenhum personal best sincronizado ainda" />;
 
-  const fastestMs = bests[0].time_ms;
+  const enrichedBests: EnrichedPB[] = bests.map((best) => ({
+    ...best,
+    carName: slugToName(best.car_id),
+    trackName: slugToName(best.track_id),
+  }));
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Personal Bests</h1>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Carro</TableHead>
-            <TableHead>Pista</TableHead>
-            <TableHead className="text-right">Melhor Tempo</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {bests.map((b) => (
-            <TableRow key={b.id}>
-              <TableCell className="font-medium">{slugToName(b.car_id)}</TableCell>
-              <TableCell>{slugToName(b.track_id)}</TableCell>
-              <TableCell className="text-right">
-                <span className="font-mono"><LapTime ms={b.time_ms} /></span>
-                {b.time_ms === fastestMs && (
-                  <Badge className="ml-2" variant="default">Record</Badge>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PersonalBestsTable records={enrichedBests} />
     </div>
   );
 }

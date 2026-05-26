@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { X, Filter } from "lucide-react";
+import { ArrowLeft, Filter } from "lucide-react";
 import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
 import type { Session, PersonalBest, Lap } from "@/lib/types";
 
@@ -119,11 +119,6 @@ export function SessionDetailPanel({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  useEffect(() => {
-    document.body.style.overflow = data ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [data]);
-
   if (!data) return null;
 
   const { session: s, laps, pb } = data;
@@ -183,91 +178,70 @@ export function SessionDetailPanel({
   ];
 
   return (
-    /* Backdrop */
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 lg:p-2"
-      style={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(0,0,0,0.72)" }}
-      onClick={onClose}
-    >
-      {/* Modal */}
-      <div
-        className="relative w-full flex flex-col bg-background border border-border rounded-2xl shadow-2xl overflow-hidden"
-        style={{ maxWidth: 1440, maxHeight: "calc(100vh - 1.5rem)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
 
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <div className="shrink-0 px-4 sm:px-6 md:px-8 py-4 md:py-6 border-b border-border bg-muted/10">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6 lg:gap-10">
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+      <div>
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-5"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {t("backToSessions")}
+        </button>
 
-            {/* Session info + mobile close */}
-            <div className="flex items-start justify-between gap-3 md:flex-1 md:min-w-0">
-              <div className="min-w-0">
-                {s.session_types && (
-                  <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide mb-2 ${badgeClass(s.session_types) ?? ""}`}>
-                    {s.session_types}
-                  </span>
-                )}
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
-                  {slugToName(s.track_id)}
-                </h2>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <p className="text-sm text-muted-foreground">{slugToName(s.car_id)}</p>
-                  <span className="text-muted-foreground/30 text-xs">•</span>
-                  <p className="text-sm text-muted-foreground">{formatDate(s.started_at)}</p>
-                </div>
-              </div>
-              {/* Close on mobile */}
-              <button
-                onClick={onClose}
-                className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-              >
-                <X className="h-5 w-5" />
-              </button>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6 lg:gap-10">
+
+          {/* Session info */}
+          <div className="flex-1 min-w-0">
+            {s.session_types && (
+              <span className={`inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide mb-2 ${badgeClass(s.session_types) ?? ""}`}>
+                {s.session_types}
+              </span>
+            )}
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight tracking-tight">
+              {slugToName(s.track_id)}
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <p className="text-sm text-muted-foreground">{slugToName(s.car_id)}</p>
+              <span className="text-muted-foreground/30 text-xs">•</span>
+              <p className="text-sm text-muted-foreground">{formatDate(s.started_at)}</p>
+            </div>
+          </div>
+
+          {/* Metrics */}
+          <div className="flex items-center gap-0 shrink-0">
+            <div className="text-center pr-6 sm:pr-8 border-r border-border shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                {t("bestLap")}
+              </p>
+              <p className="text-3xl md:text-4xl font-bold font-mono text-foreground tabular-nums">
+                {formatLapTime(bestLapMs)}
+              </p>
             </div>
 
-            {/* Metrics row */}
-            <div className="flex items-center gap-0">
-              {/* Best lap */}
-              <div className="text-center px-4 sm:px-6 md:px-8 border-r border-border md:border-l shrink-0">
+            {pb && bestLapMs && pbDelta !== null ? (
+              <div className="text-center pl-6 sm:pl-8 border-r border-border pr-6 sm:pr-8 shrink-0">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  {t("bestLap")}
+                  {t("vsPb")}
                 </p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-mono text-foreground tabular-nums">
-                  {formatLapTime(bestLapMs)}
+                <p className={`text-2xl md:text-3xl font-bold font-mono tabular-nums ${pbDelta <= 0 ? "text-green-400" : "text-orange-400"}`}>
+                  {formatDelta(pbDelta)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{t("pb")}: {formatLapTime(pb.time_ms)}</p>
               </div>
-
-              {/* vs PB */}
-              {pb && bestLapMs && pbDelta !== null ? (
-                <div className="text-center px-4 sm:px-6 md:px-8 border-r border-border shrink-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                    {t("vsPb")}
-                  </p>
-                  <p className={`text-xl sm:text-2xl md:text-3xl font-bold font-mono tabular-nums ${pbDelta <= 0 ? "text-green-400" : "text-orange-400"}`}>
-                    {formatDelta(pbDelta)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">{t("pb")}: {formatLapTime(pb.time_ms)}</p>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Close on desktop */}
-            <button
-              onClick={onClose}
-              className="hidden md:block p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-auto md:ml-0"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            ) : null}
           </div>
         </div>
+      </div>
 
-        {/* ── Body ───────────────────────────────────────────────────────────── */}
-        {/* On mobile: single vertical scroll. On md+: two independent columns. */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden apex-scroll min-h-0">
+      <div className="w-full h-px bg-border" />
 
-          {/* ── Left: stats panel ────────────────────────────────────────────── */}
-          <div className="w-full md:w-72 lg:w-80 shrink-0 border-b md:border-b-0 md:border-r border-border md:overflow-y-auto apex-scroll px-4 md:px-5 py-4 md:py-5 space-y-4">
+      {/* ── Body ───────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row gap-5">
+
+        {/* ── Left: stats panel ────────────────────────────────────────────── */}
+        <div className="w-full md:w-72 lg:w-80 shrink-0 space-y-4">
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 gap-2.5">
@@ -342,15 +316,15 @@ export function SessionDetailPanel({
                 </div>
               </div>
             )}
-          </div>
+        </div>
 
-          {/* ── Right: lap table ─────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 flex flex-col md:overflow-hidden">
+        {/* ── Right: lap table ─────────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0 flex flex-col">
 
             {hasLaps ? (
               <>
                 {/* Filter bar */}
-                <div className="shrink-0 flex flex-wrap items-center gap-3 px-4 md:px-6 py-3 border-b border-border bg-muted/5">
+                <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 py-3 border border-border rounded-t-xl bg-muted/5">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowValidOnly(!showValidOnly)}
@@ -387,8 +361,8 @@ export function SessionDetailPanel({
                   </div>
                 </div>
 
-                {/* Table — horizontal scroll on mobile, vertical on desktop */}
-                <div className="md:flex-1 md:overflow-y-auto overflow-x-auto apex-scroll">
+                {/* Table */}
+                <div className="overflow-x-auto apex-scroll border border-t-0 border-border rounded-b-xl">
                   <table className="w-full text-xs min-w-[600px]">
                     <thead className="sticky top-0 z-10">
                       <tr className="border-b border-border bg-background">
@@ -490,7 +464,6 @@ export function SessionDetailPanel({
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
     </div>

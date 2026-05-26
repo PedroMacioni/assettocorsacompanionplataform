@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/EmptyState";
-import { formatDistance } from "@/lib/format";
 import type { TopCar, CarSpecs, UserCarPreference } from "@/lib/types";
 import { GarageContent } from "./GarageContent";
 import { Suspense } from "react";
@@ -13,7 +12,15 @@ type SearchParams = {
   brand?: string;
   favorites?: string;
   recent?: string;
+  page?: string;
 };
+
+const PAGE_SIZE = 10;
+
+function parsePage(value?: string): number {
+  const parsed = Number.parseInt(value ?? "1", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
 
 export default async function GaragePage({
   searchParams,
@@ -22,13 +29,12 @@ export default async function GaragePage({
 }) {
   const t = await getTranslations("Garage");
   const params = await searchParams;
+  const currentPage = parsePage(params.page);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const uid = user.id;
-  const carImageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-previews/${uid}`;
-
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const thirtyDaysAgo = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [carsRes, prefsRes, specsRes, recentRes] = await Promise.all([
     supabase.from("top_cars").select("*").eq("user_id", uid).order("sessions", { ascending: false }),
@@ -89,6 +95,12 @@ export default async function GaragePage({
     filtered = filtered.filter((c) => recentCarIds.has(c.car_id));
   }
 
+  filtered = filtered.sort((a, b) => {
+    const aFav = prefMap[a.car_id]?.is_favorite ? 1 : 0;
+    const bFav = prefMap[b.car_id]?.is_favorite ? 1 : 0;
+    return bFav - aFav;
+  });
+
   const availableClasses = Array.from(
     new Set(allCars.map((c) => specsMap[c.car_id]?.class).filter(Boolean) as string[])
   ).sort();
@@ -99,38 +111,32 @@ export default async function GaragePage({
 
   const totalSessions = allCars.reduce((sum, c) => sum + c.sessions, 0);
   const totalDistance = allCars.reduce((sum, c) => sum + (c.total_distance_km ?? 0), 0);
+  const filteredCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("yourCars")}
-        </p>
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">{t("title")}</h1>
-        <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{allCars.length}</span>
-          <span>{allCars.length === 1 ? t("summary.carsOne") : t("summary.carsOther")}</span>
-          <span className="opacity-30">·</span>
-          <span className="font-semibold text-foreground">{totalSessions.toLocaleString()}</span>
-          <span>{totalSessions === 1 ? t("summary.sessionsOne") : t("summary.sessionsOther")}</span>
-          <span className="opacity-30">·</span>
-          <span className="font-semibold text-foreground">{formatDistance(totalDistance)}</span>
-          <span>{t("summary.driven")}</span>
-        </div>
-      </div>
-
-      <Suspense>
-        <GarageContent
-          cars={filtered}
-          specsMap={specsMap}
-          prefMap={prefMap}
-          availableClasses={availableClasses}
-          availableBrands={availableBrands}
-          totalCars={allCars.length}
-          carImageBase={carImageBase}
-        />
-      </Suspense>
-    </div>
+    <Suspense>
+      <GarageContent
+        cars={paginated}
+        specsMap={specsMap}
+        prefMap={prefMap}
+        availableClasses={availableClasses}
+        availableBrands={availableBrands}
+        totalCars={allCars.length}
+        totalSessions={totalSessions}
+        totalDistance={totalDistance}
+        currentPage={safePage}
+        totalPages={totalPages}
+        queryParams={{
+          search: params.search,
+          class: params.class,
+          brand: params.brand,
+          favorites: params.favorites,
+          recent: params.recent,
+        }}
+      />
+    </Suspense>
   );
 }

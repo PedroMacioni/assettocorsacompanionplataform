@@ -1,274 +1,297 @@
 "use client";
 
-import { useState } from "react";
-import { slugToName } from "@/lib/format";
-import type { Track, TopTrack } from "@/lib/types";
-import { LapTime } from "@/components/LapTime";
-import { X, MapPin, Ruler, Flag, RotateCcw } from "lucide-react";
+import { useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Flag, Search, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatDistance, formatLapTime } from "@/lib/format";
+import { FilterBar, FilterControl } from "@/components/FilterBar";
+import { PageLoader } from "@/components/PageLoader";
+import { PaginationClient } from "@/components/ui/pagination-client";
+import { TrackDetailPanel } from "./TrackDetailPanel";
+import type { Track } from "@/lib/types";
 
-type TrackWithStats = Track & {
+export type TrackWithStats = Track & {
   sessions: number;
   total_laps: number;
   total_distance_km: number;
   best_lap_ms: number | null;
 };
 
-function TrackOutline({ url, name }: { url: string | null; name: string }) {
-  if (!url) {
-    return (
-      <div className="h-36 bg-muted flex items-center justify-center">
-        <MapPin className="h-8 w-8 text-muted-foreground/30" />
-      </div>
-    );
+// ── Filtros ─────────────────────────────────────────────────────────────────
+
+const inputClassName =
+  "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-input/30";
+
+function TracksFilters({ availableCountries }: { availableCountries: string[] }) {
+  const t = useTranslations("Tracks");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const search  = searchParams.get("search")  ?? "";
+  const country = searchParams.get("country") ?? "";
+  const driven  = searchParams.get("driven")  ?? "";
+
+  const activeCount = [search, country, driven].filter(Boolean).length;
+
+  function navigate(next: URLSearchParams) {
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
+
+  function updateFilter(key: string, value: string) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (value) { next.set(key, value); } else { next.delete(key); }
+    next.delete("page");
+    navigate(next);
+  }
+
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt={`${name} track outline`}
-      className="h-36 w-full object-contain bg-muted p-3"
-    />
+    <FilterBar
+      title={t("filters.title")}
+      activeLabel={activeCount > 0 ? t("filters.active", { count: activeCount }) : undefined}
+      clearLabel={t("filters.clear")}
+      canClear={activeCount > 0}
+      onClear={() => navigate(new URLSearchParams())}
+    >
+      <FilterControl label={t("filters.search")} icon={<Search className="size-3" />}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => updateFilter("search", e.target.value)}
+          placeholder={t("filters.searchPlaceholder")}
+          className={inputClassName}
+        />
+      </FilterControl>
+
+      <FilterControl label={t("filters.country")} icon={<Globe className="size-3" />}>
+        <select value={country} onChange={(e) => updateFilter("country", e.target.value)} className={inputClassName}>
+          <option value="">{t("filters.allCountries")}</option>
+          {availableCountries.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </FilterControl>
+
+      <FilterControl label={t("filters.status")} icon={<Flag className="size-3" />}>
+        <select value={driven} onChange={(e) => updateFilter("driven", e.target.value)} className={inputClassName}>
+          <option value="">{t("filters.allTracks")}</option>
+          <option value="yes">{t("filters.drivenOnly")}</option>
+          <option value="no">{t("filters.notYetDriven")}</option>
+        </select>
+      </FilterControl>
+    </FilterBar>
   );
 }
 
-type Translations = {
-  length: string;
-  pitboxes: string;
-  direction: string;
-  mySessions: string;
-  myStats: string;
-  laps: string;
-  distance: string;
-  bestLap: string;
-  sessionOne: string;
-  sessionOther: string;
-  notYetDriven: string;
-};
+// ── Grid principal ───────────────────────────────────────────────────────────
 
-function TrackModal({
-  track,
-  onClose,
-  tr,
-}: {
-  track: TrackWithStats;
-  onClose: () => void;
-  tr: Translations;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-2xl bg-card border border-border rounded-lg shadow-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-10 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        {/* Outline */}
-        {track.outline_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={track.outline_url}
-            alt={`${track.name} outline`}
-            className="w-full h-64 object-contain bg-muted p-6"
-          />
-        ) : (
-          <div className="w-full h-40 bg-muted flex items-center justify-center">
-            <MapPin className="h-12 w-12 text-muted-foreground/20" />
-          </div>
-        )}
-
-        <div className="p-6 space-y-5">
-          {/* Header */}
-          <div>
-            {(track.country || track.city) && (
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                {[track.city, track.country].filter(Boolean).join(", ")}
-              </p>
-            )}
-            <h2 className="text-xl font-bold text-foreground">{track.name}</h2>
-          </div>
-
-          {/* Track specs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {track.length_km && (
-              <div className="bg-muted rounded-md p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Ruler className="h-3 w-3 text-muted-foreground" />
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {tr.length}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-foreground">
-                  {track.length_km.toFixed(3)} km
-                </p>
-              </div>
-            )}
-            {track.pitboxes && (
-              <div className="bg-muted rounded-md p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Flag className="h-3 w-3 text-muted-foreground" />
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {tr.pitboxes}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-foreground">{track.pitboxes}</p>
-              </div>
-            )}
-            {track.run && (
-              <div className="bg-muted rounded-md p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <RotateCcw className="h-3 w-3 text-muted-foreground" />
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {tr.direction}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-foreground">{track.run}</p>
-              </div>
-            )}
-            {track.sessions > 0 && (
-              <div className="bg-muted rounded-md p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  {tr.mySessions}
-                </p>
-                <p className="text-sm font-bold text-foreground">{track.sessions}</p>
-              </div>
-            )}
-          </div>
-
-          {/* User stats */}
-          {track.sessions > 0 && (
-            <div className="border border-border rounded-md p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                {tr.myStats}
-              </p>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.laps}</p>
-                  <p className="text-base font-bold text-foreground">
-                    {track.total_laps.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.distance}</p>
-                  <p className="text-base font-bold text-foreground">
-                    {track.total_distance_km >= 1000
-                      ? `${(track.total_distance_km / 1000).toFixed(1)}k km`
-                      : `${track.total_distance_km.toFixed(0)} km`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground mb-0.5">{tr.bestLap}</p>
-                  <p className="text-base font-bold font-mono text-primary">
-                    <LapTime ms={track.best_lap_ms} />
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tags */}
-          {track.tags && track.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {track.tags.slice(0, 8).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 bg-muted border border-border rounded text-[10px] text-muted-foreground"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+interface Props {
+  tracks: TrackWithStats[];
+  availableCountries: string[];
+  totalTracks: number;
+  drivenCount: number;
+  filteredCount: number;
+  currentPage: number;
+  totalPages: number;
+  queryParams: Record<string, string | undefined>;
 }
 
 export function TracksGrid({
   tracks,
-  userStats,
-  translations: tr,
-}: {
-  tracks: Track[];
-  userStats: TopTrack[];
-  translations: Translations;
-}) {
+  availableCountries,
+  totalTracks,
+  drivenCount,
+  currentPage,
+  totalPages,
+  queryParams,
+}: Props) {
+  const t = useTranslations("Tracks");
+  const router = useRouter();
   const [selected, setSelected] = useState<TrackWithStats | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const statsMap = new Map(userStats.map((s) => [s.track_id, s]));
+  function handlePageChange(page: number) {
+    if (page === currentPage || isPending) return;
 
-  const tracksWithStats: TrackWithStats[] = tracks.map((t) => {
-    const stats = statsMap.get(t.track_id);
-    return {
-      ...t,
-      sessions: stats?.sessions ?? 0,
-      total_laps: stats?.total_laps ?? 0,
-      total_distance_km: stats?.total_distance_km ?? 0,
-      best_lap_ms: stats?.best_lap_ms ?? null,
-    };
-  });
+    const next = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+    });
+    next.set("page", String(page));
 
-  // Sort: tracks with sessions first, then alphabetically
-  const sorted = [...tracksWithStats].sort((a, b) => {
-    if (a.sessions !== b.sessions) return b.sessions - a.sessions;
-    return a.name.localeCompare(b.name);
-  });
+    startTransition(() => {
+      router.push(`/tracks?${next.toString()}`);
+    });
+  }
+
+  if (selected) {
+    return <TrackDetailPanel track={selected} onClose={() => setSelected(null)} />;
+  }
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sorted.map((track) => (
-          <button
-            key={track.track_id}
-            onClick={() => setSelected(track)}
-            className={cn(
-              "text-left bg-card border border-border rounded-md overflow-hidden",
-              "hover:border-primary/40 transition-all duration-150 group"
-            )}
-          >
-            <TrackOutline url={track.outline_url} name={track.name} />
-            <div className="p-4">
-              {(track.country || track.city) && (
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                  {[track.city, track.country].filter(Boolean).join(", ")}
-                </p>
-              )}
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                {track.name}
-              </p>
-              <div className="flex items-center gap-4 mt-2">
-                {track.length_km && (
-                  <span className="text-[11px] text-muted-foreground">
-                    {track.length_km.toFixed(3)} km
-                  </span>
-                )}
-                {track.sessions > 0 ? (
-                  <span className="text-[11px] text-primary font-medium">
-                    {track.sessions} {track.sessions === 1 ? tr.sessionOne : tr.sessionOther}
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground/50">{tr.notYetDriven}</span>
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
+    <div className="space-y-6">
+      {/* Cabeçalho */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("catalogue")}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h1>
+        </div>
+
+        <div className="flex w-fit items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Flag className="size-4" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("results.label")}
+            </p>
+            <p className="text-sm font-semibold text-foreground">
+              {t("results.count", { tracks: totalTracks, driven: drivenCount })}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {selected && (
-        <TrackModal track={selected} onClose={() => setSelected(null)} tr={tr} />
+      <TracksFilters availableCountries={availableCountries} />
+
+      {isPending ? (
+        <div className="rounded-lg border border-border bg-card">
+          <PageLoader size="md" className="min-h-[320px]" />
+        </div>
+      ) : (
+        <>
+
+      {/* ── Desktop: tabela ──────────────────────────────────────────── */}
+      <div className="hidden md:block overflow-hidden rounded-lg border border-border bg-card">
+        <div className="apex-scroll overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                {[
+                  { label: t("table.track"),    right: false },
+                  { label: t("table.location"), right: false },
+                  { label: t("table.length"),   right: true  },
+                  { label: t("table.sessions"), right: true  },
+                  { label: t("table.laps"),     right: true  },
+                  { label: t("table.distance"), right: true  },
+                  { label: t("table.bestLap"),  right: true  },
+                ].map(({ label, right }) => (
+                  <th
+                    key={label}
+                    className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground ${right ? "text-right" : "text-left"}`}
+                  >
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tracks.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-14 text-center text-sm text-muted-foreground">
+                    {t("noResults")}
+                  </td>
+                </tr>
+              ) : (
+                tracks.map((track) => (
+                  <tr
+                    key={track.track_id}
+                    onClick={() => setSelected(track)}
+                    className="group cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-muted/60"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground transition-colors group-hover:text-primary max-w-[220px] truncate">
+                      {track.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {[track.city, track.country].filter(Boolean).join(", ") || <span className="text-muted-foreground/40">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {track.length_km ? `${track.length_km.toFixed(3)} km` : <span className="text-muted-foreground/40">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {track.sessions > 0 ? track.sessions : <span className="text-muted-foreground/40">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {track.sessions > 0 ? track.total_laps : <span className="text-muted-foreground/40">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {track.sessions > 0 ? formatDistance(track.total_distance_km) : <span className="text-muted-foreground/40">--</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">
+                      {track.sessions > 0
+                        ? formatLapTime(track.best_lap_ms)
+                        : <span className="text-muted-foreground/40 font-sans font-normal">--</span>}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Mobile: lista ────────────────────────────────────────────── */}
+      <div className="md:hidden">
+        {tracks.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card px-4 py-14 text-center text-sm text-muted-foreground">
+            {t("noResults")}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
+            {tracks.map((track) => (
+              <button
+                key={track.track_id}
+                onClick={() => setSelected(track)}
+                className={cn(
+                  "w-full text-left px-4 py-3.5 transition-colors",
+                  "hover:bg-muted/60 active:bg-muted"
+                )}
+              >
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <p className="text-sm font-semibold text-foreground truncate">{track.name}</p>
+                  {track.sessions > 0 && (
+                    <p className="text-sm font-bold font-mono text-foreground shrink-0">
+                      {formatLapTime(track.best_lap_ms)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <p className="text-xs text-muted-foreground truncate">
+                    {[track.city, track.country].filter(Boolean).join(", ") || "--"}
+                  </p>
+                  {track.length_km && (
+                    <p className="text-[10px] text-muted-foreground shrink-0">{track.length_km.toFixed(3)} km</p>
+                  )}
+                </div>
+                {track.sessions > 0 ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] text-primary font-medium">
+                      {track.sessions} {track.sessions === 1 ? t("card.sessionOne") : t("card.sessionOther")}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">·</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDistance(track.total_distance_km)}</span>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground/50">{t("card.notYetDriven")}</p>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+        </>
       )}
-    </>
+
+      <PaginationClient
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
   );
 }

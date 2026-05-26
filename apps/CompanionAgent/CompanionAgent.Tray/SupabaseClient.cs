@@ -245,14 +245,14 @@ public sealed class SupabaseClient : IDisposable
         }
     }
 
-    public async Task<bool> UploadCarBadgeAsync(string carId, byte[] imageBytes, CancellationToken ct = default)
+    public async Task<bool> UploadCarPreviewAsync(string carId, byte[] imageBytes, string contentType, CancellationToken ct = default)
     {
         await EnsureValidTokenAsync();
         var storagePath = $"{UserId}/{carId}.png";
         var req = BuildRequest(HttpMethod.Post, $"/storage/v1/object/car-previews/{storagePath}");
         req.Headers.Add("x-upsert", "true");
         req.Content = new ByteArrayContent(imageBytes);
-        req.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         var res = await _http.SendAsync(req, ct);
         return res.IsSuccessStatusCode;
     }

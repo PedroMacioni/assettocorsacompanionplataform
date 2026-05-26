@@ -43,6 +43,7 @@
     "allSessions": "View all sessions",
     "vsPb": "vs PB",
     "vsPersonalBest": "vs Personal Best",
+    "comboHistory": "History on this combo",
     "badge": {
       "pb": "New PB",
       "improving": "Improving",
@@ -52,13 +53,17 @@
   },
   "ActivityCalendar": {
     "title": "Activity",
-    "activeDays": "active days",
+    "activeDays": "active days (90 days)",
     "less": "Less",
     "more": "More",
-    "tooltip": "{count, plural, one {1 session on {date}} other {{count} sessions on {date}}}"
+    "tooltip": "{count, plural, one {1 session on {date}} other {{count} sessions on {date}}}",
+    "statDays": "active days",
+    "daysLabel": "days",
+    "weekdayTitle": "Day of week"
   },
   "QuickStats": {
     "tracks": "Tracks",
+    "friends": "Friends",
     "cars": "Cars",
     "distance": "km driven",
     "totalLaps": "Laps"
@@ -74,6 +79,18 @@
     "title": "Personal Records",
     "empty": "No records yet",
     "viewAll": "View all records"
+  },
+  "RecentRecords": {
+    "title": "Recent Records",
+    "viewAll": "View all",
+    "empty": "No records yet"
+  },
+  "ComboProgress": {
+    "title": "Combo Progress",
+    "needMoreSessions": "Run at least 2 sessions on this combo to see your progress",
+    "improved": "{delta}s improvement",
+    "noImprovement": "No improvement recorded",
+    "sessionsCount": "{count} sessions"
   },
   "QuickNav": {
     "sessions": "Sessions",
@@ -91,9 +108,110 @@
     "analytics": "Analytics",
     "garage": "Garage",
     "tracks": "Tracks",
+    "friends": "Friends",
     "settings": "Settings",
     "agent": "Agent",
+    "profile": "Profile",
     "signOut": "Sign out"
+  },
+  "Friends": {
+    "eyebrow": "Social",
+    "title": "Friends",
+    "description": "Find drivers, send requests, and manage who can compare data with you.",
+    "addDriver": "Add driver",
+    "yourDrivers": "Your drivers",
+    "connected": "{count, plural, one {# driver connected} other {# drivers connected}}",
+    "waitingResponse": "Waiting for response",
+    "incomingTitle": "{count, plural, one {Incoming request} other {Incoming requests}}",
+    "outgoingTitle": "{count, plural, one {# request sent} other {# requests sent}}",
+    "stats": {
+      "friends": "Friends",
+      "incoming": "Incoming",
+      "outgoing": "Sent"
+    },
+    "card": {
+      "since": "since {date}",
+      "sessions": "Sessions",
+      "laps": "Laps",
+      "best": "Best",
+      "removeMenu": "Remove friend"
+    },
+    "removeConfirm": {
+      "title": "Remove friend?",
+      "description": "<b>{name}</b> will be removed from your friends list and will no longer be able to see your profile.",
+      "confirm": "Remove",
+      "cancel": "Cancel"
+    },
+    "modal": {
+      "title": "Add driver",
+      "subtitle": "Search by username or name",
+      "placeholder": "Search driver...",
+      "hint": "Find drivers by name or @username",
+      "minChars": "Type at least 2 characters.",
+      "noResults": "No drivers found.",
+      "error": "Could not search users."
+    },
+    "noDriversTitle": "No drivers yet",
+    "noDriversDesc": "Connect with other drivers and compare your lap times on track",
+    "search": {
+      "title": "Find drivers",
+      "hint": "Search by username or public name.",
+      "placeholder": "Type at least 2 characters...",
+      "button": "Search",
+      "minChars": "Type at least 2 characters to search.",
+      "empty": "No drivers found."
+    },
+    "sections": {
+      "friends": "Your friends",
+      "incoming": "Incoming requests",
+      "outgoing": "Sent requests"
+    },
+    "empty": {
+      "friends": "You do not have friends yet.",
+      "incoming": "No incoming requests.",
+      "outgoing": "No sent requests."
+    },
+    "actions": {
+      "add": "Add",
+      "accept": "Accept",
+      "decline": "Decline",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "cancelRequest": "Cancel",
+      "sent": "Sent",
+      "pending": "Pending",
+      "friend": "Friend",
+      "viewProfile": "View profile"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Friend",
+      "declined": "Declined",
+      "blocked": "Blocked"
+    },
+    "meta": {
+      "friend": "Accepted friendship",
+      "received": "Request received",
+      "sent": "Request sent"
+    },
+    "filters": {
+      "title": "Filters",
+      "active": "{count, plural, one {# filter active} other {# filters active}}",
+      "clear": "Clear",
+      "search": "Search",
+      "searchPlaceholder": "Name or @username...",
+      "sort": "Sort by",
+      "sortName": "Name",
+      "sortSessions": "Most sessions",
+      "sortBest": "Best lap",
+      "showing": "{shown} of {total} drivers",
+      "noResults": "No drivers found",
+      "noResultsHint": "Try a different name or username."
+    },
+    "errors": {
+      "search": "Could not search users.",
+      "action": "Could not complete the action."
+    }
   },
   "Login": {
     "title": "Welcome back",
@@ -248,6 +366,30 @@
       "hint": "Visible only to you. Leave empty to use the original name.",
       "save": "Save",
       "cancel": "Cancel"
+    },
+    "filters": {
+      "title": "Filters",
+      "active": "{count} active",
+      "clear": "Clear",
+      "search": "Search",
+      "class": "Class",
+      "allClasses": "All classes",
+      "brand": "Brand",
+      "allBrands": "All brands",
+      "favorites": "Favorites",
+      "allCars": "All",
+      "onlyFavorites": "Favorites only",
+      "recent": "Recent",
+      "recentOnly": "Last 30 days"
+    },
+    "table": {
+      "car": "Car",
+      "class": "Class",
+      "brand": "Brand",
+      "sessions": "Sessions",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
     }
   },
   "Landing": {
@@ -327,9 +469,40 @@
     "catalogue": "Catalogue",
     "title": "Tracks",
     "count": "{tracks} tracks · {driven} driven",
+    "noResults": "No tracks found",
     "empty": {
       "title": "No tracks found",
       "description": "Sync your agent to populate the track catalogue from your AC installation."
+    },
+    "results": {
+      "label": "Tracks",
+      "count": "{tracks} tracks · {driven} driven"
+    },
+    "filters": {
+      "title": "Filters",
+      "active": "{count} active",
+      "clear": "Clear",
+      "search": "Search",
+      "searchPlaceholder": "Search track...",
+      "country": "Country",
+      "allCountries": "All countries",
+      "status": "Status",
+      "allTracks": "All tracks",
+      "drivenOnly": "Driven only",
+      "notYetDriven": "Not yet driven"
+    },
+    "table": {
+      "track": "Track",
+      "location": "Location",
+      "length": "Length",
+      "sessions": "Sessions",
+      "laps": "Laps",
+      "distance": "Distance",
+      "bestLap": "Best Lap"
+    },
+    "detail": {
+      "back": "Back to tracks",
+      "specs": "Specifications"
     },
     "modal": {
       "length": "Length",
@@ -384,7 +557,9 @@
   "Dashboard": {
     "noSyncRegistered": "No sync recorded",
     "noSession": "No sessions yet",
-    "sessionsCount": "{count, plural, one {1 session} other {{count} sessions}}"
+    "sessionsCount": "{count, plural, one {1 session} other {{count} sessions}}",
+    "sectionActivity": "Activity",
+    "sectionPerformance": "Performance"
   },
   "EmptyState": {
     "title": "No sessions yet",
@@ -392,6 +567,7 @@
     "action": "Set up Agent"
   },
   "SessionDetail": {
+    "backToSessions": "Back to sessions",
     "bestLap": "Best Lap",
     "vsPb": "vs PB",
     "pb": "PB",
@@ -442,5 +618,58 @@
       "empty": "Lap data not available.",
       "emptyHint": "Sync via the agent to import sector breakdown."
     }
+  },
+  "Profile": {
+    "title": "Profile",
+    "memberSince": "Member since {date}",
+    "lastSession": "Last session {time}",
+    "editProfile": "Edit profile",
+    "sectionFavorites": "Favorites",
+    "sectionRecords": "Personal Records",
+    "sectionActivity": "Activity",
+    "favoriteCar": "Favorite car",
+    "favoriteTrack": "Favorite track",
+    "noFavoriteCar": "No favorite car set",
+    "noFavoriteCarHint": "Go to Garage and mark a car as favorite",
+    "noFavoriteTrack": "No favorite track set",
+    "noFavoriteTrackHint": "Coming soon — set your favorite track",
+    "goToGarage": "Go to Garage",
+    "sessions": "Sessions",
+    "laps": "Laps",
+    "bestLap": "Best Lap",
+    "records": {
+      "title": "Personal Records",
+      "empty": "No personal records yet",
+      "rank": "#",
+      "car": "Car",
+      "track": "Track",
+      "time": "Time",
+      "date": "Date",
+      "previous": "Previous",
+      "next": "Next",
+      "showing": "{from}–{to} of {total}"
+    },
+    "changeButton": "Change",
+    "chooseFavorite": "Choose favorite",
+    "noFavoriteCarHint": "Click to choose your favorite car",
+    "noFavoriteTrackHint2": "Click to choose your favorite track",
+    "carPickerTitle": "Choose favorite car",
+    "trackPickerTitle": "Choose favorite track",
+    "pickerSearch": "Search...",
+    "pickerSessions": "{count} sessions",
+    "backToFriends": "Back to friends",
+    "sectionRecentSessions": "Recent Sessions",
+    "uniqueTracks": "Tracks",
+    "uniqueCars": "Cars",
+    "kmDriven": "km driven",
+    "col": {
+      "date": "Date",
+      "car": "Car",
+      "track": "Track",
+      "bestLap": "Best lap",
+      "distance": "Distance",
+      "type": "Type"
+    },
+    "noSessions": "No sessions yet"
   }
 }

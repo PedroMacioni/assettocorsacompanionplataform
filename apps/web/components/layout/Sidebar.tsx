@@ -15,6 +15,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  User,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -67,9 +69,11 @@ export function Sidebar() {
     { href: "/analytics", label: t("analytics"), icon: TrendingUp },
     { href: "/garage", label: t("garage"), icon: Car },
     { href: "/tracks", label: t("tracks"), icon: MapPin },
+    { href: "/friends", label: t("friends"), icon: Users },
   ] as const;
 
   const bottomItems = [
+    { href: "/profile", label: t("profile"), icon: User },
     { href: "/download", label: t("agent"), icon: ArrowDownToLine },
     { href: "/settings", label: t("settings"), icon: Settings },
   ] as const;
@@ -90,6 +94,8 @@ export function Sidebar() {
   }, []);
 
   function isActive(href: string) {
+    if (href === "/profile") return pathname === "/profile";
+    if (href === "/friends") return pathname === "/friends" || pathname.startsWith("/profile/");
     return pathname === href || pathname.startsWith(href + "/");
   }
 

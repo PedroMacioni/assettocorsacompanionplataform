@@ -9,6 +9,29 @@ export type ProfileSummary = {
   fastest_lap_ms: number | null;
 };
 
+export type Profile = {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  bio: string | null;
+  country: string | null;
+  avatar_url: string | null;
+  avatar_color: string | null;
+  profile_visibility: "private" | "friends" | "public";
+  favorite_track_id?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Friendship = {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: "pending" | "accepted" | "declined" | "blocked";
+  created_at: string;
+  responded_at: string | null;
+};
+
 export type Session = {
   id: string;
   source_id: string;
@@ -29,6 +52,7 @@ export type PersonalBest = {
   track_id: string;
   time_ms: number;
   source_date: number | null;
+  synced_at: string;
 };
 
 export type TopCar = {

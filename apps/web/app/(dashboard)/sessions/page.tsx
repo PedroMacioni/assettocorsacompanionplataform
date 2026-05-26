@@ -1,12 +1,10 @@
-import { ListChecks } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/EmptyState";
-import { Pagination } from "@/components/ui/pagination";
 import { slugToName } from "@/lib/format";
 import type { Session, TopCar, TopTrack } from "@/lib/types";
-import { SessionsClient } from "./SessionsClient";
-import { SessionsFilters, type SessionFilterOption } from "./SessionsFilters";
+import { SessionsContent } from "./SessionsContent";
+import { type SessionFilterOption } from "./SessionsFilters";
 
 type SearchParams = {
   page?: string;
@@ -111,7 +109,7 @@ export default async function SessionsPage({
   const sessions = (sessionsRes.data ?? []) as Session[];
   const filteredCount = sessionsRes.count ?? 0;
   const totalCount = totalRes.count ?? filteredCount;
-  const totalPages = Math.ceil(filteredCount / pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
 
   const carOptions = includeSelected(
     ((carsRes.data ?? []) as Pick<TopCar, "car_id">[])
@@ -156,60 +154,30 @@ export default async function SessionsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {t("history")}
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-        </div>
-
-        <div className="flex w-fit items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <ListChecks className="size-4" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {t("results.label")}
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {activeFilterCount > 0
-                ? t("results.filteredCount", { count: filteredCount, total: totalCount })
-                : t("results.count", { count: totalCount })}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <SessionsFilters
-        cars={carOptions}
-        tracks={trackOptions}
-        types={typeOptions}
-        selected={{
-          car: params.car,
-          track: params.track,
-          type: params.type,
-          period: selectedPeriod,
-          date: params.date,
-        }}
-        activeCount={activeFilterCount}
-      />
-
-      <SessionsClient sessions={sessions} />
-
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        baseUrl="/sessions"
-        queryParams={{
-          car: params.car,
-          track: params.track,
-          type: params.type,
-          date: params.date,
-          filter: selectedPeriod,
-        }}
-      />
-    </div>
+    <SessionsContent
+      sessions={sessions}
+      cars={carOptions}
+      tracks={trackOptions}
+      types={typeOptions}
+      selected={{
+        car: params.car,
+        track: params.track,
+        type: params.type,
+        period: selectedPeriod,
+        date: params.date,
+      }}
+      activeFilterCount={activeFilterCount}
+      filteredCount={filteredCount}
+      totalCount={totalCount}
+      currentPage={page}
+      totalPages={totalPages}
+      queryParams={{
+        car: params.car,
+        track: params.track,
+        type: params.type,
+        date: params.date,
+        filter: selectedPeriod,
+      }}
+    />
   );
 }

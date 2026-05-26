@@ -293,7 +293,7 @@ public sealed class SyncWorker : IDisposable
 
         if (allCarIds.Count == 0) return;
 
-        ActivityLogged?.Invoke($"↑ Enviando badges de carros (0/{allCarIds.Count})...");
+        ActivityLogged?.Invoke($"↑ Enviando previews de carros (0/{allCarIds.Count})...");
 
         var uploaded = new List<string>();
         var attempted = new List<string>();
@@ -301,8 +301,24 @@ public sealed class SyncWorker : IDisposable
         {
             ct.ThrowIfCancellationRequested();
             var carId = allCarIds[i];
-            var badgePath = Path.Combine(carsPath, carId, "ui", "badge.png");
-            if (!File.Exists(badgePath))
+
+            // Tenta car_preview.jpg (foto real do carro no Content Manager)
+            // Fallback para badge.png (ícone/logo)
+            var candidates = new[]
+            {
+                (Path.Combine(carsPath, carId, "ui", "car_preview.jpg"), "image/jpeg"),
+                (Path.Combine(carsPath, carId, "ui", "preview.jpg"),     "image/jpeg"),
+                (Path.Combine(carsPath, carId, "ui", "badge.png"),       "image/png"),
+            };
+
+            string? foundPath = null;
+            string contentType = "image/png";
+            foreach (var (path, mime) in candidates)
+            {
+                if (File.Exists(path)) { foundPath = path; contentType = mime; break; }
+            }
+
+            if (foundPath == null)
             {
                 attempted.Add(carId);
                 continue;
@@ -310,32 +326,32 @@ public sealed class SyncWorker : IDisposable
 
             try
             {
-                var bytes = File.ReadAllBytes(badgePath);
+                var bytes = File.ReadAllBytes(foundPath);
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 linkedCts.CancelAfter(TimeSpan.FromSeconds(15));
-                if (bytes.Length > 0 && await _supabase.UploadCarBadgeAsync(carId, bytes, linkedCts.Token))
+                if (bytes.Length > 0 && await _supabase.UploadCarPreviewAsync(carId, bytes, contentType, linkedCts.Token))
                     uploaded.Add(carId);
                 else
-                    ActivityLogged?.Invoke($"  ↳ badge não enviado: {carId}");
+                    ActivityLogged?.Invoke($"  ↳ preview não enviado: {carId}");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
-                ActivityLogged?.Invoke($"  ↳ erro no badge {carId}: {ex.Message}");
+                ActivityLogged?.Invoke($"  ↳ erro no preview {carId}: {ex.Message}");
             }
 
             attempted.Add(carId);
 
             if ((i + 1) % 5 == 0 || i == allCarIds.Count - 1)
-                ActivityLogged?.Invoke($"↑ Enviando badges de carros ({i + 1}/{allCarIds.Count})...");
+                ActivityLogged?.Invoke($"↑ Enviando previews de carros ({i + 1}/{allCarIds.Count})...");
         }
 
         if (attempted.Count > 0)
             _cache.MarkCarBadgesSynced(attempted);
 
         ActivityLogged?.Invoke(uploaded.Count > 0
-            ? $"✓ {uploaded.Count}/{attempted.Count} badges de carros enviados"
-            : $"✓ Badges de carros: nenhum novo para enviar");
+            ? $"✓ {uploaded.Count}/{attempted.Count} previews de carros enviados"
+            : $"✓ Previews de carros: nenhum novo para enviar");
     }
 
     private async Task SyncCarSpecsAsync(CancellationToken ct = default)
