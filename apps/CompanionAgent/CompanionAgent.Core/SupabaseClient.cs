@@ -1,4 +1,4 @@
-namespace CompanionAgent.Tray;
+namespace CompanionAgent.Core;
 
 using Companion.SharedContracts.History;
 using Companion.SharedContracts.Tracks;
@@ -21,6 +21,7 @@ public sealed class SupabaseClient : IDisposable
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(_accessToken) && Guid.TryParse(UserId, out _);
     public string UserId { get; private set; } = "";
+    public string UserEmail { get; private set; } = "";
 
     public SupabaseClient(string url, string anonKey)
     {
@@ -46,8 +47,6 @@ public sealed class SupabaseClient : IDisposable
         if (!Guid.TryParse(UserId, out _))
             ClearTokens();
     }
-
-    public string UserEmail { get; private set; } = "";
 
     public async Task<(string AccessToken, string RefreshToken)?> SignInAsync(string email, string password)
     {

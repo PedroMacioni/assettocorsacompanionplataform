@@ -34,7 +34,7 @@ public sealed class SettingsForm : Form
         _historyService = historyService;
         _onSave         = onSave;
 
-        Text            = "Configurações";
+        Text            = "Settings";
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox     = false;
         MinimizeBox     = false;
@@ -58,19 +58,19 @@ public sealed class SettingsForm : Form
     {
         // ── Header ────────────────────────────────────────────────────────
         var header = MakePanel(0, 0, 420, 50, BgDark);
-        header.Controls.Add(MakeLabel("Configurações", 16, 10, TxtPri, 11f, FontStyle.Bold));
+        header.Controls.Add(MakeLabel("Settings", 16, 10, TxtPri, 11f, FontStyle.Bold));
         header.Controls.Add(MakeLabel("Sim Racing Companion", 16, 32, TxtSec, 8f));
 
         // ── Auth card (dynamic) ───────────────────────────────────────────
         _authCard = MakeCard(12, 62, 396, 152);
-        _authCard.Controls.Add(MakeLabel("CONTA", 14, 12, TxtSec, 7f, FontStyle.Bold));
+        _authCard.Controls.Add(MakeLabel("ACCOUNT", 14, 12, TxtSec, 7f, FontStyle.Bold));
         PopulateAuthCard();
 
         // ── Sync card ─────────────────────────────────────────────────────
         var syncCard = MakeCard(12, 226, 396, 84);
-        syncCard.Controls.Add(MakeLabel("SINCRONIZAÇÃO", 14, 12, TxtSec, 7f, FontStyle.Bold));
+        syncCard.Controls.Add(MakeLabel("SYNC", 14, 12, TxtSec, 7f, FontStyle.Bold));
 
-        syncCard.Controls.Add(MakeLabel("Intervalo (min):", 14, 36, TxtSec, 8.5f));
+        syncCard.Controls.Add(MakeLabel("Interval (min):", 14, 36, TxtSec, 8.5f));
         _intervalBox = new NumericUpDown
         {
             Location  = new Point(130, 33),
@@ -84,7 +84,7 @@ public sealed class SettingsForm : Form
 
         _autoStartBox = new CheckBox
         {
-            Text      = "Iniciar com o Windows",
+            Text      = "Start with Windows",
             Location  = new Point(14, 58),
             AutoSize  = true,
             Checked   = AutoStartManager.IsEnabled(),
@@ -96,10 +96,10 @@ public sealed class SettingsForm : Form
         var (currentSessionsPath, currentPbPath) = _historyService.GetCurrentPaths();
 
         var dataCard = MakeCard(12, 322, 396, 140);
-        dataCard.Controls.Add(MakeLabel("FONTES DE DADOS", 14, 12, TxtSec, 7f, FontStyle.Bold));
-        dataCard.Controls.Add(MakeLabel("Deixe vazio para usar o caminho padrão/sample-data", 14, 30, TxtSec, 7f));
+        dataCard.Controls.Add(MakeLabel("DATA SOURCES", 14, 12, TxtSec, 7f, FontStyle.Bold));
+        dataCard.Controls.Add(MakeLabel("Leave empty to use the default path", 14, 30, TxtSec, 7f));
 
-        dataCard.Controls.Add(MakeLabel("Sessões:", 14, 52, TxtSec, 8.5f));
+        dataCard.Controls.Add(MakeLabel("Sessions:", 14, 52, TxtSec, 8.5f));
         _sessionsPathBox = MakeTextBox(14, 70, 330, current.CustomSessionsPath);
         _sessionsPathBox.PlaceholderText = currentSessionsPath;
         dataCard.Controls.Add(_sessionsPathBox);
@@ -119,8 +119,8 @@ public sealed class SettingsForm : Form
         var footer = MakePanel(0, 474, 420, 46, BgSub);
         footer.Paint += (_, e) => e.Graphics.DrawLine(new Pen(Border), 0, 0, 420, 0);
 
-        var saveBtn   = MakeButton("Salvar",   210, 8, 90, 28, OnSave);
-        var cancelBtn = MakeButton("Cancelar", 310, 8, 90, 28, (_, _) => Close());
+        var saveBtn   = MakeButton("Save",   210, 8, 90, 28, OnSave);
+        var cancelBtn = MakeButton("Cancel", 310, 8, 90, 28, (_, _) => Close());
         footer.Controls.AddRange(new Control[] { saveBtn, cancelBtn });
 
         Controls.AddRange(new Control[] { header, _authCard, syncCard, dataCard, footer });
@@ -191,7 +191,7 @@ public sealed class SettingsForm : Form
 
         // "Conectado" dot + text
         var connDot  = MakeLabel("●", 82, 64, Green, 7f);
-        var connText = MakeLabel("Conectado", 96, 64, TxtSec, 7.5f);
+        var connText = MakeLabel("Connected", 96, 64, TxtSec, 7.5f);
         _authCard.Controls.Add(connDot);
         _authCard.Controls.Add(connText);
 
@@ -205,7 +205,7 @@ public sealed class SettingsForm : Form
         _authCard.Controls.Add(sep);
 
         // Logout button
-        var logoutBtn = MakeButton("Sair da conta", 14, 116, 120, 26, OnLogout);
+        var logoutBtn = MakeButton("Sign out", 14, 116, 120, 26, OnLogout);
         logoutBtn.ForeColor = Red;
         logoutBtn.FlatAppearance.BorderColor = Color.FromArgb(60, 40, 40);
         _authCard.Controls.Add(logoutBtn);
@@ -213,37 +213,37 @@ public sealed class SettingsForm : Form
 
     private void BuildLoginForm()
     {
-        _authCard.Controls.Add(MakeLabel("E-mail:", 14, 36, TxtSec, 8.5f));
+        _authCard.Controls.Add(MakeLabel("Email:", 14, 36, TxtSec, 8.5f));
         var emailBox = MakeTextBox(90, 32, 290, "");
         _authCard.Controls.Add(emailBox);
 
-        _authCard.Controls.Add(MakeLabel("Senha:", 14, 70, TxtSec, 8.5f));
+        _authCard.Controls.Add(MakeLabel("Password:", 14, 70, TxtSec, 8.5f));
         var passBox = MakeTextBox(90, 66, 290, "", passwordChar: '●');
         _authCard.Controls.Add(passBox);
 
         var statusLabel = MakeLabel("", 90, 106, TxtSec, 8f);
         _authCard.Controls.Add(statusLabel);
 
-        var loginBtn = MakeButton("Entrar", 90, 100, 110, 28, null!);
+        var loginBtn = MakeButton("Sign in", 90, 100, 110, 28, null!);
         loginBtn.Click += async (_, _) =>
         {
             var email = emailBox.Text.Trim();
             var pass  = passBox.Text;
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(pass))
             {
-                statusLabel.Text      = "Preencha e-mail e senha.";
+                statusLabel.Text      = "Enter email and password.";
                 statusLabel.ForeColor = Red;
                 return;
             }
 
             loginBtn.Enabled      = false;
-            statusLabel.Text      = "Autenticando...";
+            statusLabel.Text      = "Signing in…";
             statusLabel.ForeColor = TxtSec;
 
             var result = await _supabase.SignInAsync(email, pass);
             if (result is null)
             {
-                statusLabel.Text      = "Credenciais inválidas.";
+                statusLabel.Text      = "Invalid credentials.";
                 statusLabel.ForeColor = Red;
                 loginBtn.Enabled      = true;
                 return;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   User, Palette, Monitor, Check,
   Sun, Moon, Globe, ChevronRight, Camera, X, Laptop, AlertCircle,
@@ -79,6 +80,7 @@ type Props = {
 
 export function SettingsClient(props: Props) {
   const t = useTranslations("Settings");
+  const searchParams = useSearchParams();
 
   const SECTIONS = [
     { id: "profile" as const,    label: t("sections.profile"),    icon: User },
@@ -86,7 +88,10 @@ export function SettingsClient(props: Props) {
     { id: "agent" as const,      label: t("sections.agent"),      icon: Monitor },
   ];
 
-  const [section, setSection]           = useState<Section>("profile");
+  const initialSection = (searchParams.get("section") as Section | null) ?? "profile";
+  const [section, setSection] = useState<Section>(
+    SECTIONS.some((s) => s.id === initialSection) ? initialSection : "profile"
+  );
   const [displayName, setDisplayName]   = useState(props.displayName);
   const [avatarColor, setAvatarColor]   = useState(props.avatarColor);
   const [avatarUrl, setAvatarUrl]       = useState<string | null>(props.avatarUrl);
@@ -584,78 +589,82 @@ export function SettingsClient(props: Props) {
           </div>
         )}
 
-        {/* ── AGENT TOKEN ──────────────────────────────────────────────── */}
+        {/* ── CONNECTED COMPUTER ───────────────────────────────────────── */}
         {section === "agent" && (
           <div className="space-y-6">
             <SectionHeader title={t("agent.title")} description={t("agent.description")} />
 
-            <div className="bg-card border border-border rounded-md p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">{t("agent.accessToken")}</label>
-                <div className="flex gap-2">
-                  <input
-                    type={tokenVisible ? "text" : "password"}
-                    value={token}
-                    readOnly
-                    className="flex-1 bg-muted border border-border rounded-md px-3.5 py-2.5 text-xs font-mono text-foreground focus:outline-none"
-                  />
+            {props.connectedDevice ? (
+              <>
+                <div className="bg-card border border-border rounded-md p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-md bg-green-500/10 border border-green-500/25 flex items-center justify-center shrink-0">
+                      <Laptop className="h-4 w-4 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{props.connectedDevice.device_name}</p>
+                      <p className="text-[11px] text-green-500 font-medium">Connected</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-4 space-y-3">
+                    {[
+                      { label: t("agent.platform"),       value: props.connectedDevice.platform },
+                      { label: t("agent.version"),        value: props.connectedDevice.app_version ?? "—" },
+                      { label: t("agent.connectedSince"), value: formatDate(props.connectedDevice.paired_at) },
+                      {
+                        label: t("agent.lastSeen"),
+                        value: props.connectedDevice.last_seen_at
+                          ? formatDate(props.connectedDevice.last_seen_at)
+                          : t("agent.neverSeen"),
+                      },
+                      { label: t("agent.deviceId"), value: shortId(props.connectedDevice.id) },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between gap-4">
+                        <span className="text-xs text-muted-foreground">{label}</span>
+                        <span className="text-xs font-semibold font-mono text-foreground">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-card border border-border rounded-md p-5 flex items-start gap-3">
+                  <AlertCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-xs leading-5 text-muted-foreground">{t("agent.disconnectNote")}</p>
+                </div>
+
+                <div>
                   <button
-                    onClick={() => setTokenVisible((v) => !v)}
-                    className="px-3 py-2.5 bg-muted border border-border rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                    title={tokenVisible ? "Hide" : "Show"}
+                    onClick={disconnect}
+                    disabled={disconnecting}
+                    className={cn(
+                      "px-5 py-2.5 rounded-md text-sm font-semibold border transition-all duration-150",
+                      disconnecting
+                        ? "border-border text-muted-foreground cursor-not-allowed"
+                        : "border-destructive/40 text-destructive hover:bg-destructive/5 active:scale-95"
+                    )}
                   >
-                    {tokenVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {disconnecting ? t("agent.disconnecting") : t("agent.disconnectButton")}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={copyToken}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border rounded-md text-sm font-medium text-foreground hover:border-primary transition-all duration-150"
+              </>
+            ) : (
+              <div className="bg-card border border-border rounded-md p-8 flex flex-col items-center text-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-muted border border-border flex items-center justify-center">
+                  <Monitor className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t("agent.noDevice")}</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">{t("agent.noDeviceDescription")}</p>
+                </div>
+                <a
+                  href="/download"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
                 >
-                  {copied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">{t("agent.copied")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      {t("agent.copyToken")}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={renewToken}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all duration-150"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  {t("agent.renew")}
-                </button>
+                  {t("agent.downloadAgent")}
+                </a>
               </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-md p-6">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                {t("agent.howToUse")}
-              </p>
-              <ol className="space-y-3">
-                {[
-                  t("agent.steps.one"),
-                  t("agent.steps.two"),
-                  t("agent.steps.three"),
-                  t("agent.steps.four"),
-                ].map((step, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-foreground">
-                      {i + 1}
-                    </span>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            </div>
+            )}
           </div>
         )}
 

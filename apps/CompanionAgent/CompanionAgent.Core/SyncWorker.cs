@@ -1,4 +1,4 @@
-namespace CompanionAgent.Tray;
+namespace CompanionAgent.Core;
 
 using Companion.Infrastructure.History;
 using Companion.Infrastructure.Tracks;
@@ -308,8 +308,6 @@ public sealed class SyncWorker : IDisposable
             ct.ThrowIfCancellationRequested();
             var carId = allCarIds[i];
 
-            // Tenta car_preview.jpg (foto real do carro no Content Manager)
-            // Fallback para badge.png (ícone/logo)
             var candidates = new[]
             {
                 (Path.Combine(carsPath, carId, "ui", "car_preview.jpg"), "image/jpeg"),
@@ -492,7 +490,6 @@ public sealed class SyncWorker : IDisposable
             if (specs.TryGetProperty("acceleration", out var acc))
             {
                 var accStr = acc.GetString() ?? "";
-                // "3.1s" → 31
                 var numStr = new string(accStr.Where(ch => ch == '.' || char.IsDigit(ch)).ToArray());
                 if (double.TryParse(numStr, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var accVal))
@@ -521,7 +518,6 @@ public sealed class SyncWorker : IDisposable
     {
         if (!specs.TryGetProperty(key, out var el)) return null;
         var str = el.GetString() ?? "";
-        // extract first number: "565 bhp" → 565, "1250 kg" → 1250
         var numStr = new string(str.TakeWhile(ch => char.IsDigit(ch) || ch == '.').ToArray()).Trim();
         return int.TryParse(numStr, out var v) ? v : null;
     }
@@ -552,7 +548,6 @@ public sealed class SyncWorker : IDisposable
             var key = line[..eqIdx].Trim();
             var val = line[(eqIdx + 1)..].Trim();
 
-            // ignore comment suffix
             var commentIdx = val.IndexOf(';');
             if (commentIdx >= 0) val = val[..commentIdx].Trim();
 

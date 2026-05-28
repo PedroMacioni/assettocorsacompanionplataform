@@ -132,7 +132,7 @@ export default async function AgentConnectPage({
       throw new Error(pairingError.message);
     }
 
-    redirect("/settings");
+    redirect("/settings?section=agent");
   }
 
   async function cancelPairing() {

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CompanionAgent.Desktop (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "CompanionAgent.Desktop (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

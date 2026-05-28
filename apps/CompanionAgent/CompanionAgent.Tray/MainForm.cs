@@ -93,7 +93,7 @@ public sealed class MainForm : Form
             _syncBtn.Enabled = state != SyncState.Syncing;
 
             _dotLabel.ForeColor  = _supabase.IsConfigured ? Green : Red;
-            _connLabel.Text      = _supabase.IsConfigured ? "Conectado" : "Não configurado";
+            _connLabel.Text      = _supabase.IsConfigured ? "Connected" : "Not configured";
             _connLabel.ForeColor = _supabase.IsConfigured ? TxtPri : TxtSec;
         });
     }
@@ -140,7 +140,7 @@ public sealed class MainForm : Form
 
         _dotLabel  = MakeLabel("●", 18, 11, _supabase.IsConfigured ? Green : Red, 10f);
         _connLabel = MakeLabel(
-            _supabase.IsConfigured ? "Conectado" : "Não configurado",
+            _supabase.IsConfigured ? "Connected" : "Not configured",
             36, 11, _supabase.IsConfigured ? TxtPri : TxtSec, 8.5f);
         connBar.Controls.AddRange(new Control[] { _dotLabel, _connLabel });
 
@@ -148,11 +148,11 @@ public sealed class MainForm : Form
         var syncCard = MakeCard(12, 112, 436, 96);
         syncCard.Controls.Add(MakeLabel("STATUS", 14, 12, TxtSec, 7f, FontStyle.Bold));
 
-        _stateLabel = MakeLabel("Iniciando...", 14, 32, TxtSec, 10f);
+        _stateLabel = MakeLabel("Starting…", 14, 32, TxtSec, 10f);
 
         _syncBtn = new Button
         {
-            Text      = "Sincronizar agora",
+            Text      = "Sync now",
             Location  = new Point(298, 58),
             Size      = new Size(124, 26),
             FlatStyle = FlatStyle.Flat,
@@ -169,13 +169,13 @@ public sealed class MainForm : Form
             _ = _worker.SyncAsync().ContinueWith(_ =>
             {
                 if (IsDisposed || !IsHandleCreated) return;
-                BeginInvoke(() => { if (_stateLabel.Text != "Sincronizando...") _syncBtn.Enabled = true; });
+                BeginInvoke(() => { if (_stateLabel.Text != "Syncing…") _syncBtn.Enabled = true; });
             });
         };
 
         var resyncBtn = new Button
         {
-            Text      = "Re-sync voltas",
+            Text      = "Re-sync laps",
             Location  = new Point(14, 58),
             Size      = new Size(110, 26),
             FlatStyle = FlatStyle.Flat,
@@ -201,7 +201,7 @@ public sealed class MainForm : Form
 
         // ── Activity log card ─────────────────────────────────────────────
         var logCard = MakeCard(12, 220, 436, 232);
-        logCard.Controls.Add(MakeLabel("ATIVIDADE RECENTE", 14, 12, TxtSec, 7f, FontStyle.Bold));
+        logCard.Controls.Add(MakeLabel("RECENT ACTIVITY", 14, 12, TxtSec, 7f, FontStyle.Bold));
 
         _logBox = new RichTextBox
         {
@@ -222,13 +222,13 @@ public sealed class MainForm : Form
         footer.Paint += (_, e) =>
             e.Graphics.DrawLine(new Pen(Border), 0, 0, 460, 0);
 
-        var btnDash = MakeFooterButton("Abrir Dashboard", 12);
+        var btnDash = MakeFooterButton("Open Dashboard", 12);
         btnDash.Click += (_, _) =>
             System.Diagnostics.Process.Start(
                 new System.Diagnostics.ProcessStartInfo("https://sim-racing-companion.vercel.app")
                     { UseShellExecute = true });
 
-        var btnCfg = MakeFooterButton("Configurações", 158);
+        var btnCfg = MakeFooterButton("Settings", 158);
         btnCfg.Click += (_, _) =>
         {
             var form = new SettingsForm(_settings, _supabase, _historyService, saved =>
@@ -245,7 +245,7 @@ public sealed class MainForm : Form
             form.Show();
         };
 
-        var btnMin = MakeFooterButton("Minimizar ▼", 304);
+        var btnMin = MakeFooterButton("Minimize ▼", 304);
         btnMin.Click += (_, _) => Hide();
 
         footer.Controls.AddRange(new Control[] { btnDash, btnCfg, btnMin });
