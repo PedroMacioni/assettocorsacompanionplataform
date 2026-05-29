@@ -62,13 +62,15 @@ public sealed class SyncWorker : IDisposable
     public void UpdateInterval(int intervalMinutes) =>
         _timer?.Change(TimeSpan.FromMinutes(intervalMinutes), TimeSpan.FromMinutes(intervalMinutes));
 
+    private const int DebounceDelayMs = 500;
+
     private void ScheduleDebounced()
     {
         lock (_debounceLock)
         {
             _debounceTimer?.Dispose();
             _debounceTimer = new System.Threading.Timer(
-                _ => _ = SyncAsync(), null, 800, System.Threading.Timeout.Infinite);
+                _ => _ = SyncAsync(), null, DebounceDelayMs, System.Threading.Timeout.Infinite);
         }
     }
 
