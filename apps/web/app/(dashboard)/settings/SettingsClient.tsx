@@ -5,10 +5,11 @@ import { useSearchParams } from "next/navigation";
 import {
   User, Palette, Monitor, Check,
   Sun, Moon, Globe, ChevronRight, Camera, X, Laptop, AlertCircle,
-  Eye, EyeOff, Copy, RefreshCw,
+  Eye, EyeOff, Copy, RefreshCw, LogOut,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ type Props = {
 
 export function SettingsClient(props: Props) {
   const t = useTranslations("Settings");
+  const { signOut } = useAuth();
   const searchParams = useSearchParams();
 
   const SECTIONS = [
@@ -106,6 +108,7 @@ export function SettingsClient(props: Props) {
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [savedAppearance, setSavedAppearance]   = useState(false);
   const [disconnecting, setDisconnecting]       = useState(false);
+  const [signingOut, setSigningOut]             = useState(false);
   const [token, setToken]               = useState("");
   const [tokenVisible, setTokenVisible] = useState(false);
   const [copied, setCopied]             = useState(false);
@@ -266,6 +269,15 @@ export function SettingsClient(props: Props) {
     }
   }
 
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   // ── token helpers ─────────────────────────────────────────────────────────────
 
   const copyToken = async () => {
@@ -309,6 +321,19 @@ export function SettingsClient(props: Props) {
             </button>
           ))}
         </div>
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className={cn(
+            "mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm font-semibold transition-all duration-150",
+            signingOut
+              ? "border-border text-muted-foreground cursor-not-allowed"
+              : "border-destructive/40 text-destructive hover:bg-destructive/5 active:scale-95"
+          )}
+        >
+          <LogOut className="h-4 w-4" />
+          {signingOut ? t("signingOut") : t("signOut")}
+        </button>
       </div>
 
       {/* Desktop: left nav sidebar */}
@@ -347,6 +372,21 @@ export function SettingsClient(props: Props) {
             )}
           </button>
         ))}
+
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className={cn(
+            "relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full text-left",
+            "transition-all duration-150",
+            signingOut
+              ? "text-muted-foreground cursor-not-allowed"
+              : "text-destructive hover:bg-destructive/5"
+          )}
+        >
+          <LogOut className="h-[15px] w-[15px] shrink-0" />
+          {signingOut ? t("signingOut") : t("signOut")}
+        </button>
 
         {/* Account stats */}
         <div className="!mt-8 p-3.5 rounded-md bg-muted border border-border space-y-2.5">

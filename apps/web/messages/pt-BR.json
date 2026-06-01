@@ -373,7 +373,18 @@
       "copyLink": "Copiar link",
       "saveImage": "Salvar imagem",
       "linkCopied": "Link copiado!",
-      "imageSaved": "Imagem salva!"
+      "imageSaved": "Imagem salva!",
+      "theme": {
+        "dark": "Escuro",
+        "light": "Claro"
+      },
+      "card": {
+        "newPb": "Novo PB",
+        "bestLapSectors": "Setores da melhor volta",
+        "lap": "Volta",
+        "tyre": "Pneu",
+        "laps": "{count, plural, one {# volta} other {# voltas}}"
+      }
     },
     "noSessions": "Nenhuma sessão sincronizada"
   },
@@ -564,6 +575,8 @@
   "Settings": {
     "title": "Configurações",
     "account": "Conta",
+    "signOut": "Sair",
+    "signingOut": "Saindo...",
     "sections": {
       "profile": "Perfil",
       "appearance": "Aparência",

@@ -16,6 +16,7 @@ import {
   X,
   User,
   Users,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -51,6 +52,7 @@ export function Sidebar() {
 
   const bottomItems = [
     { href: "/profile", label: t("profile"), icon: User },
+    { href: "/settings", label: t("settings"), icon: Settings },
     { href: "/download", label: t("agent"), icon: ArrowDownToLine },
   ] as const;
 
@@ -212,7 +214,7 @@ export function Sidebar() {
           );
         })}
 
-        {/* User card with dropdown */}
+        {/* User card */}
         <div className="mt-3">
           <ProfileDropdown
             displayName={displayName}

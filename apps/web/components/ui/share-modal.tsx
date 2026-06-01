@@ -13,6 +13,7 @@ type ShareModalProps = {
   saveImageLabel: string;
   linkCopiedLabel: string;
   imageSavedLabel: string;
+  imageBackgroundColor?: string;
   cardRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 };
@@ -26,6 +27,7 @@ export function ShareModal({
   saveImageLabel,
   linkCopiedLabel,
   imageSavedLabel,
+  imageBackgroundColor = "#0a0a0a",
   cardRef,
   children,
 }: ShareModalProps) {
@@ -64,7 +66,7 @@ export function ShareModal({
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
-        backgroundColor: "#0a0a0a",
+        backgroundColor: imageBackgroundColor,
       });
 
       const link = document.createElement("a");
@@ -77,7 +79,7 @@ export function ShareModal({
     } catch (error) {
       console.error("Failed to save image:", error);
     }
-  }, [cardRef]);
+  }, [cardRef, imageBackgroundColor]);
 
   if (!open) return null;
 

@@ -10,8 +10,18 @@ import { ShareSessionModal } from "./share-session-modal";
 import { PageLoader } from "@/components/PageLoader";
 import { PaginationClient } from "@/components/ui/pagination-client";
 import type { SessionWithMeta } from "@/lib/types";
+import type { ShareCardTheme } from "./session-share-card";
 
 type SortDirection = "asc" | "desc" | null;
+
+function getCurrentShareTheme(): ShareCardTheme {
+  if (typeof window === "undefined") return "dark";
+
+  const savedTheme = window.localStorage.getItem("apex-theme");
+  if (savedTheme === "dark" || savedTheme === "light") return savedTheme;
+
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
 
 type SelectedFilters = {
   car?: string;
@@ -48,6 +58,7 @@ export function SessionsContent({
   const [isPending, startTransition] = useTransition();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [shareSession, setShareSession] = useState<SessionWithMeta | null>(null);
+  const [shareTheme, setShareTheme] = useState<ShareCardTheme>("dark");
 
   const sortedSessions = useMemo(() => {
     if (sortDirection === null) return sessions;
@@ -71,6 +82,11 @@ export function SessionsContent({
   }, [loadingId]);
 
   const closePanel = useCallback(() => setPanel(null), []);
+
+  const openShare = useCallback((session: SessionWithMeta) => {
+    setShareTheme(getCurrentShareTheme());
+    setShareSession(session);
+  }, []);
 
   function handlePageChange(page: number) {
     if (page === currentPage || isPending) return;
@@ -113,7 +129,7 @@ export function SessionsContent({
           loadingId={loadingId}
           sortDirection={sortDirection}
           onSelect={openSession}
-          onShare={setShareSession}
+          onShare={openShare}
           onSortChange={setSortDirection}
         />
       )}
@@ -127,6 +143,8 @@ export function SessionsContent({
       <ShareSessionModal
         session={shareSession}
         open={shareSession !== null}
+        theme={shareTheme}
+        onThemeChange={setShareTheme}
         onClose={() => setShareSession(null)}
       />
     </div>

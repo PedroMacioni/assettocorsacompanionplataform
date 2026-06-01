@@ -247,6 +247,8 @@
   "Settings": {
     "title": "Settings",
     "account": "Account",
+    "signOut": "Sign out",
+    "signingOut": "Signing out...",
     "sections": {
       "profile": "Profile",
       "appearance": "Appearance",
@@ -467,7 +469,18 @@
       "copyLink": "Copy link",
       "saveImage": "Save image",
       "linkCopied": "Link copied!",
-      "imageSaved": "Image saved!"
+      "imageSaved": "Image saved!",
+      "theme": {
+        "dark": "Dark",
+        "light": "Light"
+      },
+      "card": {
+        "newPb": "New PB",
+        "bestLapSectors": "Best lap sectors",
+        "lap": "Lap",
+        "tyre": "Tyre",
+        "laps": "{count, plural, one {# lap} other {# laps}}"
+      }
     },
     "noSessions": "No sessions synced"
   },
