@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export default async function LandingPage() {
+  // Redirect logged users to dashboard
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   const t = await getTranslations("Landing");
   return (
     <div className="min-h-screen flex flex-col bg-[#0d0d0f] text-[#f0f0f0]">

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { AuthProvider } from "@/providers/AuthProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -40,7 +41,9 @@ async function RootLayoutBody({ children }: { children: React.ReactNode }) {
   return (
     <body className="min-h-full flex flex-col" data-locale={locale}>
       <NextIntlClientProvider messages={messages}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </NextIntlClientProvider>
     </body>
   );

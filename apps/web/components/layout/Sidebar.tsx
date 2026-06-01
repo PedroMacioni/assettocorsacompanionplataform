@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Car,
   MapPin,
-  Settings,
   ArrowDownToLine,
   PanelLeftClose,
   PanelLeftOpen,
@@ -21,29 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useSidebar } from "./SidebarContext";
-
-function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
-  if (avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={avatarUrl}
-        alt={name}
-        className="w-8 h-8 rounded-full object-cover shrink-0 border border-border"
-      />
-    );
-  }
-  const parts = name.trim().split(/\s+/);
-  const letters =
-    parts.length >= 2
-      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-      : name.slice(0, 2).toUpperCase();
-  return (
-    <div className="w-8 h-8 rounded-full bg-primary/[0.12] border border-primary/25 flex items-center justify-center shrink-0">
-      <span className="text-[11px] font-bold text-primary">{letters}</span>
-    </div>
-  );
-}
+import { ProfileDropdown } from "./ProfileDropdown";
 
 function NavTooltip({ label, show }: { label: string; show: boolean }) {
   if (!show) return null;
@@ -75,7 +52,6 @@ export function Sidebar() {
   const bottomItems = [
     { href: "/profile", label: t("profile"), icon: User },
     { href: "/download", label: t("agent"), icon: ArrowDownToLine },
-    { href: "/settings", label: t("settings"), icon: Settings },
   ] as const;
 
   useEffect(() => {
@@ -236,35 +212,14 @@ export function Sidebar() {
           );
         })}
 
-        {/* User card */}
-        <div
-          className={cn(
-            "mt-3 mx-1 rounded-md bg-muted border border-border",
-            collapsed ? "p-1.5 flex justify-center" : "p-2.5"
-          )}
-          onMouseEnter={() => collapsed && setHoveredItem("user")}
-          onMouseLeave={() => setHoveredItem(null)}
-        >
-          {collapsed ? (
-            <div className="relative">
-              <Avatar name={displayName || "D"} avatarUrl={avatarUrl} />
-              {hoveredItem === "user" && (
-                <NavTooltip label={displayName || "Driver"} show />
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5">
-              <Avatar name={displayName || "D"} avatarUrl={avatarUrl} />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate leading-tight">
-                  {displayName}
-                </p>
-                <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-                  {email}
-                </p>
-              </div>
-            </div>
-          )}
+        {/* User card with dropdown */}
+        <div className="mt-3">
+          <ProfileDropdown
+            displayName={displayName}
+            email={email}
+            avatarUrl={avatarUrl}
+            collapsed={collapsed}
+          />
         </div>
       </div>
 
@@ -374,18 +329,13 @@ export function Sidebar() {
                       </Link>
                     );
                   })}
-                  <div className="mt-3 mx-1 p-2.5 rounded-md bg-muted border border-border">
-                    <div className="flex items-center gap-2.5">
-                      <Avatar name={displayName || "D"} avatarUrl={avatarUrl} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate leading-tight">
-                          {displayName}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
-                          {email}
-                        </p>
-                      </div>
-                    </div>
+                  <div className="mt-3 mx-1">
+                    <ProfileDropdown
+                      displayName={displayName}
+                      email={email}
+                      avatarUrl={avatarUrl}
+                      collapsed={false}
+                    />
                   </div>
                 </div>
               </aside>
