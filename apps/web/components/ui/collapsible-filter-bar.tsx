@@ -37,9 +37,7 @@ export function CollapsibleFilterBar({
 }: CollapsibleFilterBarProps) {
   const [collapsed, setCollapsed] = useLocalStorage(storageKey, defaultCollapsed);
 
-  const displayTitle = activeCount > 0 && activeLabel
-    ? activeLabel.replace("{count}", String(activeCount))
-    : title;
+  const displayTitle = activeCount > 0 && activeLabel ? activeLabel : title;
 
   return (
     <section className={cn("rounded-lg border border-border bg-card", className)}>
@@ -72,27 +70,34 @@ export function CollapsibleFilterBar({
         </span>
       </button>
 
-      {!collapsed && (
-        <div className="border-t border-border p-3 md:p-4">
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-            {children}
-          </div>
-          {onClear && (
-            <div className="mt-4 flex justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onClear}
-                disabled={!canClear}
-              >
-                <X className="size-3.5" aria-hidden="true" />
-                {clearLabel}
-              </Button>
+      <div
+        className={cn(
+          "grid transition-all duration-300 ease-in-out",
+          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border p-3 md:p-4">
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+              {children}
             </div>
-          )}
+            {onClear && (
+              <div className="mt-4 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClear}
+                  disabled={!canClear}
+                >
+                  <X className="size-3.5" aria-hidden="true" />
+                  {clearLabel}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }

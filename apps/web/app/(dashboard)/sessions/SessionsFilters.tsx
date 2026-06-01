@@ -72,7 +72,7 @@ export function SessionsFilters({ cars, tracks, selected, activeCount }: Props) 
     <CollapsibleFilterBar
       title={t("filters.title")}
       activeCount={activeCount}
-      activeLabel={t("filters.activeCount")}
+      activeLabel={activeCount > 0 ? t("filters.activeCount", { count: activeCount }) : undefined}
       clearLabel={t("filters.clear")}
       expandLabel={t("filters.expand")}
       collapseLabel={t("filters.collapse")}
