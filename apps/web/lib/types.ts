@@ -147,3 +147,10 @@ export type CarSetup = {
   created_at: string;
   updated_at: string;
 };
+
+export type SessionBadge = "new_pb" | "consistent" | null;
+
+export type SessionWithMeta = Session & {
+  deltaPbMs: number | null;
+  badge: SessionBadge;
+};
