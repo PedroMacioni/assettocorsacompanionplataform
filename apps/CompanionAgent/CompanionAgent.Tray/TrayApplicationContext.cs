@@ -68,17 +68,17 @@ public sealed class TrayApplicationContext : ApplicationContext
             { Enabled = false, Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold) });
         menu.Items.Add(new ToolStripSeparator());
 
-        _statusItem = new ToolStripMenuItem("Iniciando...") { Enabled = false };
+        _statusItem = new ToolStripMenuItem("Starting…") { Enabled = false };
         menu.Items.Add(_statusItem);
         menu.Items.Add(new ToolStripSeparator());
 
-        menu.Items.Add(new ToolStripMenuItem("Mostrar janela", null,
+        menu.Items.Add(new ToolStripMenuItem("Show window", null,
             (_, _) => ShowMainForm()));
-        menu.Items.Add(new ToolStripMenuItem("Sincronizar agora", null,
+        menu.Items.Add(new ToolStripMenuItem("Sync now", null,
             (_, _) => _ = _worker.SyncAsync()));
         menu.Items.Add(new ToolStripSeparator());
 
-        menu.Items.Add(new ToolStripMenuItem("Sair", null, (_, _) => ExitApp()));
+        menu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => ExitApp()));
 
         return menu;
     }

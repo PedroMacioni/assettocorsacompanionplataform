@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="CompanionAgent.Desktop.Pages.OverviewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent">
+
+    <Grid>
+
+        <!-- ── Main content ── -->
+        <Grid Padding="20,14,20,12" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />  <!-- status row -->
+                <RowDefinition Height="Auto" />  <!-- stat cards -->
+                <RowDefinition Height="Auto" />  <!-- sync button -->
+                <RowDefinition Height="Auto" />  <!-- activity header -->
+                <RowDefinition Height="*" />     <!-- activity log -->
+                <RowDefinition Height="Auto" />  <!-- footer -->
+            </Grid.RowDefinitions>
+
+            <!-- Status row -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Ellipse x:Name="StatusDot" Grid.Column="0"
+                         Width="8" Height="8" VerticalAlignment="Center"
+                         Fill="{StaticResource ApexGreenBrush}" Margin="0,0,8,0" />
+
+                <TextBlock x:Name="StatusLabel" Grid.Column="1"
+                           Text="Online" VerticalAlignment="Center"
+                           FontSize="11" FontWeight="SemiBold" Opacity="0.8" />
+
+                <TextBlock x:Name="AccountText" Grid.Column="2"
+                           Text="" VerticalAlignment="Center" HorizontalAlignment="Right"
+                           FontSize="11" Foreground="{StaticResource ApexMutedBrush}"
+                           TextTrimming="CharacterEllipsis" Margin="8,0" />
+
+                <Button x:Name="SettingsBtn" Grid.Column="3"
+                        Click="Settings_Click" Padding="6,4"
+                        ToolTipService.ToolTip="Connection settings">
+                    <Button.Resources>
+                        <SolidColorBrush x:Key="ButtonBackground"             Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver"  Color="#2A2A2C" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed"      Color="#333335" />
+                        <SolidColorBrush x:Key="ButtonBorderBrush"            Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="Transparent" />
+                    </Button.Resources>
+                    <SymbolIcon Symbol="Setting" />
+                </Button>
+            </Grid>
+
+            <!-- Stat cards -->
+            <Grid Grid.Row="1" ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" CornerRadius="6" Padding="14,10"
+                        Background="{StaticResource ApexSurfaceBrush}"
+                        BorderBrush="{StaticResource ApexBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="LAST SYNC" FontSize="9" FontWeight="SemiBold"
+                                   CharacterSpacing="80"
+                                   Foreground="{StaticResource ApexMutedBrush}" />
+                        <TextBlock x:Name="LastSyncText" Text="—"
+                                   FontSize="15" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" CornerRadius="6" Padding="14,10"
+                        Background="{StaticResource ApexSurfaceBrush}"
+                        BorderBrush="{StaticResource ApexBorderBrush}" BorderThickness="1">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="SESSIONS" FontSize="9" FontWeight="SemiBold"
+                                   CharacterSpacing="80"
+                                   Foreground="{StaticResource ApexMutedBrush}" />
+                        <TextBlock x:Name="SessionsText" Text="—"
+                                   FontSize="15" FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Sync button -->
+            <Button x:Name="SyncNowButton" Grid.Row="2"
+                    HorizontalAlignment="Stretch" Padding="0,9"
+                    Click="SyncNow_Click">
+                <Button.Resources>
+                    <SolidColorBrush x:Key="ButtonBackground"             Color="#E8612A" />
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"  Color="#D45520" />
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed"      Color="#BF4C1C" />
+                    <SolidColorBrush x:Key="ButtonBackgroundDisabled"     Color="#7A3015" />
+                    <SolidColorBrush x:Key="ButtonForeground"             Color="White" />
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"  Color="White" />
+                    <SolidColorBrush x:Key="ButtonForegroundPressed"      Color="White" />
+                    <SolidColorBrush x:Key="ButtonForegroundDisabled"     Color="#FFFFFF80" />
+                    <SolidColorBrush x:Key="ButtonBorderBrush"            Color="Transparent" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                    <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="Transparent" />
+                </Button.Resources>
+                <TextBlock Text="SYNC NOW" FontSize="11" FontWeight="SemiBold"
+                           CharacterSpacing="80" Foreground="White" />
+            </Button>
+
+            <!-- Activity header -->
+            <Grid Grid.Row="3" ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="ACTIVITY" FontSize="9" FontWeight="SemiBold"
+                           CharacterSpacing="100" VerticalAlignment="Center"
+                           Foreground="{StaticResource ApexMutedBrush}" />
+                <Rectangle Grid.Column="1" Height="1" VerticalAlignment="Center"
+                           Fill="{StaticResource ApexBorderBrush}" />
+                <Button Grid.Column="2" Content="Clear" Click="ClearLog_Click"
+                        Padding="6,2" FontSize="10">
+                    <Button.Resources>
+                        <SolidColorBrush x:Key="ButtonBackground"             Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver"  Color="#2A2A2C" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed"      Color="#333335" />
+                        <SolidColorBrush x:Key="ButtonBorderBrush"            Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                        <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="Transparent" />
+                    </Button.Resources>
+                </Button>
+            </Grid>
+
+            <!-- Activity log -->
+            <Grid Grid.Row="4">
+
+                <!-- Empty state -->
+                <StackPanel x:Name="LogEmptyState"
+                            VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Spacing="8" Margin="0,24">
+                    <SymbolIcon Symbol="Clock" Foreground="{StaticResource ApexBorderBrush}"
+                                HorizontalAlignment="Center" />
+                    <TextBlock Text="No activity yet"
+                               FontSize="11" Foreground="{StaticResource ApexMutedBrush}"
+                               HorizontalAlignment="Center" Opacity="0.6" />
+                </StackPanel>
+
+                <ListView x:Name="LogList"
+                          SelectionMode="None" IsItemClickEnabled="False"
+                          Background="Transparent" Visibility="Collapsed">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding"   Value="0,1" />
+                            <Setter Property="MinHeight" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Text="{x:Bind}" FontFamily="Cascadia Mono, Consolas"
+                                       FontSize="11" TextWrapping="Wrap" Opacity="0.65" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+            </Grid>
+            <!-- Footer: version -->
+            <TextBlock x:Name="VersionText" Grid.Row="5"
+                       Text="" FontSize="10" Opacity="0.3"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource ApexMutedBrush}"
+                       Margin="0,4,0,0" />
+
+        </Grid>
+
+        <!-- ── Not-connected overlay ── -->
+        <Grid x:Name="NotConnectedOverlay" Visibility="Collapsed">
+            <!-- Dim layer -->
+            <Rectangle Fill="#E00D0D0F" />
+
+            <!-- Connect card -->
+            <Border CornerRadius="10" Padding="28,24"
+                    MaxWidth="270" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Background="#1E1E20"
+                    BorderBrush="{StaticResource ApexBorderBrush}" BorderThickness="1">
+                <StackPanel Spacing="14" HorizontalAlignment="Center">
+
+                    <Border Width="44" Height="44" CornerRadius="22"
+                            Background="#E8612A20" HorizontalAlignment="Center">
+                        <SymbolIcon Symbol="Link" Foreground="{StaticResource ApexOrangeBrush}" />
+                    </Border>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Not connected" FontSize="15" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="Link this computer to your Apex account to start syncing your sessions."
+                                   TextWrapping="Wrap" FontSize="12"
+                                   Foreground="{StaticResource ApexMutedBrush}"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                    </StackPanel>
+
+                    <Button Click="Settings_Click" HorizontalAlignment="Stretch" Padding="0,10">
+                        <Button.Resources>
+                            <SolidColorBrush x:Key="ButtonBackground"             Color="#E8612A" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver"  Color="#D45520" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed"      Color="#BF4C1C" />
+                            <SolidColorBrush x:Key="ButtonForeground"             Color="White" />
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver"  Color="White" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed"      Color="White" />
+                            <SolidColorBrush x:Key="ButtonBorderBrush"            Color="Transparent" />
+                            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                            <SolidColorBrush x:Key="ButtonBorderBrushPressed"     Color="Transparent" />
+                        </Button.Resources>
+                        <TextBlock Text="Connect to Apex" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="White" />
+                    </Button>
+
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</Page>

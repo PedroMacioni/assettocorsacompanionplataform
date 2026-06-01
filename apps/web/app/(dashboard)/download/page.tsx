@@ -1,14 +1,28 @@
 import { getTranslations } from "next-intl/server";
 import { ArrowDownToLine, Monitor, Gauge, CheckCircle2, ExternalLink } from "lucide-react";
 
-const RELEASE_VERSION = "v0.2.0";
-const DOWNLOAD_URL =
-  "https://github.com/PedroMacioni/assettocorsacompanionplataform/releases/latest/download/SimRacingCompanion.exe";
-const RELEASES_URL =
-  "https://github.com/PedroMacioni/assettocorsacompanionplataform/releases";
+const RELEASES_URL = "https://github.com/PedroMacioni/apex-agent/releases";
+const DOWNLOAD_URL = `${RELEASES_URL}/latest/download/ApexAgent-win-Setup.exe`;
+
+async function getLatestVersion(): Promise<string> {
+  try {
+    const res = await fetch(
+      "https://api.github.com/repos/PedroMacioni/apex-agent/releases/latest",
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return (data.tag_name as string) ?? "";
+  } catch {
+    return "";
+  }
+}
 
 export default async function DownloadPage() {
-  const t = await getTranslations("Download");
+  const [t, releaseVersion] = await Promise.all([
+    getTranslations("Download"),
+    getLatestVersion(),
+  ]);
 
   const steps = [t("steps.one"), t("steps.two"), t("steps.three"), t("steps.four")];
 
@@ -37,9 +51,9 @@ export default async function DownloadPage() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-base font-semibold text-foreground">SimRacingCompanion.exe</span>
+                <span className="text-base font-semibold text-foreground">ApexAgent-win-Setup.exe</span>
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider">
-                  {RELEASE_VERSION}
+                  {releaseVersion}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">{t("fileInfo")}</p>

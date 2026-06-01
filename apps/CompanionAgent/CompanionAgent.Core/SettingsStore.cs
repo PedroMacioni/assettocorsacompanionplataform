@@ -1,4 +1,4 @@
-namespace CompanionAgent.Tray;
+namespace CompanionAgent.Core;
 
 using System.Text.Json;
 

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -13,6 +13,7 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CompanionAgent.Core\CompanionAgent.Core.csproj" />
     <ProjectReference Include="..\..\..\packages\Companion.Infrastructure\Companion.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\packages\Companion.SharedContracts\Companion.SharedContracts.csproj" />
   </ItemGroup>

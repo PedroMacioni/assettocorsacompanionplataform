@@ -1,11 +1,11 @@
-namespace CompanionAgent.Tray;
+namespace CompanionAgent.Core;
 
 using Microsoft.Win32;
 
 public static class AutoStartManager
 {
     private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-    private const string AppName = "SimRacingCompanion";
+    private const string AppName = "ApexAgent";
 
     public static void Enable()
     {
