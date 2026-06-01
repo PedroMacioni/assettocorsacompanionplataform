@@ -1,33 +1,31 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ListChecks } from "lucide-react";
 import { SessionDetailPanel, type SessionPanelData } from "@/components/SessionDetailPanel";
 import { SessionsClient } from "./SessionsClient";
 import { SessionsFilters, type SessionFilterOption } from "./SessionsFilters";
+import { ShareSessionModal } from "./share-session-modal";
 import { PageLoader } from "@/components/PageLoader";
 import { PaginationClient } from "@/components/ui/pagination-client";
-import type { Session } from "@/lib/types";
+import type { SessionWithMeta } from "@/lib/types";
+
+type SortDirection = "asc" | "desc" | null;
 
 type SelectedFilters = {
   car?: string;
   track?: string;
-  type?: string;
   period?: string;
-  date?: string;
+  onlyPb?: boolean;
 };
 
 interface Props {
-  sessions: Session[];
+  sessions: SessionWithMeta[];
   cars: SessionFilterOption[];
   tracks: SessionFilterOption[];
-  types: SessionFilterOption[];
   selected: SelectedFilters;
   activeFilterCount: number;
-  filteredCount: number;
-  totalCount: number;
   currentPage: number;
   totalPages: number;
   queryParams: Record<string, string | undefined>;
@@ -37,11 +35,8 @@ export function SessionsContent({
   sessions,
   cars,
   tracks,
-  types,
   selected,
   activeFilterCount,
-  filteredCount,
-  totalCount,
   currentPage,
   totalPages,
   queryParams,
@@ -51,6 +46,18 @@ export function SessionsContent({
   const [panel, setPanel] = useState<SessionPanelData | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [shareSession, setShareSession] = useState<SessionWithMeta | null>(null);
+
+  const sortedSessions = useMemo(() => {
+    if (sortDirection === null) return sessions;
+
+    return [...sessions].sort((a, b) => {
+      const aTime = a.best_lap_ms ?? Infinity;
+      const bTime = b.best_lap_ms ?? Infinity;
+      return sortDirection === "asc" ? aTime - bTime : bTime - aTime;
+    });
+  }, [sessions, sortDirection]);
 
   const openSession = useCallback(async (sourceId: string) => {
     if (loadingId) return;
@@ -85,35 +92,13 @@ export function SessionsContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {t("history")}
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-        </div>
-
-        <div className="flex w-fit items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
-          <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <ListChecks className="size-4" aria-hidden="true" />
-          </span>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {t("results.label")}
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {activeFilterCount > 0
-                ? t("results.filteredCount", { count: filteredCount, total: totalCount })
-                : t("results.count", { count: totalCount })}
-            </p>
-          </div>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        {t("title")}
+      </h1>
 
       <SessionsFilters
         cars={cars}
         tracks={tracks}
-        types={types}
         selected={selected}
         activeCount={activeFilterCount}
       />
@@ -123,13 +108,26 @@ export function SessionsContent({
           <PageLoader size="md" className="min-h-[320px]" />
         </div>
       ) : (
-        <SessionsClient sessions={sessions} loadingId={loadingId} onSelect={openSession} />
+        <SessionsClient
+          sessions={sortedSessions}
+          loadingId={loadingId}
+          sortDirection={sortDirection}
+          onSelect={openSession}
+          onShare={setShareSession}
+          onSortChange={setSortDirection}
+        />
       )}
 
       <PaginationClient
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
+      />
+
+      <ShareSessionModal
+        session={shareSession}
+        open={shareSession !== null}
+        onClose={() => setShareSession(null)}
       />
     </div>
   );
