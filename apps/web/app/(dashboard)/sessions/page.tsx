@@ -52,41 +52,58 @@ export default async function SessionsPage({
   const { data: { user } } = await supabase.auth.getUser();
   const uid = user!.id;
 
-  let query = supabase
+  const onlyPb = params.onlyPb === "1";
+
+  // Pre-compute period cutoff ISO string (if any)
+  let periodCutoff: string | undefined;
+  if (period === "this_week") {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay());
+    d.setHours(0, 0, 0, 0);
+    periodCutoff = d.toISOString();
+  } else if (period === "last_30_days") {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    periodCutoff = d.toISOString();
+  } else if (period === "last_90_days") {
+    const d = new Date();
+    d.setDate(d.getDate() - 90);
+    d.setHours(0, 0, 0, 0);
+    periodCutoff = d.toISOString();
+  } else if (period === "this_year") {
+    const d = new Date();
+    d.setMonth(0, 1);
+    d.setHours(0, 0, 0, 0);
+    periodCutoff = d.toISOString();
+  }
+
+  // Build paged query (used when onlyPb=false)
+  let pagedQuery = supabase
     .from("sessions")
     .select("*", { count: "exact" })
     .eq("user_id", uid)
     .neq("session_types", "--")
-    .order("started_at", { ascending: false })
-    .range(from, from + pageSize - 1);
+    .order("started_at", { ascending: false });
+  if (params.car) pagedQuery = pagedQuery.eq("car_id", params.car);
+  if (params.track) pagedQuery = pagedQuery.eq("track_id", params.track);
+  if (periodCutoff) pagedQuery = pagedQuery.gte("started_at", periodCutoff);
+  const rangedQuery = pagedQuery.range(from, from + pageSize - 1);
 
-  if (params.car) query = query.eq("car_id", params.car);
-  if (params.track) query = query.eq("track_id", params.track);
+  // Build all-sessions query (used when onlyPb=true, no range)
+  let allQuery = supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", uid)
+    .neq("session_types", "--")
+    .order("started_at", { ascending: false });
+  if (params.car) allQuery = allQuery.eq("car_id", params.car);
+  if (params.track) allQuery = allQuery.eq("track_id", params.track);
+  if (periodCutoff) allQuery = allQuery.gte("started_at", periodCutoff);
 
-  if (period === "this_week") {
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    query = query.gte("started_at", weekStart.toISOString());
-  } else if (period === "last_30_days") {
-    const monthStart = new Date();
-    monthStart.setDate(monthStart.getDate() - 30);
-    monthStart.setHours(0, 0, 0, 0);
-    query = query.gte("started_at", monthStart.toISOString());
-  } else if (period === "last_90_days") {
-    const start = new Date();
-    start.setDate(start.getDate() - 90);
-    start.setHours(0, 0, 0, 0);
-    query = query.gte("started_at", start.toISOString());
-  } else if (period === "this_year") {
-    const yearStart = new Date();
-    yearStart.setMonth(0, 1);
-    yearStart.setHours(0, 0, 0, 0);
-    query = query.gte("started_at", yearStart.toISOString());
-  }
-
-  const [sessionsRes, carsRes, tracksRes] = await Promise.all([
-    query,
+  const [sessionsRes, allSessionsRes, carsRes, tracksRes] = await Promise.all([
+    onlyPb ? Promise.resolve({ data: [] as unknown[], count: 0, error: null }) : rangedQuery,
+    onlyPb ? allQuery : Promise.resolve({ data: [] as unknown[], error: null }),
     supabase
       .from("top_cars")
       .select("car_id")
@@ -99,9 +116,10 @@ export default async function SessionsPage({
       .order("sessions", { ascending: false }),
   ]);
 
-  const rawSessions = (sessionsRes.data ?? []) as Session[];
-  const filteredCount = sessionsRes.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+  // When onlyPb, we work on the full unranged result set
+  const rawSessions = (
+    onlyPb ? (allSessionsRes.data ?? []) : (sessionsRes.data ?? [])
+  ) as Session[];
 
   // Enrich sessions with deltaPbMs and badge
   const carTrackPairs = [...new Set(rawSessions.map((s) => `${s.car_id}::${s.track_id}`))];
@@ -119,12 +137,27 @@ export default async function SessionsPage({
     pbMap.set(`${pb.car_id}::${pb.track_id}`, pb.time_ms);
   }
 
-  const sessions: SessionWithMeta[] = rawSessions.map((s) => {
+  const enrichedSessions: SessionWithMeta[] = rawSessions.map((s) => {
     const pbMs = pbMap.get(`${s.car_id}::${s.track_id}`) ?? null;
     const deltaPbMs = s.best_lap_ms !== null && pbMs !== null ? s.best_lap_ms - pbMs : null;
     const badge: SessionBadge = deltaPbMs !== null && deltaPbMs <= 0 ? "new_pb" : null;
     return { ...s, deltaPbMs, badge };
   });
+
+  let sessions: SessionWithMeta[];
+  let filteredCount: number;
+  let totalPages: number;
+
+  if (onlyPb) {
+    const pbOnly = enrichedSessions.filter((s) => s.badge === "new_pb");
+    filteredCount = pbOnly.length;
+    totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+    sessions = pbOnly.slice(from, from + pageSize);
+  } else {
+    filteredCount = (sessionsRes as { count: number | null }).count ?? 0;
+    totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
+    sessions = enrichedSessions;
+  }
 
   const carOptions = includeSelected(
     ((carsRes.data ?? []) as Pick<TopCar, "car_id">[])
@@ -142,8 +175,7 @@ export default async function SessionsPage({
     slugToName
   );
 
-  const onlyPb = params.onlyPb === "1";
-  const filteredSessions = onlyPb ? sessions.filter((s) => s.badge === "new_pb") : sessions;
+  const filteredSessions = sessions;
 
   const activeFilterCount = [
     params.car,
