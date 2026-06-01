@@ -494,14 +494,20 @@
     "bestLap": "Melhor Volta",
     "vsPb": "vs PB",
     "pb": "PB",
+    "tabs": {
+      "overview": "Resumo",
+      "laps": "Voltas"
+    },
     "stats": {
-      "totalLaps": "Total de Voltas",
       "valid": "Válidas",
       "distance": "Distância",
-      "lastLap": "Última Volta",
       "avgLap": "Média (válidas)",
       "cuts": "c/ Corte",
-      "tyre": "Pneu"
+      "tyre": "Pneu",
+      "validOf": "{valid} / {total} válidas",
+      "cutsInline": "{count} cortes",
+      "avgVsBest": "{delta} vs melhor",
+      "noCuts": "Sem cortes"
     },
     "consistency": {
       "title": "Consistência",

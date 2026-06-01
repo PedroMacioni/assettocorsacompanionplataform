@@ -590,14 +590,20 @@
     "bestLap": "Best Lap",
     "vsPb": "vs PB",
     "pb": "PB",
+    "tabs": {
+      "overview": "Overview",
+      "laps": "Laps"
+    },
     "stats": {
-      "totalLaps": "Total Laps",
       "valid": "Valid",
       "distance": "Distance",
-      "lastLap": "Last Lap",
       "avgLap": "Avg (valid)",
       "cuts": "w/ Cuts",
-      "tyre": "Tyre"
+      "tyre": "Tyre",
+      "validOf": "{valid} / {total} valid",
+      "cutsInline": "{count} cuts",
+      "avgVsBest": "{delta} vs best",
+      "noCuts": "No cuts"
     },
     "consistency": {
       "title": "Consistency",
