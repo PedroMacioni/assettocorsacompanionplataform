@@ -85,13 +85,8 @@ export default async function SessionsPage({
     query = query.gte("started_at", yearStart.toISOString());
   }
 
-  const [sessionsRes, totalRes, carsRes, tracksRes] = await Promise.all([
+  const [sessionsRes, carsRes, tracksRes] = await Promise.all([
     query,
-    supabase
-      .from("sessions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", uid)
-      .neq("session_types", "--"),
     supabase
       .from("top_cars")
       .select("car_id")
