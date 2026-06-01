@@ -3,7 +3,6 @@
 import { useState, useCallback, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { SessionDetailPanel, type SessionPanelData } from "@/components/SessionDetailPanel";
 import { SessionsClient } from "./SessionsClient";
 import { SessionsFilters, type SessionFilterOption } from "./SessionsFilters";
 import { ShareSessionModal } from "./share-session-modal";
@@ -53,8 +52,6 @@ export function SessionsContent({
 }: Props) {
   const t = useTranslations("Sessions");
   const router = useRouter();
-  const [panel, setPanel] = useState<SessionPanelData | null>(null);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [shareSession, setShareSession] = useState<SessionWithMeta | null>(null);
@@ -70,18 +67,9 @@ export function SessionsContent({
     });
   }, [sessions, sortDirection]);
 
-  const openSession = useCallback(async (sourceId: string) => {
-    if (loadingId) return;
-    setLoadingId(sourceId);
-    try {
-      const res = await fetch(`/api/sessions/${sourceId}`);
-      if (res.ok) setPanel(await res.json());
-    } finally {
-      setLoadingId(null);
-    }
-  }, [loadingId]);
-
-  const closePanel = useCallback(() => setPanel(null), []);
+  const openSession = useCallback((sourceId: string) => {
+    router.push(`/sessions/${sourceId}`);
+  }, [router]);
 
   const openShare = useCallback((session: SessionWithMeta) => {
     setShareTheme(getCurrentShareTheme());
@@ -100,10 +88,6 @@ export function SessionsContent({
     startTransition(() => {
       router.push(`/sessions?${next.toString()}`);
     });
-  }
-
-  if (panel) {
-    return <SessionDetailPanel data={panel} onClose={closePanel} />;
   }
 
   return (
@@ -126,7 +110,6 @@ export function SessionsContent({
       ) : (
         <SessionsClient
           sessions={sortedSessions}
-          loadingId={loadingId}
           sortDirection={sortDirection}
           onSelect={openSession}
           onShare={openShare}

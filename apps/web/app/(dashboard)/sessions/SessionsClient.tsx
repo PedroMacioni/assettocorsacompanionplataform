@@ -12,7 +12,6 @@ type SortDirection = "asc" | "desc" | null;
 
 interface Props {
   sessions: SessionWithMeta[];
-  loadingId: string | null;
   sortDirection: SortDirection;
   onSelect: (sourceId: string) => void;
   onShare: (session: SessionWithMeta) => void;
@@ -20,11 +19,10 @@ interface Props {
 }
 
 const actionBtnClass =
-  "flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
+  "flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-control-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
 
 export function SessionsClient({
   sessions,
-  loadingId,
   sortDirection,
   onSelect,
   onShare,
@@ -90,8 +88,7 @@ export function SessionsClient({
                 sessions.map((s) => (
                   <tr
                     key={s.id}
-                    aria-busy={loadingId === s.source_id}
-                    className="border-b border-border transition-colors last:border-0 hover:bg-muted/40"
+                    className="border-b border-border transition-colors last:border-0 hover:bg-control-hover"
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
                       {formatDate(s.started_at)}
@@ -136,7 +133,6 @@ export function SessionsClient({
                         <button
                           type="button"
                           title={t("actions.viewDetails")}
-                          disabled={loadingId === s.source_id}
                           onClick={() => onSelect(s.source_id)}
                           className={actionBtnClass}
                         >
@@ -171,10 +167,7 @@ export function SessionsClient({
             {sessions.map((s) => (
               <div
                 key={s.id}
-                className={cn(
-                  "flex items-center justify-between gap-3 px-4 py-3.5",
-                  loadingId === s.source_id && "opacity-60"
-                )}
+                className="flex items-center justify-between gap-3 px-4 py-3.5"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -200,7 +193,6 @@ export function SessionsClient({
                   <button
                     type="button"
                     title={t("actions.viewDetails")}
-                    disabled={loadingId === s.source_id}
                     onClick={() => onSelect(s.source_id)}
                     className={actionBtnClass}
                   >
