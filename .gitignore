@@ -51,7 +51,8 @@ packages/**/obj/
 CollectorCore/bin/
 CollectorCore/obj/
 
-# Claude Code local settings
-.claude/
+# Claude Code local settings (keep skills versioned)
+.claude/*
+!.claude/skills/
 
 apps/CompanionAgent/publish/
