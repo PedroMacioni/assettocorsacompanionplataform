@@ -426,47 +426,49 @@
     "footer": "Apex — Sim Racing Companion"
   },
   "Sessions": {
-    "history": "History",
-    "title": "Session history",
-    "filteringBy": "Filtering by:",
-    "thisWeek": "This week",
-    "clearFilters": "Clear",
-    "noSessions": "No sessions synced",
-    "noResults": "No sessions found for the selected filters",
-    "loadingSession": "Opening session...",
-    "previous": "← Previous",
-    "next": "Next →",
-    "count": "{count, plural, one {1 session} other {{count} sessions}}",
-    "results": {
-      "label": "Sessions",
-      "count": "{count, plural, one {1 session} other {{count} sessions}}",
-      "filteredCount": "{count} of {total} sessions"
-    },
+    "title": "Sessions",
     "filters": {
       "title": "Filters",
-      "active": "{count, plural, one {1 active} other {{count} active}}",
-      "clear": "Clear",
+      "activeCount": "Filters ({count})",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "clear": "Clear filters",
       "period": "Period",
-      "allPeriods": "Full history",
+      "car": "Car",
+      "track": "Track",
+      "onlyPb": "Only PB",
+      "allCars": "All cars",
+      "allTracks": "All tracks",
+      "allPeriods": "All time",
       "thisWeek": "This week",
       "last30Days": "Last 30 days",
-      "car": "Car",
-      "allCars": "All cars",
-      "track": "Track",
-      "allTracks": "All tracks",
-      "type": "Type",
-      "allTypes": "All types",
-      "date": "Day"
+      "last90Days": "Last 90 days",
+      "thisYear": "This year"
     },
-    "table": {
+    "grid": {
       "date": "Date",
       "car": "Car",
       "track": "Track",
-      "type": "Type",
-      "laps": "Laps",
-      "distance": "Distance",
-      "bestLap": "Best Lap"
-    }
+      "bestLap": "Best Lap",
+      "delta": "Delta",
+      "noResults": "No sessions found"
+    },
+    "badges": {
+      "newPb": "New PB",
+      "consistent": "Consistent"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "share": "Share"
+    },
+    "share": {
+      "title": "Share Session",
+      "copyLink": "Copy link",
+      "saveImage": "Save image",
+      "linkCopied": "Link copied!",
+      "imageSaved": "Image saved!"
+    },
+    "noSessions": "No sessions synced"
   },
   "Tracks": {
     "catalogue": "Catalogue",

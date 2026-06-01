@@ -332,47 +332,49 @@
     "footer": "Apex — Sim Racing Companion"
   },
   "Sessions": {
-    "history": "Arquivo",
-    "title": "Histórico de sessões",
-    "filteringBy": "Filtrando por:",
-    "thisWeek": "Esta semana",
-    "clearFilters": "Limpar",
-    "noSessions": "Nenhuma sessão sincronizada",
-    "noResults": "Nenhuma sessão encontrada para os filtros selecionados",
-    "loadingSession": "Abrindo sessão...",
-    "previous": "← Anterior",
-    "next": "Próxima →",
-    "count": "{count, plural, one {1 sessão} other {{count} sessões}}",
-    "results": {
-      "label": "Sessões",
-      "count": "{count, plural, one {1 sessão} other {{count} sessões}}",
-      "filteredCount": "{count} de {total} sessões"
-    },
+    "title": "Sessões",
     "filters": {
       "title": "Filtros",
-      "active": "{count, plural, one {1 ativo} other {{count} ativos}}",
-      "clear": "Limpar",
+      "activeCount": "Filtros ({count})",
+      "expand": "Expandir",
+      "collapse": "Recolher",
+      "clear": "Limpar filtros",
       "period": "Período",
-      "allPeriods": "Todo o histórico",
+      "car": "Carro",
+      "track": "Pista",
+      "onlyPb": "Apenas PB",
+      "allCars": "Todos os carros",
+      "allTracks": "Todas as pistas",
+      "allPeriods": "Todo o período",
       "thisWeek": "Esta semana",
       "last30Days": "Últimos 30 dias",
-      "car": "Carro",
-      "allCars": "Todos os carros",
-      "track": "Pista",
-      "allTracks": "Todas as pistas",
-      "type": "Tipo",
-      "allTypes": "Todos os tipos",
-      "date": "Dia"
+      "last90Days": "Últimos 90 dias",
+      "thisYear": "Este ano"
     },
-    "table": {
+    "grid": {
       "date": "Data",
       "car": "Carro",
       "track": "Pista",
-      "type": "Tipo",
-      "laps": "Voltas",
-      "distance": "Distância",
-      "bestLap": "Melhor Volta"
-    }
+      "bestLap": "Melhor Volta",
+      "delta": "Delta",
+      "noResults": "Nenhuma sessão encontrada"
+    },
+    "badges": {
+      "newPb": "Novo PB",
+      "consistent": "Consistente"
+    },
+    "actions": {
+      "viewDetails": "Ver detalhes",
+      "share": "Compartilhar"
+    },
+    "share": {
+      "title": "Compartilhar Sessão",
+      "copyLink": "Copiar link",
+      "saveImage": "Salvar imagem",
+      "linkCopied": "Link copiado!",
+      "imageSaved": "Imagem salva!"
+    },
+    "noSessions": "Nenhuma sessão sincronizada"
   },
   "Tracks": {
     "catalogue": "Catálogo",
