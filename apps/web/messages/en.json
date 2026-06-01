@@ -451,6 +451,7 @@
       "track": "Track",
       "bestLap": "Best Lap",
       "delta": "Delta",
+      "actions": "Actions",
       "noResults": "No sessions found"
     },
     "badges": {

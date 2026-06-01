@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Eye, Share2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, Share2, ArrowUpDown, ArrowUp, ArrowDown, Trophy } from "lucide-react";
 import { formatLapTime, formatDelta, formatDate, slugToName } from "@/lib/format";
 import type { SessionWithMeta } from "@/lib/types";
-import { ActionMenu, type ActionMenuItem } from "@/components/ui/action-menu";
 import { SessionBadge } from "./session-badge";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,9 @@ interface Props {
   onSortChange: (direction: SortDirection) => void;
 }
 
+const actionBtnClass =
+  "flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40";
+
 export function SessionsClient({
   sessions,
   loadingId,
@@ -30,31 +33,13 @@ export function SessionsClient({
   const t = useTranslations("Sessions");
 
   function handleSortClick() {
-    if (sortDirection === null) {
-      onSortChange("asc");
-    } else if (sortDirection === "asc") {
-      onSortChange("desc");
-    } else {
-      onSortChange(null);
-    }
+    if (sortDirection === null) onSortChange("asc");
+    else if (sortDirection === "asc") onSortChange("desc");
+    else onSortChange(null);
   }
 
-  function getActions(session: SessionWithMeta): ActionMenuItem[] {
-    return [
-      {
-        label: t("actions.viewDetails"),
-        icon: <Eye className="size-4" />,
-        onClick: () => onSelect(session.source_id),
-      },
-      {
-        label: t("actions.share"),
-        icon: <Share2 className="size-4" />,
-        onClick: () => onShare(session),
-      },
-    ];
-  }
-
-  const SortIcon = sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
+  const SortIcon =
+    sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
 
   return (
     <>
@@ -86,11 +71,11 @@ export function SessionsClient({
                 <th className="px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {t("grid.delta")}
                 </th>
-                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  &nbsp;
+                <th className="px-4 py-3 text-center">
+                  <Trophy className="mx-auto size-3 text-muted-foreground" aria-label="Status" />
                 </th>
-                <th className="px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  &nbsp;
+                <th className="w-[88px] px-4 py-3 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {t("grid.actions")}
                 </th>
               </tr>
             </thead>
@@ -105,36 +90,67 @@ export function SessionsClient({
                 sessions.map((s) => (
                   <tr
                     key={s.id}
-                    onClick={() => onSelect(s.source_id)}
                     aria-busy={loadingId === s.source_id}
-                    className="group cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-muted/60"
+                    className="border-b border-border transition-colors last:border-0 hover:bg-muted/40"
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
                       {formatDate(s.started_at)}
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground transition-colors group-hover:text-primary">
-                      {slugToName(s.car_id)}
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/garage?search=${encodeURIComponent(slugToName(s.car_id))}`}
+                        className="font-medium text-foreground transition-colors hover:text-primary hover:underline underline-offset-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {slugToName(s.car_id)}
+                      </Link>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {slugToName(s.track_id)}
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/tracks?search=${encodeURIComponent(slugToName(s.track_id))}`}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {slugToName(s.track_id)}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">
                       {formatLapTime(s.best_lap_ms)}
                     </td>
-                    <td className={cn(
-                      "px-4 py-3 text-right font-mono text-sm",
-                      s.deltaPbMs === null && "text-muted-foreground/50",
-                      s.deltaPbMs !== null && s.deltaPbMs < 0 && "text-emerald-500",
-                      s.deltaPbMs !== null && s.deltaPbMs > 0 && "text-orange-500",
-                      s.deltaPbMs !== null && s.deltaPbMs === 0 && "text-primary"
-                    )}>
+                    <td
+                      className={cn(
+                        "px-4 py-3 text-right font-mono text-sm",
+                        s.deltaPbMs === null && "text-muted-foreground/50",
+                        s.deltaPbMs !== null && s.deltaPbMs < 0 && "text-emerald-500",
+                        s.deltaPbMs !== null && s.deltaPbMs > 0 && "text-orange-500",
+                        s.deltaPbMs !== null && s.deltaPbMs === 0 && "text-primary"
+                      )}
+                    >
                       {formatDelta(s.deltaPbMs)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <SessionBadge badge={s.badge} />
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <ActionMenu items={getActions(s)} />
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          title={t("actions.viewDetails")}
+                          disabled={loadingId === s.source_id}
+                          onClick={() => onSelect(s.source_id)}
+                          className={actionBtnClass}
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          title={t("actions.share")}
+                          onClick={() => onShare(s)}
+                          className={actionBtnClass}
+                        >
+                          <Share2 className="size-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -155,28 +171,50 @@ export function SessionsClient({
             {sessions.map((s) => (
               <div
                 key={s.id}
-                onClick={() => onSelect(s.source_id)}
                 className={cn(
-                  "flex items-center justify-between gap-3 px-4 py-3.5 transition-colors cursor-pointer",
-                  "hover:bg-muted/60 active:bg-muted",
+                  "flex items-center justify-between gap-3 px-4 py-3.5",
                   loadingId === s.source_id && "opacity-60"
                 )}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <Link
+                      href={`/garage?search=${encodeURIComponent(slugToName(s.car_id))}`}
+                      className="text-sm font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 truncate"
+                    >
                       {slugToName(s.car_id)}
-                    </p>
+                    </Link>
                     <SessionBadge badge={s.badge} />
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <Link
+                    href={`/tracks?search=${encodeURIComponent(slugToName(s.track_id))}`}
+                    className="text-xs text-muted-foreground hover:text-foreground hover:underline underline-offset-2 truncate block"
+                  >
                     {slugToName(s.track_id)}
-                  </p>
+                  </Link>
                   <p className="text-lg font-bold font-mono text-foreground mt-1">
                     {formatLapTime(s.best_lap_ms)}
                   </p>
                 </div>
-                <ActionMenu items={getActions(s)} />
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    title={t("actions.viewDetails")}
+                    disabled={loadingId === s.source_id}
+                    onClick={() => onSelect(s.source_id)}
+                    className={actionBtnClass}
+                  >
+                    <Eye className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title={t("actions.share")}
+                    onClick={() => onShare(s)}
+                    className={actionBtnClass}
+                  >
+                    <Share2 className="size-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
