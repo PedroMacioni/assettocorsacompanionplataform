@@ -55,3 +55,6 @@ CollectorCore/obj/
 .claude/
 
 apps/CompanionAgent/publish/
+apps/CompanionAgent/publish_desktop/
+apps/CompanionAgent/Releases/
+apps/CompanionAgent/CompanionAgent.Desktop/releases/
