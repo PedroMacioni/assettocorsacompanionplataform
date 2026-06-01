@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   User, Palette, Monitor, Check,
   Sun, Moon, Globe, ChevronRight, Camera, X, Laptop, AlertCircle,
+  Eye, EyeOff, Copy, RefreshCw,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -105,6 +106,9 @@ export function SettingsClient(props: Props) {
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [savedAppearance, setSavedAppearance]   = useState(false);
   const [disconnecting, setDisconnecting]       = useState(false);
+  const [token, setToken]               = useState("");
+  const [tokenVisible, setTokenVisible] = useState(false);
+  const [copied, setCopied]             = useState(false);
   const fileInputRef                    = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -261,6 +265,19 @@ export function SettingsClient(props: Props) {
       setDisconnecting(false);
     }
   }
+
+  // ── token helpers ─────────────────────────────────────────────────────────────
+
+  const copyToken = async () => {
+    if (!token) return;
+    await navigator.clipboard.writeText(token);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const renewToken = async () => {
+    // TODO: implement token renewal logic
+  };
 
   // ── render ────────────────────────────────────────────────────────────────────
 

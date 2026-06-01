@@ -11,6 +11,7 @@ public sealed class SyncWorker : IDisposable
     private readonly SupabaseClient _supabase;
     private readonly ILocalHistoryService _history;
     private readonly ILocalTrackService _trackService;
+    private readonly RetryQueue _retryQueue = new();
     private SyncCache _cache = SyncCache.Load();
     private System.Threading.Timer? _timer;
     private System.Threading.Timer? _debounceTimer;
@@ -62,13 +63,15 @@ public sealed class SyncWorker : IDisposable
     public void UpdateInterval(int intervalMinutes) =>
         _timer?.Change(TimeSpan.FromMinutes(intervalMinutes), TimeSpan.FromMinutes(intervalMinutes));
 
+    private const int DebounceDelayMs = 500;
+
     private void ScheduleDebounced()
     {
         lock (_debounceLock)
         {
             _debounceTimer?.Dispose();
             _debounceTimer = new System.Threading.Timer(
-                _ => _ = SyncAsync(), null, 800, System.Threading.Timeout.Infinite);
+                _ => _ = SyncAsync(), null, DebounceDelayMs, System.Threading.Timeout.Infinite);
         }
     }
 
@@ -126,6 +129,14 @@ public sealed class SyncWorker : IDisposable
                     {
                         var shortId = session.Id[..Math.Min(8, session.Id.Length)];
                         ActivityLogged?.Invoke($"  ✗ Sessão {shortId}: erro ao ler voltas — {ex.Message}");
+
+                        // Queue for retry with exponential backoff
+                        var sessionId = session.Id;
+                        _retryQueue.Enqueue(
+                            $"laps-{sessionId}",
+                            async () => await SyncLapsAsync(sessionId)
+                        );
+                        ActivityLogged?.Invoke($"  ↺ Sessão {shortId}: agendada para retry");
                     }
                 }
 
@@ -236,6 +247,28 @@ public sealed class SyncWorker : IDisposable
     {
         _cache.ClearLapSessions();
         await SyncAsync();
+    }
+
+    private async Task<bool> SyncLapsAsync(string sessionId)
+    {
+        try
+        {
+            var laps = _history.GetSessionLaps(sessionId).Laps;
+            if (laps.Count == 0) return false;
+
+            await _supabase.UpsertLapsAsync(laps);
+            _cache.MarkLapsSynced(new[] { sessionId });
+
+            var shortId = sessionId[..Math.Min(8, sessionId.Length)];
+            ActivityLogged?.Invoke($"  ✓ Retry sessão {shortId}: {laps.Count} voltas sincronizadas");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            var shortId = sessionId[..Math.Min(8, sessionId.Length)];
+            ActivityLogged?.Invoke($"  ✗ Retry sessão {shortId}: {ex.Message}");
+            return false;
+        }
     }
 
     private async Task SyncTracksAsync(CancellationToken ct = default)
@@ -622,6 +655,7 @@ public sealed class SyncWorker : IDisposable
         lock (_debounceLock) { _debounceTimer?.Dispose(); }
         _sessionWatcher?.Dispose();
         _pbWatcher?.Dispose();
+        _retryQueue.Dispose();
         _lock.Dispose();
     }
 }
