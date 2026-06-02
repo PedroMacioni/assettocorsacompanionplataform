@@ -22,7 +22,7 @@ export type TrackWithStats = Track & {
 // ── Filtros ─────────────────────────────────────────────────────────────────
 
 const inputClassName =
-  "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-input/30";
+  "h-9 w-full rounded-lg border border-input bg-control px-2.5 text-sm text-foreground outline-none transition-colors hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 function TracksFilters({ availableCountries }: { availableCountries: string[] }) {
   const t = useTranslations("Tracks");

@@ -27,7 +27,7 @@ type Props = {
 };
 
 const toggleClass =
-  "flex h-9 w-full cursor-pointer items-center gap-2 rounded-lg border border-input bg-background/80 px-2.5 text-sm text-foreground transition-colors hover:bg-muted/60 dark:bg-input/30";
+  "flex h-9 w-full cursor-pointer items-center gap-2 rounded-lg border border-input bg-control px-2.5 text-sm text-foreground transition-colors hover:bg-control-hover";
 
 export function SessionsFilters({ cars, tracks, selected, activeCount }: Props) {
   const t = useTranslations("Sessions");
@@ -142,7 +142,7 @@ export function SessionsFilters({ cars, tracks, selected, activeCount }: Props) 
             className={`flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
               selected.onlyPb
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-input bg-background"
+                : "border-input bg-surface-raised"
             }`}
           >
             {selected.onlyPb && (

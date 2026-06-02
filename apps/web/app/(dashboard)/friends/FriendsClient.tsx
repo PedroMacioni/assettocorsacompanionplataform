@@ -352,7 +352,7 @@ function AddFriendModal({ onClose, busyId, onAction, onAccept, onDecline }: {
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); if (e.target.value.trim().length >= 2) runSearch(e.target.value); }}
                 placeholder={t("modal.placeholder")}
-                className="w-full h-9 rounded-lg border border-input bg-background pl-9 pr-9 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                className="w-full h-9 rounded-lg border border-input bg-control pl-9 pr-9 text-sm outline-none transition-colors hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-2 focus:ring-ring/20"
               />
               {searching && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
@@ -475,7 +475,7 @@ function EmptyFriends({ onAdd }: { onAdd: () => void }) {
 type SortKey = "name" | "sessions" | "best";
 
 const inputClassName =
-  "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-input/30";
+  "h-9 w-full rounded-lg border border-input bg-control px-2.5 text-sm text-foreground outline-none transition-colors hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-3 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function FriendsClient({ title, eyebrow, description, initialFriends, initialIncoming, initialOutgoing }: Props) {
   const t = useTranslations("Friends");

@@ -2,10 +2,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function HeroSkeleton() {
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-xl p-6">
+    <div className="bg-card border border-border rounded-xl p-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-4 rounded-lg bg-[#1e1e20] flex flex-col items-center gap-3">
+          <div key={i} className="p-4 rounded-lg bg-control flex flex-col items-center gap-3">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-12 w-16" />
             <Skeleton className="h-2 w-24" />
@@ -18,7 +18,7 @@ function HeroSkeleton() {
 
 function CardSkeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`bg-[#161618] border border-[#2a2a2c] rounded-md p-5 ${className}`}>
+    <div className={`bg-card border border-border rounded-md p-5 ${className}`}>
       <Skeleton className="h-2 w-24 mb-4" />
       <Skeleton className="h-5 w-40 mb-2" />
       <Skeleton className="h-3 w-28 mb-4" />
@@ -30,7 +30,7 @@ function CardSkeleton({ className = "" }: { className?: string }) {
 
 function StatsSkeleton() {
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-4">
+    <div className="bg-card border border-border rounded-md p-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-2">
@@ -45,7 +45,7 @@ function StatsSkeleton() {
 
 function RecordsSkeleton() {
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
+    <div className="bg-card border border-border rounded-md p-5">
       <Skeleton className="h-2 w-28 mb-4" />
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -67,7 +67,7 @@ function NavCardsSkeleton() {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-[#161618] border border-[#2a2a2c] rounded-md p-4">
+        <div key={i} className="bg-card border border-border rounded-md p-4">
           <div className="flex items-start gap-3">
             <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
             <div className="space-y-1.5 flex-1">
@@ -105,7 +105,7 @@ export default function DashboardLoading() {
       {/* Last Session + Calendar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CardSkeleton />
-        <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
+        <div className="bg-card border border-border rounded-md p-5">
           <Skeleton className="h-2 w-16 mb-4" />
           <Skeleton className="h-[80px] w-full rounded-sm mb-4" />
           <div className="flex justify-between">
@@ -120,7 +120,7 @@ export default function DashboardLoading() {
 
       {/* Pace Chart + Records */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
+        <div className="xl:col-span-2 bg-card border border-border rounded-md p-5">
           <div className="flex justify-between mb-4">
             <div className="space-y-1.5">
               <Skeleton className="h-2 w-24" />

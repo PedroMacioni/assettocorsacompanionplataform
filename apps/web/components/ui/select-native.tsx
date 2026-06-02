@@ -11,11 +11,10 @@ export function SelectNative({ className, children, ...props }: SelectNativeProp
     <div className="relative w-full">
       <select
         className={cn(
-          "h-9 w-full appearance-none rounded-lg border border-input bg-background/80 pl-2.5 pr-8",
+          "h-9 w-full appearance-none rounded-lg border border-input bg-control pl-2.5 pr-8",
           "text-sm text-foreground outline-none",
-          "transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30",
+          "transition-colors hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-3 focus:ring-ring/30",
           "disabled:cursor-not-allowed disabled:opacity-60",
-          "dark:bg-input/30 dark:text-foreground",
           className
         )}
         {...props}

@@ -13,19 +13,19 @@ export function PaceEvolutionCard({ data, tracks, trackLabels }: PaceEvolutionCa
   const hasData = data.length > 0 && tracks.length > 0;
 
   return (
-    <div className="bg-[#161618] border border-[#2a2a2c] rounded-md p-5">
+    <div className="bg-card border border-border rounded-md p-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             Evolução de Pace
           </p>
-          <p className="text-sm text-white font-medium">
+          <p className="text-sm text-foreground font-medium">
             Melhor volta — últimas 4 semanas
           </p>
         </div>
         <Link
           href="/analytics?tab=pace"
-          className="text-xs text-[#6b6b72] hover:text-[#e8612a] uppercase tracking-wider transition-colors"
+          className="text-xs text-muted-foreground hover:text-primary uppercase tracking-wider transition-colors"
         >
           Ver análise →
         </Link>
@@ -37,13 +37,13 @@ export function PaceEvolutionCard({ data, tracks, trackLabels }: PaceEvolutionCa
         </div>
       ) : (
         <div className="h-[180px] flex items-center justify-center">
-          <p className="text-sm text-[#6b6b72]">Dados insuficientes</p>
+          <p className="text-sm text-muted-foreground">Dados insuficientes</p>
         </div>
       )}
 
       {/* Inline legend */}
       {hasData && (
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#2a2a2c]">
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
           {tracks.map((track, i) => {
             const colors = ["#e8612a", "#22c55e", "#3b82f6"];
             return (
@@ -52,7 +52,7 @@ export function PaceEvolutionCard({ data, tracks, trackLabels }: PaceEvolutionCa
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: colors[i] }}
                 />
-                <span className="text-xs text-[#6b6b72]">{trackLabels[track]}</span>
+                <span className="text-xs text-muted-foreground">{trackLabels[track]}</span>
               </div>
             );
           })}

@@ -26,8 +26,8 @@ export function PaginationClient({ currentPage, totalPages, onPageChange }: Prop
   if (totalPages <= 1) return null;
 
   const base    = "flex items-center justify-center min-w-[32px] h-8 px-2 text-xs font-medium rounded-md border transition-colors";
-  const idle    = `${base} border-border text-muted-foreground hover:text-foreground hover:border-primary hover:bg-muted`;
-  const active  = `${base} border-primary bg-primary text-primary-foreground`;
+  const idle    = `${base} border-border bg-control text-muted-foreground hover:text-foreground hover:border-primary hover:bg-control-hover`;
+  const active  = `${base} border-primary bg-control-active text-control-active-foreground`;
   const disabled = `${base} border-border text-muted-foreground/40 cursor-not-allowed pointer-events-none`;
 
   return (

@@ -35,7 +35,7 @@ function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null })
 export function ProfileDropdown({ displayName, email, avatarUrl, collapsed }: ProfileDropdownProps) {
   if (collapsed) {
     return (
-      <div className="p-1.5 flex justify-center rounded-md bg-muted border border-border">
+      <div className="p-1.5 flex justify-center rounded-md bg-surface-raised border border-sidebar-border">
         <Avatar name={displayName || "D"} avatarUrl={avatarUrl} />
       </div>
     );
@@ -44,7 +44,7 @@ export function ProfileDropdown({ displayName, email, avatarUrl, collapsed }: Pr
   return (
     <div
       className={cn(
-        "w-full mx-1 p-2.5 rounded-md bg-muted border border-border",
+        "w-full mx-1 p-2.5 rounded-md bg-surface-raised border border-sidebar-border",
         "flex items-center gap-2.5"
       )}
     >

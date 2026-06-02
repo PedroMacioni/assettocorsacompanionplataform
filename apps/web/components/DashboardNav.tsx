@@ -24,7 +24,7 @@ export function DashboardNav() {
   }
 
   return (
-    <nav className="flex items-center gap-1 px-4 py-3 border-b bg-background">
+    <nav className="flex items-center gap-1 px-4 py-3 border-b border-border bg-shell">
       <span className="font-bold text-sm mr-4 text-primary">🏎 Sim Racing</span>
       {links.map((l) => (
         <Link
@@ -33,8 +33,8 @@ export function DashboardNav() {
           className={cn(
             "px-3 py-1.5 rounded-md text-sm transition-colors",
             pathname === l.href || pathname.startsWith(l.href + "/")
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              ? "bg-control-active text-control-active-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
           )}
         >
           {l.label}

@@ -80,7 +80,7 @@ export function Sidebar() {
   const sidebarContent = (
     <aside
       className={cn(
-        "relative flex flex-col h-full bg-background border-r border-border overflow-hidden",
+        "relative flex flex-col h-full bg-sidebar border-r border-sidebar-border overflow-hidden",
         "transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-[220px]"
       )}
@@ -92,7 +92,7 @@ export function Sidebar() {
             <span className="text-[15px] font-bold tracking-[0.2em] text-primary uppercase">A</span>
             <button
               onClick={toggle}
-              className="hidden md:flex w-7 h-7 rounded-md items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
+              className="hidden md:flex w-7 h-7 rounded-md items-center justify-center text-muted-foreground hover:text-foreground hover:bg-control-hover transition-all duration-150"
               aria-label="Expandir menu"
             >
               <PanelLeftOpen className="h-[15px] w-[15px]" />
@@ -109,7 +109,7 @@ export function Sidebar() {
             </div>
             <button
               onClick={toggle}
-              className="hidden md:flex w-7 h-7 rounded-md items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 shrink-0"
+              className="hidden md:flex w-7 h-7 rounded-md items-center justify-center text-muted-foreground hover:text-foreground hover:bg-control-hover transition-all duration-150 shrink-0"
               aria-label="Retrair menu"
             >
               <PanelLeftClose className="h-[15px] w-[15px]" />
@@ -118,7 +118,7 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="mx-4 h-px bg-border" />
+      <div className="mx-4 h-px bg-sidebar-border" />
 
       {/* Main nav */}
       <nav className={cn("flex-1 pt-3 space-y-0.5", collapsed ? "px-2" : "px-3")}>
@@ -136,8 +136,8 @@ export function Sidebar() {
                 "transition-all duration-150 ease-out",
                 collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
                 active
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "text-control-active-foreground bg-control-active"
+                  : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
               )}
             >
               {!collapsed && (
@@ -170,7 +170,7 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className={cn("pb-4", collapsed ? "px-2" : "px-3")}>
-        <div className="mx-1 h-px bg-border mb-3" />
+        <div className="mx-1 h-px bg-sidebar-border mb-3" />
 
         {bottomItems.map(({ href, label, icon: Icon }) => {
           const active = isActive(href);
@@ -186,8 +186,8 @@ export function Sidebar() {
                 "transition-all duration-150 ease-out",
                 collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
                 active
-                  ? "text-foreground bg-muted"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "text-control-active-foreground bg-control-active"
+                  : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
               )}
             >
               {!collapsed && (
@@ -245,7 +245,7 @@ export function Sidebar() {
           <div className="fixed left-0 top-0 h-screen z-50 md:hidden w-[220px]">
             <div className="relative h-full">
               {/* Força expanded no mobile drawer */}
-              <aside className="flex flex-col h-full w-[220px] bg-background border-r border-border overflow-hidden">
+              <aside className="flex flex-col h-full w-[220px] bg-sidebar border-r border-sidebar-border overflow-hidden">
                 {/* Logo */}
                 <div className="px-5 pt-7 pb-6">
                   <div className="flex items-baseline gap-2">
@@ -257,7 +257,7 @@ export function Sidebar() {
                   <p className="text-[10px] text-muted-foreground mt-0.5 tracking-wide">Sim Racing</p>
                 </div>
 
-                <div className="mx-4 h-px bg-border" />
+                <div className="mx-4 h-px bg-sidebar-border" />
 
                 <nav className="flex-1 px-3 pt-3 space-y-0.5">
                   {navItems.map(({ href, label, icon: Icon }) => {
@@ -271,8 +271,8 @@ export function Sidebar() {
                           "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
                           "transition-all duration-150 ease-out",
                           active
-                            ? "text-foreground bg-muted"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            ? "text-control-active-foreground bg-control-active"
+                            : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
                         )}
                       >
                         <span
@@ -297,7 +297,7 @@ export function Sidebar() {
                 </nav>
 
                 <div className="px-3 pb-4">
-                  <div className="mx-1 h-px bg-border mb-3" />
+                  <div className="mx-1 h-px bg-sidebar-border mb-3" />
                   {bottomItems.map(({ href, label, icon: Icon }) => {
                     const active = isActive(href);
                     return (
@@ -309,8 +309,8 @@ export function Sidebar() {
                           "group relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium",
                           "transition-all duration-150 ease-out",
                           active
-                            ? "text-foreground bg-muted"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            ? "text-control-active-foreground bg-control-active"
+                            : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
                         )}
                       >
                         <span

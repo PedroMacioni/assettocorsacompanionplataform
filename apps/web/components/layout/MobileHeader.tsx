@@ -7,10 +7,10 @@ export function MobileHeader() {
   const { setMobileOpen } = useSidebar();
 
   return (
-    <div className="flex items-center md:hidden px-4 pt-4 pb-2">
+    <div className="sticky top-0 z-30 flex items-center md:hidden border-b border-border bg-shell px-4 py-3">
       <button
         onClick={() => setMobileOpen(true)}
-        className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-control-hover transition-colors"
         aria-label="Abrir menu"
       >
         <Menu className="h-5 w-5" />

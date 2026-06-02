@@ -40,11 +40,11 @@ export function CollapsibleFilterBar({
   const displayTitle = activeCount > 0 && activeLabel ? activeLabel : title;
 
   return (
-    <section className={cn("rounded-lg border border-border bg-card", className)}>
+    <section className={cn("rounded-lg border border-border bg-surface", className)}>
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="flex w-full items-center justify-between p-3 md:p-4"
+        className="flex w-full items-center justify-between rounded-lg p-3 transition-colors hover:bg-control-hover md:p-4"
         aria-expanded={!collapsed}
       >
         <div className="flex items-center gap-2">
@@ -77,7 +77,7 @@ export function CollapsibleFilterBar({
         )}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-border p-3 md:p-4">
+          <div className="border-t border-border bg-surface-raised/40 p-3 md:p-4">
             <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
               {children}
             </div>

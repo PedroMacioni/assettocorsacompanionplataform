@@ -324,14 +324,14 @@ export function SessionDetailPanel({
             {hasLaps ? (
               <>
                 {/* Filter bar */}
-                <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 py-3 border border-border rounded-t-xl bg-muted/5">
+                <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 py-3 border border-border rounded-t-xl bg-surface-raised/40">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowValidOnly(!showValidOnly)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         showValidOnly
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted"
+                          : "bg-control text-muted-foreground hover:text-foreground hover:bg-control-hover"
                       }`}
                     >
                       <Filter className="h-3 w-3" />
@@ -365,7 +365,7 @@ export function SessionDetailPanel({
                 <div className="overflow-x-auto apex-scroll border border-t-0 border-border rounded-b-xl">
                   <table className="w-full text-xs min-w-[600px]">
                     <thead className="sticky top-0 z-10">
-                      <tr className="border-b border-border bg-background">
+                      <tr className="border-b border-border bg-surface-raised/40">
                         {(
                           [
                             t("table.headers.lap"),
@@ -400,7 +400,7 @@ export function SessionDetailPanel({
                           <tr
                             key={lap.id}
                             className={`border-b border-border last:border-0 transition-colors ${
-                              isBest ? "bg-primary/[0.07]" : "hover:bg-muted/20"
+                              isBest ? "bg-primary/[0.07]" : "hover:bg-control-hover"
                             }`}
                           >
                             <td className="px-4 py-2.5">

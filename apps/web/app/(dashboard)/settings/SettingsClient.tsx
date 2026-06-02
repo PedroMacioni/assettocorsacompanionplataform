@@ -304,16 +304,16 @@ export function SettingsClient(props: Props) {
           </p>
           <h1 className="text-xl font-bold text-foreground">{t("account")}</h1>
         </div>
-        <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
+        <div className="flex gap-1 overflow-x-auto rounded-lg border border-border bg-control p-1 scrollbar-none">
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setSection(id)}
               className={cn(
-                "whitespace-nowrap shrink-0 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 -mb-px transition-colors",
+                "whitespace-nowrap shrink-0 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors",
                 section === id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-surface-raised text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-control-hover hover:text-foreground"
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -353,8 +353,8 @@ export function SettingsClient(props: Props) {
               "relative flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium w-full text-left",
               "transition-all duration-150",
               section === id
-                ? "text-foreground bg-muted"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                ? "text-control-active-foreground bg-control-active"
+                : "text-muted-foreground hover:text-foreground hover:bg-control-hover"
             )}
           >
             {section === id && (
@@ -389,7 +389,7 @@ export function SettingsClient(props: Props) {
         </button>
 
         {/* Account stats */}
-        <div className="!mt-8 p-3.5 rounded-md bg-muted border border-border space-y-2.5">
+        <div className="!mt-8 p-3.5 rounded-md bg-surface border border-border space-y-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
             {t("account")}
           </p>
@@ -458,8 +458,8 @@ export function SettingsClient(props: Props) {
                       className={cn(
                         "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-all duration-150",
                         uploading
-                          ? "bg-muted border-border text-muted-foreground cursor-not-allowed"
-                          : "bg-muted border-border text-foreground hover:border-primary"
+                          ? "bg-control border-border text-muted-foreground cursor-not-allowed"
+                          : "bg-control border-border text-foreground hover:bg-control-hover hover:border-primary"
                       )}
                     >
                       <Camera className="h-3 w-3" />
@@ -531,7 +531,7 @@ export function SettingsClient(props: Props) {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder={t("profile.displayNamePlaceholder")}
-                  className="w-full bg-muted border border-border rounded-md px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                  className="w-full bg-control border border-input rounded-md px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground hover:bg-control-hover focus:bg-surface-raised focus:border-primary focus:outline-none transition-colors"
                 />
               </div>
 
@@ -541,7 +541,7 @@ export function SettingsClient(props: Props) {
                   type="email"
                   value={props.email}
                   disabled
-                  className="w-full bg-background border border-border rounded-md px-3.5 py-2.5 text-sm text-muted-foreground cursor-not-allowed"
+                  className="w-full bg-control border border-border rounded-md px-3.5 py-2.5 text-sm text-muted-foreground cursor-not-allowed"
                 />
               </div>
             </div>
@@ -753,14 +753,14 @@ function ThemeCard({ id, active, onClick, label }: { id: "dark" | "light"; activ
       )}
     >
       {/* Preview — intentionally hardcoded to always show the theme preview colors */}
-      <div className={cn("p-4 space-y-2", isDark ? "bg-[#0d0d0f]" : "bg-[#f0f0f0]")}>
-        <div className={cn("h-1.5 w-16 rounded-full", isDark ? "bg-[#2a2a2c]" : "bg-[#d0d0d0]")} />
-        <div className={cn("h-6 w-full rounded", isDark ? "bg-[#161618]" : "bg-[#e0e0e0]")} />
+      <div className={cn("p-4 space-y-2", isDark ? "bg-[#0b0c0f]" : "bg-[#f4f6f8]")}>
+        <div className={cn("h-1.5 w-16 rounded-full", isDark ? "bg-[#303743]" : "bg-[#d8dee8]")} />
+        <div className={cn("h-6 w-full rounded", isDark ? "bg-[#171a20]" : "bg-[#ffffff]")} />
         <div className="flex gap-1.5">
           {[40, 56, 48].map((w, i) => (
             <div
               key={i}
-              className={cn("h-3 rounded", isDark ? "bg-[#1e1e20]" : "bg-[#d8d8d8]")}
+              className={cn("h-3 rounded", isDark ? "bg-[#20242b]" : "bg-[#eef1f5]")}
               style={{ width: w }}
             />
           ))}
@@ -768,16 +768,16 @@ function ThemeCard({ id, active, onClick, label }: { id: "dark" | "light"; activ
       </div>
 
       {/* Label */}
-      <div className={cn("px-4 py-3 flex items-center justify-between", isDark ? "bg-[#161618]" : "bg-white")}>
+      <div className={cn("px-4 py-3 flex items-center justify-between", isDark ? "bg-[#171a20]" : "bg-white")}>
         <div className="flex items-center gap-2">
           {isDark ? (
-            <Moon className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-[#6b6b72]")} />
+            <Moon className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-[#9aa3af]")} />
           ) : (
-            <Sun className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-[#999]")} />
+            <Sun className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-[#626b78]")} />
           )}
           <span className={cn(
             "text-sm font-semibold",
-            isDark ? (active ? "text-white" : "text-[#6b6b72]") : (active ? "text-[#111]" : "text-[#999]")
+            isDark ? (active ? "text-white" : "text-[#9aa3af]") : (active ? "text-[#171a1f]" : "text-[#626b78]")
           )}>
             {label}
           </span>

@@ -41,7 +41,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-control-hover hover:text-foreground"
         aria-label="Actions"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -52,7 +52,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-lg border border-border bg-card py-1 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-lg"
         >
           {items.map((item, index) => (
             <button
@@ -68,7 +68,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
                 "flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors",
                 item.variant === "destructive"
                   ? "text-destructive hover:bg-destructive/10"
-                  : "text-foreground hover:bg-muted"
+                  : "text-foreground hover:bg-control-hover"
               )}
             >
               {item.icon}

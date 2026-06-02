@@ -76,8 +76,8 @@ export function Pagination({
 
   const linkClasses =
     "flex items-center justify-center min-w-[32px] h-8 px-2 text-xs font-medium rounded-md border transition-colors";
-  const defaultClasses = `${linkClasses} border-border text-muted-foreground hover:text-foreground hover:border-primary hover:bg-muted`;
-  const activeClasses = `${linkClasses} border-primary bg-primary text-primary-foreground`;
+  const defaultClasses = `${linkClasses} border-border bg-control text-muted-foreground hover:text-foreground hover:border-primary hover:bg-control-hover`;
+  const activeClasses = `${linkClasses} border-primary bg-control-active text-control-active-foreground`;
   const disabledClasses = `${linkClasses} border-border text-muted-foreground/40 cursor-not-allowed pointer-events-none`;
 
   return (

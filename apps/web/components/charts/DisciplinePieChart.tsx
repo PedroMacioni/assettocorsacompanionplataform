@@ -41,16 +41,16 @@ export default function DisciplinePieChart({ data }: Props) {
         </Pie>
         <Tooltip
           contentStyle={{
-            background: "#161618",
-            border: "1px solid #2a2a2c",
+            background: "var(--popover)",
+            border: "1px solid var(--border)",
             borderRadius: 6,
             fontSize: 12,
           }}
-          labelStyle={{ color: "#6b6b72" }}
+          labelStyle={{ color: "var(--muted-foreground)" }}
         />
         <Legend
           wrapperStyle={{ fontSize: 11 }}
-          formatter={(v) => <span style={{ color: "#6b6b72" }}>{v}</span>}
+          formatter={(v) => <span style={{ color: "var(--muted-foreground)" }}>{v}</span>}
         />
       </PieChart>
     </ResponsiveContainer>

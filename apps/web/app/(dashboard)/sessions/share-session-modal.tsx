@@ -100,7 +100,7 @@ export function ShareSessionModal({ session, open, theme, onThemeChange, onClose
       cardRef={cardRef}
     >
       <div className="flex w-full flex-col items-center gap-3">
-        <div className="inline-flex rounded-lg border border-border bg-muted/50 p-1">
+        <div className="inline-flex rounded-lg border border-border bg-control p-1">
           {themeOptions.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
@@ -110,8 +110,8 @@ export function ShareSessionModal({ session, open, theme, onThemeChange, onClose
               className={cn(
                 "flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
                 theme === value
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-surface-raised text-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-control-hover hover:text-foreground"
               )}
             >
               <Icon className="size-3.5" />

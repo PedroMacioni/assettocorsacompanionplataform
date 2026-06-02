@@ -23,25 +23,25 @@ export default function SessionAreaChart({ data }: Props) {
         </defs>
         <XAxis
           dataKey="week"
-          tick={{ fontSize: 10, fill: "#6b6b72" }}
+          tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
           axisLine={false}
           tickLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
-          tick={{ fontSize: 10, fill: "#6b6b72" }}
+          tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
           axisLine={false}
           tickLine={false}
           allowDecimals={false}
         />
         <Tooltip
           contentStyle={{
-            background: "#161618",
-            border: "1px solid #2a2a2c",
+            background: "var(--popover)",
+            border: "1px solid var(--border)",
             borderRadius: 6,
             fontSize: 12,
           }}
-          labelStyle={{ color: "#6b6b72" }}
+          labelStyle={{ color: "var(--muted-foreground)" }}
         />
         <Area
           type="monotone"

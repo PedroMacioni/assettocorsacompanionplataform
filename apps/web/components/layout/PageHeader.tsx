@@ -11,11 +11,11 @@ export function PageHeader({ eyebrow, title, actions }: Props) {
     <div className="flex items-start justify-between mb-8">
       <div>
         {eyebrow && (
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6b6b72] mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             {eyebrow}
           </p>
         )}
-        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
       </div>
       {actions && <div className="flex items-center gap-3 mt-1">{actions}</div>}
     </div>

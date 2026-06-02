@@ -34,7 +34,7 @@ export function FilterBar({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border bg-card p-3 md:p-4",
+        "rounded-lg border border-border bg-surface p-3 md:p-4",
         className
       )}
     >

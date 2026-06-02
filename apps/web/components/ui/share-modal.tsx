@@ -97,7 +97,7 @@ export function ShareModal({
         aria-labelledby="share-modal-title"
         className="w-full max-w-md animate-in fade-in zoom-in-95 duration-200"
       >
-        <div className="rounded-xl border border-border bg-card shadow-xl">
+        <div className="rounded-xl border border-border bg-popover shadow-xl">
           <div className="flex items-center justify-between border-b border-border p-4">
             <h2 id="share-modal-title" className="text-lg font-semibold text-foreground">
               {title}
@@ -105,7 +105,7 @@ export function ShareModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-control-hover hover:text-foreground"
               aria-label="Close"
             >
               <X className="size-4" />

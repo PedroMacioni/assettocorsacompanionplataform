@@ -100,7 +100,7 @@ export function CarDetail({ car, specs, pref, onClose, onFavoriteChange }: Props
       .sort((a, b) => (a.best_lap_ms ?? Infinity) - (b.best_lap_ms ?? Infinity))[0] ?? null;
   }
 
-  const selectClass = "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 appearance-none";
+  const selectClass = "h-9 w-full rounded-lg border border-input bg-control px-2.5 text-sm text-foreground outline-none transition-colors hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-2 focus:ring-ring/30 appearance-none";
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
@@ -173,7 +173,7 @@ export function CarDetail({ car, specs, pref, onClose, onFavoriteChange }: Props
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Buscar pista..."
-                className="w-full h-8 pl-8 pr-3 rounded-lg border border-input bg-background text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30 placeholder:text-muted-foreground/50"
+                className="w-full h-8 pl-8 pr-3 rounded-lg border border-input bg-control text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 hover:bg-control-hover focus:border-ring focus:bg-surface-raised focus:ring-2 focus:ring-ring/30"
               />
             </div>
 
