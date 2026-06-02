@@ -8,31 +8,25 @@ async function getLatestRelease(): Promise<{ version: string; downloadUrl: strin
   try {
     const res = await fetch(
       `https://api.github.com/repos/${REPO}/releases/latest`,
-      {
-        next: { revalidate: 3600 },
-        headers: { Accept: "application/vnd.github+json" },
-      }
+      { next: { revalidate: 3600 }, headers: { Accept: "application/vnd.github+json" } }
     );
-    if (!res.ok) return { version: "", downloadUrl: `${RELEASES_URL}/latest` };
+    if (!res.ok) return { version: "", downloadUrl: RELEASES_URL };
     const data = await res.json();
-    const version = (data.tag_name as string) ?? "";
-    const asset = (
-      data.assets as Array<{ name: string; browser_download_url: string }> | undefined
-    )?.find((a) => a.name.endsWith(".exe"));
-    return {
-      version,
-      downloadUrl: asset?.browser_download_url ?? `${RELEASES_URL}/latest`,
-    };
+    const tag: string = data.tag_name ?? "";
+    const version = tag.replace(/^v/, "");
+    // Prefer the actual uploaded asset; fall back to the predictable download URL
+    const asset = (data.assets as Array<{ name: string; browser_download_url: string }> | undefined)
+      ?.find((a) => a.name.endsWith(".exe"));
+    const downloadUrl = asset?.browser_download_url
+      ?? `https://github.com/${REPO}/releases/download/${tag}/SimRacingCompanion-Setup-${version}.exe`;
+    return { version: tag, downloadUrl };
   } catch {
-    return { version: "", downloadUrl: `${RELEASES_URL}/latest` };
+    return { version: "", downloadUrl: RELEASES_URL };
   }
 }
 
 export default async function DownloadPage() {
-  const [t, release] = await Promise.all([
-    getTranslations("Download"),
-    getLatestRelease(),
-  ]);
+  const [t, release] = await Promise.all([getTranslations("Download"), getLatestRelease()]);
 
   const steps = [t("steps.one"), t("steps.two"), t("steps.three"), t("steps.four")];
   const requirements = [t("requirements.os"), t("requirements.ac"), t("requirements.cm")];
@@ -77,6 +71,7 @@ export default async function DownloadPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <a
               href={release.downloadUrl}
+              download
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               <ArrowDownToLine className="w-4 h-4" />

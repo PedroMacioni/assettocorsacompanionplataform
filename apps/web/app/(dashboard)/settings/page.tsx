@@ -23,9 +23,12 @@ async function fetchLatestRelease(): Promise<{
     const asset = (
       data.assets as Array<{ name: string; browser_download_url: string }> | undefined
     )?.find((a) => a.name.endsWith(".exe"));
+    const tag: string = data.tag_name ?? "";
+    const downloadUrl = asset?.browser_download_url
+      ?? `https://github.com/${REPO}/releases/download/${tag}/SimRacingCompanion-Setup-${version}.exe`;
     return {
       version,
-      downloadUrl: asset?.browser_download_url ?? (data.html_url as string),
+      downloadUrl,
       releaseUrl: data.html_url as string,
     };
   } catch {
