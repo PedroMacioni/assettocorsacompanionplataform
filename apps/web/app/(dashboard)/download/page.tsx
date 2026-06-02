@@ -1,31 +1,40 @@
 import { getTranslations } from "next-intl/server";
-import { ArrowDownToLine, Monitor, Gauge, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowDownToLine, Monitor, CheckCircle2, ExternalLink } from "lucide-react";
 
-const RELEASES_URL = "https://github.com/PedroMacioni/apex-agent/releases";
-const DOWNLOAD_URL = `${RELEASES_URL}/latest/download/ApexAgent-win-Setup.exe`;
+const REPO = "PedroMacioni/ac-companion-agent";
+const RELEASES_URL = `https://github.com/${REPO}/releases`;
 
-async function getLatestVersion(): Promise<string> {
+async function getLatestRelease(): Promise<{ version: string; downloadUrl: string }> {
   try {
     const res = await fetch(
-      "https://api.github.com/repos/PedroMacioni/apex-agent/releases/latest",
-      { next: { revalidate: 3600 } }
+      `https://api.github.com/repos/${REPO}/releases/latest`,
+      {
+        next: { revalidate: 3600 },
+        headers: { Accept: "application/vnd.github+json" },
+      }
     );
-    if (!res.ok) return "";
+    if (!res.ok) return { version: "", downloadUrl: `${RELEASES_URL}/latest` };
     const data = await res.json();
-    return (data.tag_name as string) ?? "";
+    const version = (data.tag_name as string) ?? "";
+    const asset = (
+      data.assets as Array<{ name: string; browser_download_url: string }> | undefined
+    )?.find((a) => a.name.endsWith(".exe"));
+    return {
+      version,
+      downloadUrl: asset?.browser_download_url ?? `${RELEASES_URL}/latest`,
+    };
   } catch {
-    return "";
+    return { version: "", downloadUrl: `${RELEASES_URL}/latest` };
   }
 }
 
 export default async function DownloadPage() {
-  const [t, releaseVersion] = await Promise.all([
+  const [t, release] = await Promise.all([
     getTranslations("Download"),
-    getLatestVersion(),
+    getLatestRelease(),
   ]);
 
   const steps = [t("steps.one"), t("steps.two"), t("steps.three"), t("steps.four")];
-
   const requirements = [t("requirements.os"), t("requirements.ac"), t("requirements.cm")];
 
   return (
@@ -41,7 +50,6 @@ export default async function DownloadPage() {
 
       {/* Download card */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        {/* Top accent bar */}
         <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
 
         <div className="p-6 space-y-5">
@@ -51,10 +59,14 @@ export default async function DownloadPage() {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-base font-semibold text-foreground">ApexAgent-win-Setup.exe</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider">
-                  {releaseVersion}
+                <span className="text-base font-semibold text-foreground">
+                  SimRacingCompanion-Setup.exe
                 </span>
+                {release.version && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider">
+                    {release.version}
+                  </span>
+                )}
               </div>
               <p className="text-sm text-muted-foreground">{t("fileInfo")}</p>
             </div>
@@ -64,7 +76,7 @@ export default async function DownloadPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href={DOWNLOAD_URL}
+              href={release.downloadUrl}
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
             >
               <ArrowDownToLine className="w-4 h-4" />

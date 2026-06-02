@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   User, Palette, Monitor, Check,
   Sun, Moon, Globe, ChevronRight, Camera, X, Laptop, AlertCircle,
-  Eye, EyeOff, Copy, RefreshCw, LogOut,
+  Eye, EyeOff, Copy, RefreshCw, LogOut, ArrowDownToLine,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -64,6 +64,12 @@ function shortId(uuid: string): string {
 
 // ─── props ────────────────────────────────────────────────────────────────────
 
+type LatestRelease = {
+  version: string;
+  downloadUrl: string;
+  releaseUrl: string;
+};
+
 type Props = {
   userId: string;
   email: string;
@@ -76,6 +82,7 @@ type Props = {
   totalSessions: number;
   lastSessionAt: string | null;
   connectedDevice: ConnectedDevice | null;
+  latestRelease: LatestRelease | null;
 };
 
 // ─── main component ───────────────────────────────────────────────────────────
@@ -653,21 +660,52 @@ export function SettingsClient(props: Props) {
 
             {props.connectedDevice ? (
               <>
+                {/* Update available banner */}
+                {props.latestRelease &&
+                  props.connectedDevice.app_version &&
+                  props.connectedDevice.app_version !== props.latestRelease.version && (
+                  <div className="bg-primary/8 border border-primary/20 rounded-md p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">New version available</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        v{props.latestRelease.version} · Installed: v{props.connectedDevice.app_version}
+                      </p>
+                    </div>
+                    <a
+                      href={props.latestRelease.downloadUrl}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                    >
+                      <ArrowDownToLine className="h-3.5 w-3.5" />
+                      Download
+                    </a>
+                  </div>
+                )}
+
                 <div className="bg-card border border-border rounded-md p-6 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-md bg-green-500/10 border border-green-500/25 flex items-center justify-center shrink-0">
                       <Laptop className="h-4 w-4 text-green-500" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground">{props.connectedDevice.device_name}</p>
                       <p className="text-[11px] text-green-500 font-medium">Connected</p>
                     </div>
+                    {props.latestRelease && props.connectedDevice.app_version === props.latestRelease.version && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20 uppercase tracking-wider shrink-0">
+                        Up to date
+                      </span>
+                    )}
                   </div>
 
                   <div className="border-t border-border pt-4 space-y-3">
                     {[
                       { label: t("agent.platform"),       value: props.connectedDevice.platform },
-                      { label: t("agent.version"),        value: props.connectedDevice.app_version ?? "—" },
+                      {
+                        label: t("agent.version"),
+                        value: props.connectedDevice.app_version
+                          ? `v${props.connectedDevice.app_version}`
+                          : "—",
+                      },
                       { label: t("agent.connectedSince"), value: formatDate(props.connectedDevice.paired_at) },
                       {
                         label: t("agent.lastSeen"),
@@ -714,12 +752,20 @@ export function SettingsClient(props: Props) {
                   <p className="text-sm font-semibold text-foreground">{t("agent.noDevice")}</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">{t("agent.noDeviceDescription")}</p>
                 </div>
-                <a
-                  href="/download"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-                >
-                  {t("agent.downloadAgent")}
-                </a>
+                <div className="flex flex-col items-center gap-2">
+                  <a
+                    href={props.latestRelease?.downloadUrl ?? "/download"}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                  >
+                    <ArrowDownToLine className="h-4 w-4" />
+                    {t("agent.downloadAgent")}
+                  </a>
+                  {props.latestRelease?.version && (
+                    <span className="text-[11px] text-muted-foreground">
+                      v{props.latestRelease.version}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
