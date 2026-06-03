@@ -1,7 +1,9 @@
 namespace CompanionAgent.Core;
 
 using Companion.Infrastructure.History;
+using Companion.Infrastructure.Telemetry;
 using Companion.Infrastructure.Tracks;
+using Companion.SharedContracts.Telemetry;
 using System.Net;
 
 public enum SyncState { Unconfigured, Syncing, Idle, Error }
@@ -21,6 +23,7 @@ public sealed class SyncWorker : IDisposable
     private int _consecutiveFailures;
     private readonly SemaphoreSlim _lock = new(1, 1);
     private DateTimeOffset? _lastSeenSyncRequest;
+    private readonly TelemetryCollector _telemetry = new();
 
     public event Action<SyncState, string>? StateChanged;
     public event Action<string>? ActivityLogged;
@@ -37,8 +40,43 @@ public sealed class SyncWorker : IDisposable
     public void Start(int intervalMinutes)
     {
         SetupWatchers();
+        _telemetry.Start();
+        _telemetry.SessionEnded += OnTelemetrySessionEnded;
         _timer = new System.Threading.Timer(_ => _ = TickAsync(),
             null, TimeSpan.Zero, TimeSpan.FromMinutes(intervalMinutes));
+    }
+
+    private void OnTelemetrySessionEnded(object? sender, SessionTelemetryResult result)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (!_supabase.IsConfigured) return;
+
+                // Pegar a sessão mais recente sincronizada como source_id
+                var sessionSourceId = _cache.SyncedSessionIds.LastOrDefault();
+                if (sessionSourceId is null) return;
+
+                var dto = new LapTelemetryDto
+                {
+                    UserId = _supabase.UserId,
+                    SessionSourceId = sessionSourceId,
+                    LapNumber = 0, // melhor volta
+                    Data = TelemetryMapper.ToDto(result.BestLap),
+                    SampleHz = 20,
+                };
+
+                var ok = await _supabase.UpsertLapTelemetryAsync(dto);
+                ActivityLogged?.Invoke(ok
+                    ? "✓ Telemetria da melhor volta enviada"
+                    : "⚠ Falha ao enviar telemetria");
+            }
+            catch (Exception ex)
+            {
+                ActivityLogged?.Invoke($"⚠ Telemetria: {ex.Message}");
+            }
+        });
     }
 
     private async Task TickAsync()
@@ -656,6 +694,8 @@ public sealed class SyncWorker : IDisposable
         _sessionWatcher?.Dispose();
         _pbWatcher?.Dispose();
         _retryQueue.Dispose();
+        _telemetry.SessionEnded -= OnTelemetrySessionEnded;
+        _telemetry.Dispose();
         _lock.Dispose();
     }
 }

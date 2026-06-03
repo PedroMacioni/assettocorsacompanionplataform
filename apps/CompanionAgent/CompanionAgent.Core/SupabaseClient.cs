@@ -1,6 +1,7 @@
 namespace CompanionAgent.Core;
 
 using Companion.SharedContracts.History;
+using Companion.SharedContracts.Telemetry;
 using Companion.SharedContracts.Tracks;
 using System.Net.Http.Headers;
 using System.Text;
@@ -309,6 +310,21 @@ public sealed class SupabaseClient : IDisposable
                 throw new HttpRequestException($"car_setups {(int)res.StatusCode}: {body}", null, res.StatusCode);
             }
         }
+    }
+
+    public async Task<bool> UpsertLapTelemetryAsync(
+        LapTelemetryDto dto,
+        CancellationToken ct = default)
+    {
+        await EnsureValidTokenAsync();
+        var req = BuildRequest(HttpMethod.Post, "/rest/v1/lap_telemetry?on_conflict=user_id,session_source_id,lap_number");
+        req.Headers.Add("Prefer", "resolution=merge-duplicates,return=minimal");
+        req.Content = new StringContent(
+            System.Text.Json.JsonSerializer.Serialize(dto),
+            System.Text.Encoding.UTF8,
+            "application/json");
+        var res = await _http.SendAsync(req, ct);
+        return res.IsSuccessStatusCode;
     }
 
     public async Task<DateTimeOffset?> GetSyncRequestedAtAsync()
