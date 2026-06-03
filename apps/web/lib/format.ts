@@ -1,8 +1,9 @@
 export function formatLapTime(ms: number | null | undefined): string {
   if (!ms || ms <= 0) return "—";
-  const minutes = Math.floor(ms / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
-  const millis = ms % 1000;
+  const t = Math.round(ms);
+  const minutes = Math.floor(t / 60000);
+  const seconds = Math.floor((t % 60000) / 1000);
+  const millis = t % 1000;
   return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
 

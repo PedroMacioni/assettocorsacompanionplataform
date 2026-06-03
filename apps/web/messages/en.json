@@ -642,6 +642,18 @@
       "ref": "REF",
       "empty": "Lap data not available.",
       "emptyHint": "Sync via the agent to import sector breakdown."
+    },
+    "chart": {
+      "title": "Pace Evolution"
+    },
+    "history": {
+      "title": "Track History"
+    },
+    "statsRow": {
+      "laps": "{count} laps",
+      "valid": "{count} valid",
+      "cuts": "{count} cuts",
+      "noCuts": "No cuts"
     }
   },
   "Profile": {

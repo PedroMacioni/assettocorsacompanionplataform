@@ -546,6 +546,18 @@
       "ref": "REF",
       "empty": "Dados de volta não disponíveis.",
       "emptyHint": "Sincronize pelo agente para importar o detalhamento de setores."
+    },
+    "chart": {
+      "title": "Evolução de Pace"
+    },
+    "history": {
+      "title": "Histórico nesta pista"
+    },
+    "statsRow": {
+      "laps": "{count} voltas",
+      "valid": "{count} válidas",
+      "cuts": "{count} cortes",
+      "noCuts": "Sem cortes"
     }
   },
   "Login": {
