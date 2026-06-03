@@ -64,20 +64,7 @@ export default async function SessionDetailPage({
       .maybeSingle(),
   ]);
 
-  // TEMP (teste): se esta sessão não tem telemetria própria, cair para a
-  // telemetria mais recente do usuário, só para validar o mapa visualmente.
-  // Remover quando a captura do agente estiver confirmada em produção.
-  let telemetry = (telemetryRes.data ?? null) as LapTelemetry | null;
-  if (!telemetry) {
-    const { data: fallback } = await supabase
-      .from("lap_telemetry")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("synced_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    telemetry = (fallback ?? null) as LapTelemetry | null;
-  }
+  const telemetry = (telemetryRes.data ?? null) as LapTelemetry | null;
 
   const data: SessionDetailData = {
     session,

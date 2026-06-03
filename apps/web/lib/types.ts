@@ -155,6 +155,8 @@ export type SessionWithMeta = Session & {
   badge: SessionBadge;
 };
 
+// Telemetry point: 6 elements (legacy) or 7 elements (with clutch)
+// Use clutchOf() from track-map-utils.ts to safely access the 7th element
 export type TelemetryPoint = [
   number,  // 0: x (world coord ×10)
   number,  // 1: y (world coord ×10) — AC longitudinal axis
@@ -162,6 +164,7 @@ export type TelemetryPoint = [
   number,  // 3: speed km/h
   number,  // 4: throttle 0-100
   number,  // 5: brake 0-100
+  // 6: clutch 0-100 (optional, use clutchOf() for safe access)
 ];
 
 export type LapTelemetryData = {
