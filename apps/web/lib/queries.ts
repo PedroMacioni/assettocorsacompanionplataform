@@ -476,7 +476,7 @@ export async function getLapTelemetry(
   sessionSourceId: string,
 ): Promise<LapTelemetry | null> {
   "use cache";
-  cacheLife("hours");
+  cacheLife("seconds");
   cacheTag(`user:${userId}`, `user:${userId}:telemetry`);
 
   const supabase = createServiceClient();
