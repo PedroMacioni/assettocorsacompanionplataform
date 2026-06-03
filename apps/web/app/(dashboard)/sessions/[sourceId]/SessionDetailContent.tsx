@@ -10,6 +10,7 @@ import type { Session, PersonalBest, Lap, SessionWithMeta, Track, LapTelemetry }
 import { ShareSessionModal } from "../share-session-modal";
 import { LapChart } from "./LapChart";
 import { TrackMap } from "./TrackMap";
+import { MapAnalysis } from "./MapAnalysis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -311,210 +312,204 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
         ))}
       </div>
 
-      {/* ── Overview Section ─────────────────────────────────────────────── */}
-      <div className={cn(activeTab !== "overview" && "hidden md:block")}>
-        <div className="flex flex-col md:flex-row gap-5">
+{/* ── Overview Section ─────────────────────────────────────────────── */}
+<div className={cn(activeTab !== "overview" && "hidden md:block")}>
 
-          {/* ── Left: Chart + History ──────────────────────────────────── */}
-          <div className="flex-1 min-w-0 space-y-4">
+  {/* MapAnalysis no topo quando há telemetria */}
+  {data.telemetry && (
+    <div className="mb-5">
+      <MapAnalysis
+        telemetry={data.telemetry}
+        bestS1={bestS1}
+        bestS2={bestS2}
+        bestS3={bestS3}
+        consistData={consistData}
+        theoretical={theoretical}
+      />
+    </div>
+  )}
 
-            {/* Pace chart */}
+  <div className="flex flex-col md:flex-row gap-5">
+    {/* ── Left: Chart ──────────────────────────────────── */}
+    <div className="flex-1 min-w-0 space-y-4">
+      {/* Pace chart */}
+      {hasLaps && (
+        <div className="bg-card border border-border rounded-xl p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+            {t("chart.title")}
+          </p>
+          <LapChart laps={laps} bestLapMs={bestLapMs} />
+
+          {/* Chart legend */}
+          <div className="flex flex-wrap items-center gap-3 mt-3">
+            {(
+              [
+                ["purple", t("table.legend.best")],
+                ["green",  t("table.legend.top25")],
+                ["yellow", t("table.legend.top50")],
+                ["red",    t("table.legend.worst")],
+                ["grey",   t("table.legend.cut")],
+              ] as [SectorColor, string][]
+            ).map(([c, l]) => (
+              <span key={c} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className={`w-2 h-2 rounded-full ${SECTOR_DOT[c]}`} />
+                {l}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* ── Right: Analysis Sidebar ────────────────────────────────── */}
+    <div className="w-full md:w-72 lg:w-80 shrink-0">
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+
+        {/* Track map / outline - só mostra se NÃO tiver telemetria (pois já está no MapAnalysis) */}
+        {!data.telemetry && (
+          track?.outline_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={track.outline_url}
+              alt={track.name}
+              className="w-full h-44 object-contain bg-muted/40 p-5"
+            />
+          ) : track ? (
+            <div className="w-full h-28 bg-muted/40 flex flex-col items-center justify-center gap-2">
+              <MapPin className="size-7 text-muted-foreground/20" />
+              <p className="text-[10px] text-muted-foreground/50">Telemetria disponível em sessões futuras</p>
+            </div>
+          ) : null
+        )}
+
+        <div className={cn("p-5 space-y-4", (track || data.telemetry) && !data.telemetry && "border-t border-border")}>
+
+          {/* Consistency */}
+          {consistData && (
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {t("consistency.title")}
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t(`consistency.${consistData.labelKey}`)}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-3xl font-bold text-foreground tabular-nums">{consistData.score}</span>
+                <span className="text-xs text-muted-foreground">{t("consistency.outOf")}</span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${consistData.barColor}`}
+                  style={{ width: `${consistData.score}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                {t("consistency.sigma", { value: (consistency! / 1000).toFixed(3) })}
+              </p>
+            </div>
+          )}
+
+          {consistData && <div className="h-px bg-border" />}
+
+          {/* Lap metadata */}
+          <div className="space-y-2">
             {hasLaps && (
-              <div className="bg-card border border-border rounded-xl p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                  {t("chart.title")}
-                </p>
-                <LapChart laps={laps} bestLapMs={bestLapMs} />
+              <p className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
+                <span>{t("stats.validOf", { valid: validLaps.length, total: laps.length })}</span>
+                {mainTyre && (
+                  <>
+                    <span className="text-muted-foreground/30">·</span>
+                    <span className="uppercase">{mainTyre}</span>
+                  </>
+                )}
+                {s.distance_km && s.distance_km > 0 && (
+                  <>
+                    <span className="text-muted-foreground/30">·</span>
+                    <span>{formatDistance(s.distance_km)}</span>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
 
-                {/* Chart legend */}
-                <div className="flex flex-wrap items-center gap-3 mt-3">
-                  {(
-                    [
-                      ["purple", t("table.legend.best")],
-                      ["green",  t("table.legend.top25")],
-                      ["yellow", t("table.legend.top50")],
-                      ["red",    t("table.legend.worst")],
-                      ["grey",   t("table.legend.cut")],
-                    ] as [SectorColor, string][]
-                  ).map(([c, l]) => (
-                    <span key={c} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <span className={`w-2 h-2 rounded-full ${SECTOR_DOT[c]}`} />
-                      {l}
+          {/* Theoretical Best */}
+          {theoretical !== null && (
+            <>
+              <div className="h-px bg-border" />
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                  {t("theoretical.title")}
+                </p>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-mono font-bold text-xl text-foreground tabular-nums">
+                    {formatLapTime(theoretical)}
+                  </span>
+                  {bestLapMs && (
+                    <span className="text-xs text-green-400 font-medium">
+                      {t("theoretical.potentialGain", { value: formatDelta(theoretical - bestLapMs) })}
                     </span>
+                  )}
+                </div>
+                <div className="flex gap-4 mt-2.5">
+                  {([["S1", bestS1], ["S2", bestS2], ["S3", bestS3]] as [string, number | null][]).map(([label, v]) => (
+                    <div key={label}>
+                      <span className="text-[10px] font-bold text-purple-400">{label}</span>
+                      <span className="font-mono text-xs text-foreground tabular-nums ml-1.5">
+                        {formatSector(v)}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Track history */}
-            {data.trackSessions.length > 0 && (
-              <div className="bg-card border border-border rounded-xl p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                  {t("history.title")}
-                </p>
-                <div className="space-y-0">
-                  {data.trackSessions.map((ts) => {
-                    const delta = bestLapMs && ts.best_lap_ms ? ts.best_lap_ms - bestLapMs : null;
-                    const isBetter = delta !== null && delta < 0;
-                    const isWorse  = delta !== null && delta > 0;
-                    return (
-                      <div
-                        key={ts.source_id}
-                        className="flex items-center justify-between py-2.5 border-b border-border last:border-0"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium text-foreground tabular-nums">
-                            {formatDate(ts.started_at)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {slugToName(ts.car_id)}
-                            {ts.session_types && (
-                              <span className="ml-2 opacity-60">{ts.session_types}</span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 ml-4">
-                          <p className="text-xs font-mono font-semibold text-foreground tabular-nums">
-                            {formatLapTime(ts.best_lap_ms)}
-                          </p>
-                          {delta !== null && (
-                            <p className={cn(
-                              "text-[10px] font-mono tabular-nums",
-                              isBetter ? "text-green-400" : isWorse ? "text-orange-400" : "text-muted-foreground",
-                            )}>
-                              {formatDelta(delta)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Right: Analysis Sidebar ────────────────────────────────── */}
-          <div className="w-full md:w-72 lg:w-80 shrink-0">
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-
-              {/* Track map / outline */}
-              {data.telemetry ? (
-                <div className="p-4 border-b border-border">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-                    Mapa da Pista
-                  </p>
-                  <TrackMap
-                    telemetry={data.telemetry}
-                    bestS1={bestS1}
-                    bestS2={bestS2}
-                    bestS3={bestS3}
-                  />
-                </div>
-              ) : track?.outline_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={track.outline_url}
-                  alt={track.name}
-                  className="w-full h-44 object-contain bg-muted/40 p-5"
-                />
-              ) : track ? (
-                <div className="w-full h-28 bg-muted/40 flex flex-col items-center justify-center gap-2">
-                  <MapPin className="size-7 text-muted-foreground/20" />
-                  <p className="text-[10px] text-muted-foreground/50">Telemetria disponível em sessões futuras</p>
-                </div>
-              ) : null}
-
-              <div className={cn("p-5 space-y-4", (track || data.telemetry) && "border-t border-border")}>
-
-                {/* Consistency */}
-                {consistData && (
-                  <div>
-                    <div className="flex items-baseline justify-between mb-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        {t("consistency.title")}
-                      </span>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {t(`consistency.${consistData.labelKey}`)}
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-3xl font-bold text-foreground tabular-nums">{consistData.score}</span>
-                      <span className="text-xs text-muted-foreground">{t("consistency.outOf")}</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${consistData.barColor}`}
-                        style={{ width: `${consistData.score}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1.5">
-                      {t("consistency.sigma", { value: (consistency! / 1000).toFixed(3) })}
-                    </p>
-                  </div>
-                )}
-
-                {consistData && <div className="h-px bg-border" />}
-
-                {/* Lap metadata */}
-                <div className="space-y-2">
-                  {hasLaps && (
-                    <p className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
-                      <span>{t("stats.validOf", { valid: validLaps.length, total: laps.length })}</span>
-                      {mainTyre && (
-                        <>
-                          <span className="text-muted-foreground/30">·</span>
-                          <span className="uppercase">{mainTyre}</span>
-                        </>
-                      )}
-                      {s.distance_km && s.distance_km > 0 && (
-                        <>
-                          <span className="text-muted-foreground/30">·</span>
-                          <span>{formatDistance(s.distance_km)}</span>
-                        </>
-                      )}
-                    </p>
-                  )}
-                </div>
-
-                {/* Theoretical Best */}
-                {theoretical !== null && (
-                  <>
-                    <div className="h-px bg-border" />
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-                        {t("theoretical.title")}
-                      </p>
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-mono font-bold text-xl text-foreground tabular-nums">
-                          {formatLapTime(theoretical)}
-                        </span>
-                        {bestLapMs && (
-                          <span className="text-xs text-green-400 font-medium">
-                            {t("theoretical.potentialGain", { value: formatDelta(theoretical - bestLapMs) })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-4 mt-2.5">
-                        {([["S1", bestS1], ["S2", bestS2], ["S3", bestS3]] as [string, number | null][]).map(([label, v]) => (
-                          <div key={label}>
-                            <span className="text-[10px] font-bold text-purple-400">{label}</span>
-                            <span className="font-mono text-xs text-foreground tabular-nums ml-1.5">
-                              {formatSector(v)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-              </div>
-            </div>
-          </div>
+            </>
+          )}
 
         </div>
       </div>
+    </div>
+  </div>
+
+  {/* Track history - formato compacto no rodapé */}
+  {data.trackSessions.length > 0 && (
+    <div className="mt-5 bg-card border border-border rounded-xl p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        {t("history.title")}
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {data.trackSessions.slice(0, 4).map((ts) => {
+          const delta = bestLapMs && ts.best_lap_ms ? ts.best_lap_ms - bestLapMs : null;
+          const isBetter = delta !== null && delta < 0;
+          const isWorse  = delta !== null && delta > 0;
+          return (
+            <div
+              key={ts.source_id}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/30 border border-border/50"
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {formatDate(ts.started_at)}
+                </p>
+                <p className="text-xs font-mono font-semibold text-foreground tabular-nums">
+                  {formatLapTime(ts.best_lap_ms)}
+                </p>
+              </div>
+              {delta !== null && (
+                <span className={cn(
+                  "text-[10px] font-mono tabular-nums",
+                  isBetter ? "text-green-400" : isWorse ? "text-orange-400" : "text-muted-foreground",
+                )}>
+                  {formatDelta(delta)}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+</div>
 
       {/* ── Laps Section ─────────────────────────────────────────────────── */}
       <div className={cn(activeTab !== "laps" && "hidden md:block")}>
