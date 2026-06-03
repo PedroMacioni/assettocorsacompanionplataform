@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CompanionAgent.Tray;
+namespace CompanionAgent.Core;
 
 public record RetryItem(
     string Id,
@@ -76,7 +76,6 @@ public class RetryQueue : IDisposable
             }
         }
 
-        // Re-enqueue items that need retry
         foreach (var item in itemsToRequeue)
         {
             _queue.Enqueue(item);
