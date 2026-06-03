@@ -80,3 +80,115 @@ export function findClosestCanvasPoint(
   }
   return best === -1 ? null : best;
 }
+
+// ─── Derived Stats ─────────────────────────────────────────────────────────────
+
+/**
+ * Extrai o valor de clutch do ponto de telemetria.
+ * Retrocompat: pontos com 6 elementos (sem clutch) retornam 0.
+ */
+export function clutchOf(point: TelemetryPoint): number {
+  // Cast to unknown[] to access potential 7th element (future clutch data)
+  const arr = point as unknown as number[];
+  return arr.length > 6 ? arr[6] : 0;
+}
+
+/**
+ * Calcula a distância acumulada ao longo da volta.
+ * Retorna array normalizado de 0 a 1 (para usar como eixo X do trace).
+ */
+export function cumulativeDistance(points: TelemetryPoint[]): number[] {
+  if (points.length === 0) return [];
+
+  const distances: number[] = [0];
+  let total = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    // Coordenadas estão em ×10, dividir para metros reais
+    const dx = (curr[0] - prev[0]) / 10;
+    const dy = (curr[1] - prev[1]) / 10; // AC Y is longitudinal
+    const dz = (curr[2] - prev[2]) / 10;
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    total += dist;
+    distances.push(total);
+  }
+
+  // Normalizar para 0-1
+  if (total === 0) return distances.map(() => 0);
+  return distances.map(d => d / total);
+}
+
+/**
+ * Calcula estatísticas derivadas da volta.
+ */
+export function computeLapStats(points: TelemetryPoint[], maxSpeed: number) {
+  if (points.length === 0) {
+    return {
+      maxSpeed: 0,
+      minSpeed: 0,
+      avgSpeed: 0,
+      pctFullThrottle: 0,
+      maxSpeedIdx: 0,
+      minSpeedIdx: 0,
+    };
+  }
+
+  let minSpeed = Infinity;
+  let maxSpeedFound = 0;
+  let minSpeedIdx = 0;
+  let maxSpeedIdx = 0;
+  let speedSum = 0;
+  let fullThrottleCount = 0;
+
+  for (let i = 0; i < points.length; i++) {
+    const speed = points[i][3];
+    const throttle = points[i][4];
+
+    speedSum += speed;
+
+    if (speed > maxSpeedFound) {
+      maxSpeedFound = speed;
+      maxSpeedIdx = i;
+    }
+    if (speed < minSpeed) {
+      minSpeed = speed;
+      minSpeedIdx = i;
+    }
+
+    // Full throttle = 95%+ (margem para ruído de input)
+    if (throttle >= 95) {
+      fullThrottleCount++;
+    }
+  }
+
+  return {
+    maxSpeed: maxSpeedFound,
+    minSpeed: minSpeed === Infinity ? 0 : minSpeed,
+    avgSpeed: Math.round(speedSum / points.length),
+    pctFullThrottle: Math.round((fullThrottleCount / points.length) * 100),
+    maxSpeedIdx,
+    minSpeedIdx,
+  };
+}
+
+/**
+ * Detecta zonas de frenagem: índices onde o freio cruza de baixo para cima de um threshold.
+ * Retorna os índices dos pontos onde a frenagem inicia.
+ */
+export function detectBrakingZones(points: TelemetryPoint[], threshold = 20): number[] {
+  const zones: number[] = [];
+
+  for (let i = 1; i < points.length; i++) {
+    const prevBrake = points[i - 1][5];
+    const currBrake = points[i][5];
+
+    // Crossing from below threshold to above
+    if (prevBrake < threshold && currBrake >= threshold) {
+      zones.push(i);
+    }
+  }
+
+  return zones;
+}
