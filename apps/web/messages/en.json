@@ -656,6 +656,12 @@
       "noCuts": "No cuts"
     }
   },
+  "MapStats": {
+    "vmax": "V.max",
+    "vmin": "V.min",
+    "vavg": "V.avg",
+    "fullThrottle": "Full throttle"
+  },
   "Profile": {
     "title": "Profile",
     "memberSince": "Member since {date}",

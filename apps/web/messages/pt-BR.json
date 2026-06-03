@@ -560,6 +560,12 @@
       "noCuts": "Sem cortes"
     }
   },
+  "MapStats": {
+    "vmax": "V.máx",
+    "vmin": "V.mín",
+    "vavg": "V.méd",
+    "fullThrottle": "A fundo"
+  },
   "Login": {
     "title": "Bem-vindo de volta",
     "subtitle": "Entre na sua conta para continuar",

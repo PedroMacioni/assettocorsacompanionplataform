@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { LapTelemetry } from "@/lib/types";
 import { TrackMap } from "./TrackMap";
 import { TelemetryTrace } from "./TelemetryTrace";
+import { MapStatsPanel } from "./MapStatsPanel";
 
 interface Props {
   telemetry: LapTelemetry;
@@ -19,6 +20,8 @@ export function MapAnalysis({
   bestS1,
   bestS2,
   bestS3,
+  consistData,
+  theoretical,
 }: Props) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [mode, setMode] = useState<"speed" | "throttle" | "brake">("speed");
@@ -42,10 +45,18 @@ export function MapAnalysis({
           />
         </div>
 
-        {/* Right: Stats Panel placeholder */}
+        {/* Right: Stats Panel */}
         <div className="w-full lg:w-64 shrink-0">
-          <div className="h-full rounded-lg bg-muted/20 border border-border/50 p-4 flex items-center justify-center">
-            <p className="text-xs text-muted-foreground">Painel de métricas</p>
+          <div className="h-full rounded-lg bg-muted/10 border border-border/50 p-4">
+            <MapStatsPanel
+              points={data.p}
+              maxSpeed={data.mv}
+              bestS1={bestS1}
+              bestS2={bestS2}
+              bestS3={bestS3}
+              consistData={consistData}
+              theoretical={theoretical}
+            />
           </div>
         </div>
       </div>
