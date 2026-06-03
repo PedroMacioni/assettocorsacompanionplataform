@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SessionDetailContent, type SessionDetailData } from "./SessionDetailContent";
 import type { Session, PersonalBest, Lap, Track, LapTelemetry } from "@/lib/types";
-import { getLapTelemetry } from "@/lib/queries";
 
 export default async function SessionDetailPage({
   params,
@@ -34,7 +33,7 @@ export default async function SessionDetailPage({
   if (!sessionRes.data) redirect("/sessions");
   const session = sessionRes.data as Session;
 
-  const [pbRes, trackSessionsRes, trackRes, telemetry] = await Promise.all([
+  const [pbRes, trackSessionsRes, trackRes, telemetryRes] = await Promise.all([
     supabase
       .from("personal_bests")
       .select("*")
@@ -55,7 +54,14 @@ export default async function SessionDetailPage({
       .select("*")
       .eq("track_id", session.track_id)
       .maybeSingle(),
-    getLapTelemetry(user.id, sourceId),
+    supabase
+      .from("lap_telemetry")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("session_source_id", sourceId)
+      .order("synced_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   const data: SessionDetailData = {
@@ -64,7 +70,7 @@ export default async function SessionDetailPage({
     pb: (pbRes.data ?? null) as PersonalBest | null,
     trackSessions: (trackSessionsRes.data ?? []) as Session[],
     track: (trackRes.data ?? null) as Track | null,
-    telemetry: telemetry as LapTelemetry | null,
+    telemetry: (telemetryRes.data ?? null) as LapTelemetry | null,
   };
 
   return <SessionDetailContent data={data} />;

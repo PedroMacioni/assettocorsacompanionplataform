@@ -8,7 +8,6 @@ import type {
   TopTrack,
   AgentStatus,
   UserCarPreference,
-  LapTelemetry,
 } from "@/lib/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -464,30 +463,5 @@ export async function getCarPersonalBests(userId: string, carId: string) {
   return (data ?? []) as PersonalBest[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Telemetry queries
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get lap telemetry for a specific session.
- */
-export async function getLapTelemetry(
-  userId: string,
-  sessionSourceId: string,
-): Promise<LapTelemetry | null> {
-  "use cache";
-  cacheLife("seconds");
-  cacheTag(`user:${userId}`, `user:${userId}:telemetry`);
-
-  const supabase = createServiceClient();
-  const { data } = await supabase
-    .from("lap_telemetry")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("session_source_id", sessionSourceId)
-    .order("synced_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  return data as LapTelemetry | null;
-}
+// Telemetry is read inline (uncached) in the session detail page, since it is
+// written by the external agent and a cached null would persist across sessions.
