@@ -156,11 +156,12 @@ export type SessionWithMeta = Session & {
 };
 
 export type TelemetryPoint = [
-  number,  // 0: x (world coordinate ×10 compactado)
-  number,  // 1: z (world coordinate ×10 compactado)
-  number,  // 2: speed km/h
-  number,  // 3: throttle 0-100
-  number,  // 4: brake 0-100
+  number,  // 0: x (world coord ×10)
+  number,  // 1: y (world coord ×10) — AC longitudinal axis
+  number,  // 2: z (world coord ×10) — AC height (≈0 on flat track)
+  number,  // 3: speed km/h
+  number,  // 4: throttle 0-100
+  number,  // 5: brake 0-100
 ];
 
 export type LapTelemetryData = {

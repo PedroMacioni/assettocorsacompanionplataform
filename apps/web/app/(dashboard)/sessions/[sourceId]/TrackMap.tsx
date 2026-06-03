@@ -196,9 +196,9 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
               transform: mousePos.x > 200 ? "translateX(-110%)" : undefined,
             }}
           >
-            <p className="text-white font-semibold tabular-nums">{hoverFrame[2]} km/h</p>
-            <p className="text-green-400 tabular-nums mt-0.5">{hoverFrame[3]}% gas</p>
-            <p className="text-red-400 tabular-nums">{hoverFrame[4]}% fre</p>
+            <p className="text-white font-semibold tabular-nums">{hoverFrame[3]} km/h</p>
+            <p className="text-green-400 tabular-nums mt-0.5">{hoverFrame[4]}% gas</p>
+            <p className="text-red-400 tabular-nums">{hoverFrame[5]}% fre</p>
           </div>
         )}
       </div>
