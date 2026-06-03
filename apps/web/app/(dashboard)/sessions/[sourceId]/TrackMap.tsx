@@ -5,6 +5,7 @@ import type { LapTelemetry } from "@/lib/types";
 import {
   normalizePoints, speedToColor, throttleToColor, brakeToColor,
   findByNormPos, findClosestCanvasPoint, type CanvasPoint,
+  computeLapStats, detectBrakingZones,
 } from "./track-map-utils";
 
 type ColorMode = "speed" | "throttle" | "brake";
@@ -14,16 +15,44 @@ interface Props {
   bestS1: number | null;
   bestS2: number | null;
   bestS3: number | null;
+  // Controlled hover (optional)
+  hoverIdx?: number | null;
+  onHover?: (idx: number | null) => void;
+  // Controlled mode (optional)
+  mode?: ColorMode;
+  onModeChange?: (mode: ColorMode) => void;
 }
 
-export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
+export function TrackMap({
+  telemetry,
+  bestS2,
+  bestS3,
+  hoverIdx: controlledHoverIdx,
+  onHover,
+  mode: controlledMode,
+  onModeChange,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [mode, setMode] = useState<ColorMode>("speed");
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [internalMode, setInternalMode] = useState<ColorMode>("speed");
+  const [internalHoverIdx, setInternalHoverIdx] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const normalizedRef = useRef<CanvasPoint[]>([]);
   const animatedRef = useRef(false);
   const { data } = telemetry;
+
+  // Use controlled values if provided, otherwise use internal state
+  const currentMode = controlledMode ?? internalMode;
+  const currentHoverIdx = controlledHoverIdx ?? internalHoverIdx;
+
+  function handleModeChange(m: ColorMode) {
+    if (onModeChange) onModeChange(m);
+    else setInternalMode(m);
+  }
+
+  function handleHoverChange(idx: number | null) {
+    if (onHover) onHover(idx);
+    else setInternalHoverIdx(idx);
+  }
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -39,6 +68,10 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
     const pts = normalizePoints(data.p, W, H);
     normalizedRef.current = pts;
 
+    // Pre-compute stats and braking zones
+    const stats = computeLapStats(data.p, data.mv);
+    const brakingZones = detectBrakingZones(data.p, 20);
+
     const doRender = (upTo: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
@@ -46,26 +79,16 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
       const slice = pts.slice(0, upTo);
       if (slice.length < 2) return;
 
-      // Sombra de fundo
+      // Segmentos coloridos (sem sombra para estilo minimalista)
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = "rgba(0,0,0,0.5)";
-      ctx.beginPath();
-      slice.forEach((p, i) => {
-        if (i === 0) ctx.moveTo(p.cx, p.cy);
-        else ctx.lineTo(p.cx, p.cy);
-      });
-      ctx.stroke();
-
-      // Segmentos coloridos
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       for (let i = 1; i < slice.length; i++) {
         const p = slice[i];
         let color: string;
-        if (mode === "speed")         color = speedToColor(p.speed, data.mv);
-        else if (mode === "throttle") color = throttleToColor(p.throttle / 100);
-        else                          color = brakeToColor(p.brake / 100);
+        if (currentMode === "speed")         color = speedToColor(p.speed, data.mv);
+        else if (currentMode === "throttle") color = throttleToColor(p.throttle / 100);
+        else                                 color = brakeToColor(p.brake / 100);
         ctx.strokeStyle = color;
         ctx.beginPath();
         ctx.moveTo(slice[i - 1].cx, slice[i - 1].cy);
@@ -74,14 +97,27 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
       }
 
       if (upTo >= pts.length) {
+        // Marcadores de velocidade: Vmax (azul) e Vmin (amarelo)
+        if (pts[stats.maxSpeedIdx]) {
+          drawSpeedMarker(ctx, pts[stats.maxSpeedIdx], "max");
+        }
+        if (pts[stats.minSpeedIdx]) {
+          drawSpeedMarker(ctx, pts[stats.minSpeedIdx], "min");
+        }
+
+        // Marcadores de início de frenagem (triângulos vermelhos)
+        brakingZones.forEach(idx => {
+          if (pts[idx]) drawBrakingMarker(ctx, pts[idx]);
+        });
+
         // Marcadores de setor
         if (data.s[0]) drawSectorMarker(ctx, pts, data.s[0]);
         if (data.s[1]) drawSectorMarker(ctx, pts, data.s[1]);
         drawStartMarker(ctx, pts[0]);
 
         // Hover highlight
-        if (hoverIdx !== null && pts[hoverIdx]) {
-          const p = pts[hoverIdx];
+        if (currentHoverIdx !== null && pts[currentHoverIdx]) {
+          const p = pts[currentHoverIdx];
           ctx.beginPath();
           ctx.arc(p.cx, p.cy, 5, 0, Math.PI * 2);
           ctx.fillStyle = "white";
@@ -106,11 +142,11 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
     } else {
       doRender(pts.length);
     }
-  }, [data, mode, hoverIdx, bestS2, bestS3]);
+  }, [data, currentMode, currentHoverIdx, bestS2, bestS3]);
 
   useEffect(() => {
     animatedRef.current = false;
-  }, [data, mode]);
+  }, [data, currentMode]);
 
   useEffect(() => { render(); }, [render]);
 
@@ -134,39 +170,38 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
     const canvas = canvasRef.current;
     if (!canvas || !normalizedRef.current.length) return;
     const rect = canvas.getBoundingClientRect();
-    // Coordenadas CSS (normalizePoints usa CSS pixels)
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setHoverIdx(findClosestCanvasPoint(normalizedRef.current, mx, my));
+    setMousePos({ x: mx, y: my });
+    handleHoverChange(findClosestCanvasPoint(normalizedRef.current, mx, my));
   }
 
-  const hoverFrame = hoverIdx !== null ? data.p[hoverIdx] : null;
+  const hoverFrame = currentHoverIdx !== null ? data.p[currentHoverIdx] : null;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2 mb-3">
         {(["speed", "throttle", "brake"] as ColorMode[]).map((m) => (
           <button
             key={m}
-            onClick={() => setMode(m)}
-            className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide transition-colors ${
-              mode === m
+            onClick={() => handleModeChange(m)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              currentMode === m
                 ? m === "speed"
-                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                  ? "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30"
                   : m === "throttle"
-                  ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                  : "bg-red-500/20 text-red-400 border border-red-500/30"
-                : "bg-control text-muted-foreground hover:text-foreground"
+                  ? "bg-green-500/20 text-green-400 ring-1 ring-green-500/30"
+                  : "bg-red-500/20 text-red-400 ring-1 ring-red-500/30"
+                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
-            {m === "speed" ? "Vel" : m === "throttle" ? "Gas" : "Fre"}
+            {m === "speed" ? "Velocidade" : m === "throttle" ? "Acelerador" : "Freio"}
           </button>
         ))}
       </div>
 
       {/* Legenda de cores — só no modo speed */}
-      {mode === "speed" && (
+      {currentMode === "speed" && (
         <div className="flex items-center gap-2">
           <span className="text-[9px] text-muted-foreground">Lento</span>
           <div
@@ -178,14 +213,14 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
       )}
 
       <div
-        className="relative rounded-lg overflow-hidden bg-[#0a0a0a]"
-        style={{ aspectRatio: "1/1" }}
+        className="relative rounded-lg overflow-hidden bg-[#0d0d0f]"
+        style={{ aspectRatio: "4/3" }}
       >
         <canvas
           ref={canvasRef}
           className="w-full h-full cursor-crosshair"
           onMouseMove={handleMouseMove}
-          onMouseLeave={() => { setHoverIdx(null); setMousePos(null); }}
+          onMouseLeave={() => { handleHoverChange(null); setMousePos(null); }}
         />
         {hoverFrame && mousePos && (
           <div
@@ -199,6 +234,9 @@ export function TrackMap({ telemetry, bestS2, bestS3 }: Props) {
             <p className="text-white font-semibold tabular-nums">{hoverFrame[3]} km/h</p>
             <p className="text-green-400 tabular-nums mt-0.5">{hoverFrame[4]}% gas</p>
             <p className="text-red-400 tabular-nums">{hoverFrame[5]}% fre</p>
+            {(hoverFrame as unknown as number[]).length > 6 && (
+              <p className="text-blue-400 tabular-nums">{(hoverFrame as unknown as number[])[6]}% emb</p>
+            )}
           </div>
         )}
       </div>
@@ -234,4 +272,25 @@ function drawStartMarker(ctx: CanvasRenderingContext2D, p: CanvasPoint) {
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 1.5;
   ctx.stroke();
+}
+
+function drawSpeedMarker(ctx: CanvasRenderingContext2D, p: CanvasPoint, type: "max" | "min") {
+  ctx.beginPath();
+  ctx.arc(p.cx, p.cy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = type === "max" ? "#3b82f6" : "#f59e0b"; // blue for max, amber for min
+  ctx.fill();
+  ctx.strokeStyle = "#1a1a1a";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function drawBrakingMarker(ctx: CanvasRenderingContext2D, p: CanvasPoint) {
+  const size = 4;
+  ctx.beginPath();
+  ctx.moveTo(p.cx, p.cy - size);
+  ctx.lineTo(p.cx + size * 0.866, p.cy + size * 0.5);
+  ctx.lineTo(p.cx - size * 0.866, p.cy + size * 0.5);
+  ctx.closePath();
+  ctx.fillStyle = "#ef4444"; // red
+  ctx.fill();
 }
