@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import type { LapTelemetry } from "@/lib/types";
 import { TrackMap } from "./TrackMap";
+import { TelemetryTrace } from "./TelemetryTrace";
 
 interface Props {
   telemetry: LapTelemetry;
@@ -18,8 +20,10 @@ export function MapAnalysis({
   bestS2,
   bestS3,
 }: Props) {
-  // Estado de hover e mode será lifted quando TrackMap for atualizado na Fase 3
-  // Por enquanto, TrackMap gerencia internamente
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [mode, setMode] = useState<"speed" | "throttle" | "brake">("speed");
+
+  const { data } = telemetry;
 
   return (
     <div className="bg-card border border-border rounded-xl p-5">
@@ -31,6 +35,10 @@ export function MapAnalysis({
             bestS1={bestS1}
             bestS2={bestS2}
             bestS3={bestS3}
+            hoverIdx={hoverIdx}
+            onHover={setHoverIdx}
+            mode={mode}
+            onModeChange={setMode}
           />
         </div>
 
@@ -42,9 +50,15 @@ export function MapAnalysis({
         </div>
       </div>
 
-      {/* Bottom: Telemetry Trace placeholder */}
-      <div className="mt-4 h-32 rounded-lg bg-muted/20 border border-border/50 flex items-center justify-center">
-        <p className="text-xs text-muted-foreground">Trace de telemetria</p>
+      {/* Bottom: Telemetry Trace with synchronized hover */}
+      <div className="mt-4">
+        <TelemetryTrace
+          points={data.p}
+          maxSpeed={data.mv}
+          sectorBoundaries={data.s}
+          hoverIdx={hoverIdx}
+          onHover={setHoverIdx}
+        />
       </div>
     </div>
   );
