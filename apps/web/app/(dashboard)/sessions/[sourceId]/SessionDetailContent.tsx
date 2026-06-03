@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Share2, Filter } from "lucide-react";
+import { ArrowLeft, Share2, Filter, MapPin } from "lucide-react";
 import { formatLapTime, formatDistance, formatDate, slugToName } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Session, PersonalBest, Lap, SessionWithMeta } from "@/lib/types";
+import type { Session, PersonalBest, Lap, SessionWithMeta, Track, LapTelemetry } from "@/lib/types";
 import { ShareSessionModal } from "../share-session-modal";
+import { LapChart } from "./LapChart";
+import { TrackMap } from "./TrackMap";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +18,8 @@ export type SessionDetailData = {
   laps: Lap[];
   pb: PersonalBest | null;
   trackSessions: Session[];
+  track: Track | null;
+  telemetry: LapTelemetry | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -108,7 +112,7 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTheme, setShareTheme] = useState<"dark" | "light">("dark");
 
-  const { session: s, laps, pb } = data;
+  const { session: s, laps, pb, track } = data;
 
   // ── Analytics ──────────────────────────────────────────────────────────────
   const validLaps = laps.filter((l) => l.cuts === 0 && l.time_ms > 0);
@@ -173,7 +177,7 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
       {/* ── Back + Share row ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
@@ -210,8 +214,9 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
           <p className="text-sm text-muted-foreground">{formatDate(s.started_at)}</p>
         </div>
 
-        {/* Hero Metrics */}
-        <div className="flex items-center gap-0 mt-4 shrink-0">
+        {/* Hero Metrics — Best | Avg | vs PB */}
+        <div className="flex items-stretch mt-5 gap-0 overflow-x-auto">
+          {/* Best lap */}
           <div className="text-center pr-6 sm:pr-8 border-r border-border shrink-0">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
               {t("bestLap")}
@@ -221,19 +226,70 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
             </p>
           </div>
 
+          {/* Avg (valid) */}
+          {avgLapMs !== null && bestLapMs !== null && (
+            <div className="text-center px-6 sm:px-8 border-r border-border shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                {t("stats.avgLap")}
+              </p>
+              <p className="text-3xl md:text-4xl font-bold font-mono text-foreground tabular-nums">
+                {formatLapTime(avgLapMs)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                {formatDelta(avgLapMs - bestLapMs)} vs melhor
+              </p>
+            </div>
+          )}
+
+          {/* vs PB */}
           {pb && bestLapMs && pbDelta !== null && (
             <div className="text-center pl-6 sm:pl-8 shrink-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                 {t("vsPb")}
               </p>
-              <p className={`text-2xl md:text-3xl font-bold font-mono tabular-nums ${pbDelta <= 0 ? "text-green-400" : "text-orange-400"}`}>
+              <p className={`text-3xl md:text-4xl font-bold font-mono tabular-nums ${pbDelta <= 0 ? "text-green-400" : "text-orange-400"}`}>
                 {formatDelta(pbDelta)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">{t("pb")}: {formatLapTime(pb.time_ms)}</p>
+              <p className="text-[10px] text-muted-foreground mt-1 font-mono">
+                {t("pb")}: {formatLapTime(pb.time_ms)}
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Stats chips row ───────────────────────────────────────────────── */}
+      {hasLaps && (
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-md bg-control text-xs text-muted-foreground font-medium">
+            {t("statsRow.laps", { count: laps.length })}
+          </span>
+          {validLaps.length < laps.length && (
+            <span className="px-2.5 py-1 rounded-md bg-control text-xs text-green-400 font-medium">
+              {t("statsRow.valid", { count: validLaps.length })}
+            </span>
+          )}
+          {cutLaps > 0 ? (
+            <span className="px-2.5 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-xs text-red-400 font-medium">
+              {t("statsRow.cuts", { count: cutLaps })}
+            </span>
+          ) : validLaps.length > 0 ? (
+            <span className="px-2.5 py-1 rounded-md bg-green-500/10 border border-green-500/20 text-xs text-green-400 font-medium">
+              {t("statsRow.noCuts")}
+            </span>
+          ) : null}
+          {s.distance_km && s.distance_km > 0 && (
+            <span className="px-2.5 py-1 rounded-md bg-control text-xs text-muted-foreground font-medium">
+              {formatDistance(s.distance_km)}
+            </span>
+          )}
+          {mainTyre && (
+            <span className="px-2.5 py-1 rounded-md bg-control text-xs text-muted-foreground font-medium uppercase">
+              {mainTyre}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="w-full h-px bg-border" />
 
@@ -255,143 +311,23 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
         ))}
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row gap-5">
+      {/* ── Overview Section ─────────────────────────────────────────────── */}
+      <div className={cn(activeTab !== "overview" && "hidden md:block")}>
+        <div className="flex flex-col md:flex-row gap-5">
 
-        {/* ── Left: Analysis Section ───────────────────────────────────── */}
-        <div className={cn("w-full md:w-72 lg:w-80 shrink-0", activeTab !== "overview" && "hidden md:block")}>
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          {/* ── Left: Chart + History ──────────────────────────────────── */}
+          <div className="flex-1 min-w-0 space-y-4">
 
-            {/* Consistency */}
-            {consistData && (
-              <div>
-                <div className="flex items-baseline justify-between mb-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {t("consistency.title")}
-                  </span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {t(`consistency.${consistData.labelKey}`)}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-3xl font-bold text-foreground tabular-nums">{consistData.score}</span>
-                  <span className="text-xs text-muted-foreground">{t("consistency.outOf")}</span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${consistData.barColor}`}
-                    style={{ width: `${consistData.score}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  {t("consistency.sigma", { value: (consistency! / 1000).toFixed(3) })}
+            {/* Pace chart */}
+            {hasLaps && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                  {t("chart.title")}
                 </p>
-              </div>
-            )}
+                <LapChart laps={laps} bestLapMs={bestLapMs} />
 
-            {consistData && <div className="h-px bg-border" />}
-
-            {/* Avg Lap + Metadata */}
-            <div className="space-y-2.5">
-              {avgLapMs !== null && bestLapMs !== null && (
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {t("stats.avgLap")}
-                  </span>
-                  <div className="text-right">
-                    <span className="font-mono font-semibold text-sm text-foreground tabular-nums">
-                      {formatLapTime(avgLapMs)}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {t("stats.avgVsBest", { delta: formatDelta(avgLapMs - bestLapMs) })}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {hasLaps && (
-                <p className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
-                  <span>{t("stats.validOf", { valid: validLaps.length, total: laps.length })}</span>
-                  {cutLaps > 0 && (
-                    <>
-                      <span className="text-muted-foreground/30">·</span>
-                      <span className="text-red-400">{t("stats.cutsInline", { count: cutLaps })}</span>
-                    </>
-                  )}
-                  {mainTyre && (
-                    <>
-                      <span className="text-muted-foreground/30">·</span>
-                      <span className="uppercase">{mainTyre}</span>
-                    </>
-                  )}
-                  {s.distance_km && s.distance_km > 0 && (
-                    <>
-                      <span className="text-muted-foreground/30">·</span>
-                      <span>{formatDistance(s.distance_km)}</span>
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-
-            {/* Theoretical Best */}
-            {theoretical !== null && (
-              <>
-                <div className="h-px bg-border" />
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-                    {t("theoretical.title")}
-                  </p>
-                  <div className="flex items-baseline justify-between">
-                    <span className="font-mono font-bold text-xl text-foreground tabular-nums">
-                      {formatLapTime(theoretical)}
-                    </span>
-                    {bestLapMs && (
-                      <span className="text-xs text-green-400 font-medium">
-                        {t("theoretical.potentialGain", { value: formatDelta(theoretical - bestLapMs) })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-4 mt-2.5">
-                    {([["S1", bestS1], ["S2", bestS2], ["S3", bestS3]] as [string, number | null][]).map(([label, v]) => (
-                      <div key={label}>
-                        <span className="text-[10px] font-bold text-purple-400">{label}</span>
-                        <span className="font-mono text-xs text-foreground tabular-nums ml-1.5">
-                          {formatSector(v)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── Right: Lap Table ─────────────────────────────────────────── */}
-        <div className={cn("flex-1 min-w-0 flex flex-col", activeTab !== "laps" && "hidden md:flex md:flex-col")}>
-          {hasLaps ? (
-            <>
-              {/* Filter bar */}
-              <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 py-3 border border-border rounded-t-xl bg-surface-raised/40">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setShowValidOnly(!showValidOnly)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      showValidOnly
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-control text-muted-foreground hover:text-foreground hover:bg-control-hover"
-                    }`}
-                  >
-                    <Filter className="h-3 w-3" />
-                    {t("table.validOnly")}
-                  </button>
-                  <span className="text-xs text-muted-foreground">
-                    {t("table.lapsCount", { count: filteredLaps.length })}
-                  </span>
-                </div>
-
-                <div className="hidden sm:flex items-center gap-3 ml-auto">
+                {/* Chart legend */}
+                <div className="flex flex-wrap items-center gap-3 mt-3">
                   {(
                     [
                       ["purple", t("table.legend.best")],
@@ -401,120 +337,331 @@ export function SessionDetailContent({ data }: { data: SessionDetailData }) {
                       ["grey",   t("table.legend.cut")],
                     ] as [SectorColor, string][]
                   ).map(([c, l]) => (
-                    <span key={c} className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                    <span key={c} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                       <span className={`w-2 h-2 rounded-full ${SECTOR_DOT[c]}`} />
                       {l}
                     </span>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Table */}
-              <div className="overflow-x-auto apex-scroll border border-t-0 border-border rounded-b-xl">
-                <table className="w-full text-xs min-w-[600px]">
-                  <thead className="sticky top-0 z-10">
-                    <tr className="border-b border-border bg-surface-raised/40">
-                      {(
-                        [
-                          t("table.headers.lap"),
-                          t("table.headers.s1"),
-                          t("table.headers.s2"),
-                          t("table.headers.s3"),
-                          t("table.headers.total"),
-                          t("table.headers.gap"),
-                          t("table.headers.tyre"),
-                          t("table.headers.cuts"),
-                        ] as string[]
-                      ).map((h, i) => (
-                        <th
-                          key={h}
-                          className={`px-4 py-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i > 0 ? "text-right" : "text-left"}`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLaps.map((lap) => {
-                      const cut    = lap.cuts > 0;
-                      const isBest = !cut && lap.time_ms === bestLapMs;
-                      const gap    = bestLapMs !== null && !cut ? lap.time_ms - bestLapMs : null;
-                      const c1 = classifySector(lap.s1_ms, bestS1, s1P25, s1P75, cut);
-                      const c2 = classifySector(lap.s2_ms, bestS2, s2P25, s2P75, cut);
-                      const c3 = classifySector(lap.s3_ms, bestS3, s3P25, s3P75, cut);
-
-                      return (
-                        <tr
-                          key={lap.id}
-                          className={`border-b border-border last:border-0 transition-colors ${
-                            isBest
-                              ? "bg-primary/[0.07] border-l-2 border-l-primary"
-                              : "hover:bg-control-hover"
-                          }`}
-                        >
-                          <td className="px-4 py-2.5">
-                            <span className={isBest ? "text-primary font-bold" : "text-muted-foreground"}>
-                              {lap.lap_number + 1}
-                            </span>
-                          </td>
-                          <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c1]}`}>
-                            {formatSector(lap.s1_ms)}
-                          </td>
-                          <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c2]}`}>
-                            {formatSector(lap.s2_ms)}
-                          </td>
-                          <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c3]}`}>
-                            {formatSector(lap.s3_ms)}
-                          </td>
-                          <td
-                            className={`px-4 py-2.5 text-right font-mono tabular-nums font-semibold ${
-                              cut
-                                ? "text-muted-foreground/50 line-through"
-                                : isBest
-                                ? "text-primary"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {formatLapTime(lap.time_ms)}
-                          </td>
-                          <td
-                            className={`px-4 py-2.5 text-right font-mono tabular-nums ${
-                              cut
-                                ? "text-muted-foreground/40"
-                                : gap === 0
-                                ? "text-primary"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {cut ? "—" : gap === null ? "—" : gap === 0 ? t("table.ref") : formatDelta(gap)}
-                          </td>
-                          <td className="px-4 py-2.5 text-right text-muted-foreground font-mono uppercase text-[10px]">
-                            {lap.tyre ?? "—"}
-                          </td>
-                          <td
-                            className={`px-4 py-2.5 text-right ${
-                              lap.cuts > 0 ? "text-red-400 font-semibold" : "text-muted-foreground/40"
-                            }`}
-                          >
-                            {lap.cuts > 0 ? lap.cuts : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {/* Track history */}
+            {data.trackSessions.length > 0 && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                  {t("history.title")}
+                </p>
+                <div className="space-y-0">
+                  {data.trackSessions.map((ts) => {
+                    const delta = bestLapMs && ts.best_lap_ms ? ts.best_lap_ms - bestLapMs : null;
+                    const isBetter = delta !== null && delta < 0;
+                    const isWorse  = delta !== null && delta > 0;
+                    return (
+                      <div
+                        key={ts.source_id}
+                        className="flex items-center justify-between py-2.5 border-b border-border last:border-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-foreground tabular-nums">
+                            {formatDate(ts.started_at)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {slugToName(ts.car_id)}
+                            {ts.session_types && (
+                              <span className="ml-2 opacity-60">{ts.session_types}</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 ml-4">
+                          <p className="text-xs font-mono font-semibold text-foreground tabular-nums">
+                            {formatLapTime(ts.best_lap_ms)}
+                          </p>
+                          {delta !== null && (
+                            <p className={cn(
+                              "text-[10px] font-mono tabular-nums",
+                              isBetter ? "text-green-400" : isWorse ? "text-orange-400" : "text-muted-foreground",
+                            )}>
+                              {formatDelta(delta)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center p-8">
-                <p className="text-sm text-muted-foreground">{t("table.empty")}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t("table.emptyHint")}</p>
+            )}
+          </div>
+
+          {/* ── Right: Analysis Sidebar ────────────────────────────────── */}
+          <div className="w-full md:w-72 lg:w-80 shrink-0">
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+
+              {/* Track map / outline */}
+              {data.telemetry ? (
+                <div className="p-4 border-b border-border">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                    Mapa da Pista
+                  </p>
+                  <TrackMap
+                    telemetry={data.telemetry}
+                    bestS1={bestS1}
+                    bestS2={bestS2}
+                    bestS3={bestS3}
+                  />
+                </div>
+              ) : track?.outline_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={track.outline_url}
+                  alt={track.name}
+                  className="w-full h-44 object-contain bg-muted/40 p-5"
+                />
+              ) : track ? (
+                <div className="w-full h-28 bg-muted/40 flex flex-col items-center justify-center gap-2">
+                  <MapPin className="size-7 text-muted-foreground/20" />
+                  <p className="text-[10px] text-muted-foreground/50">Telemetria disponível em sessões futuras</p>
+                </div>
+              ) : null}
+
+              <div className={cn("p-5 space-y-4", (track || data.telemetry) && "border-t border-border")}>
+
+                {/* Consistency */}
+                {consistData && (
+                  <div>
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                        {t("consistency.title")}
+                      </span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {t(`consistency.${consistData.labelKey}`)}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-3xl font-bold text-foreground tabular-nums">{consistData.score}</span>
+                      <span className="text-xs text-muted-foreground">{t("consistency.outOf")}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${consistData.barColor}`}
+                        style={{ width: `${consistData.score}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      {t("consistency.sigma", { value: (consistency! / 1000).toFixed(3) })}
+                    </p>
+                  </div>
+                )}
+
+                {consistData && <div className="h-px bg-border" />}
+
+                {/* Lap metadata */}
+                <div className="space-y-2">
+                  {hasLaps && (
+                    <p className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-1">
+                      <span>{t("stats.validOf", { valid: validLaps.length, total: laps.length })}</span>
+                      {mainTyre && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <span className="uppercase">{mainTyre}</span>
+                        </>
+                      )}
+                      {s.distance_km && s.distance_km > 0 && (
+                        <>
+                          <span className="text-muted-foreground/30">·</span>
+                          <span>{formatDistance(s.distance_km)}</span>
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+
+                {/* Theoretical Best */}
+                {theoretical !== null && (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                        {t("theoretical.title")}
+                      </p>
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-mono font-bold text-xl text-foreground tabular-nums">
+                          {formatLapTime(theoretical)}
+                        </span>
+                        {bestLapMs && (
+                          <span className="text-xs text-green-400 font-medium">
+                            {t("theoretical.potentialGain", { value: formatDelta(theoretical - bestLapMs) })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-4 mt-2.5">
+                        {([["S1", bestS1], ["S2", bestS2], ["S3", bestS3]] as [string, number | null][]).map(([label, v]) => (
+                          <div key={label}>
+                            <span className="text-[10px] font-bold text-purple-400">{label}</span>
+                            <span className="font-mono text-xs text-foreground tabular-nums ml-1.5">
+                              {formatSector(v)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
               </div>
             </div>
-          )}
+          </div>
+
         </div>
+      </div>
+
+      {/* ── Laps Section ─────────────────────────────────────────────────── */}
+      <div className={cn(activeTab !== "laps" && "hidden md:block")}>
+        {hasLaps ? (
+          <>
+            {/* Filter bar */}
+            <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 py-3 border border-border rounded-t-xl bg-surface-raised/40">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowValidOnly(!showValidOnly)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    showValidOnly
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-control text-muted-foreground hover:text-foreground hover:bg-control-hover"
+                  }`}
+                >
+                  <Filter className="h-3 w-3" />
+                  {t("table.validOnly")}
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {t("table.lapsCount", { count: filteredLaps.length })}
+                </span>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-3 ml-auto">
+                {(
+                  [
+                    ["purple", t("table.legend.best")],
+                    ["green",  t("table.legend.top25")],
+                    ["yellow", t("table.legend.top50")],
+                    ["red",    t("table.legend.worst")],
+                    ["grey",   t("table.legend.cut")],
+                  ] as [SectorColor, string][]
+                ).map(([c, l]) => (
+                  <span key={c} className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
+                    <span className={`w-2 h-2 rounded-full ${SECTOR_DOT[c]}`} />
+                    {l}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto apex-scroll border border-t-0 border-border rounded-b-xl">
+              <table className="w-full text-xs min-w-[600px]">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-border bg-surface-raised/40">
+                    {(
+                      [
+                        t("table.headers.lap"),
+                        t("table.headers.s1"),
+                        t("table.headers.s2"),
+                        t("table.headers.s3"),
+                        t("table.headers.total"),
+                        t("table.headers.gap"),
+                        t("table.headers.tyre"),
+                        t("table.headers.cuts"),
+                      ] as string[]
+                    ).map((h, i) => (
+                      <th
+                        key={h}
+                        className={`px-4 py-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground ${i > 0 ? "text-right" : "text-left"}`}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLaps.map((lap) => {
+                    const cut    = lap.cuts > 0;
+                    const isBest = !cut && lap.time_ms === bestLapMs;
+                    const gap    = bestLapMs !== null && !cut ? lap.time_ms - bestLapMs : null;
+                    const c1 = classifySector(lap.s1_ms, bestS1, s1P25, s1P75, cut);
+                    const c2 = classifySector(lap.s2_ms, bestS2, s2P25, s2P75, cut);
+                    const c3 = classifySector(lap.s3_ms, bestS3, s3P25, s3P75, cut);
+
+                    return (
+                      <tr
+                        key={lap.id}
+                        className={`border-b border-border last:border-0 transition-colors ${
+                          isBest
+                            ? "bg-primary/[0.07] border-l-2 border-l-primary"
+                            : "hover:bg-control-hover"
+                        }`}
+                      >
+                        <td className="px-4 py-2.5">
+                          <span className={isBest ? "text-primary font-bold" : "text-muted-foreground"}>
+                            {lap.lap_number + 1}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c1]}`}>
+                          {formatSector(lap.s1_ms)}
+                        </td>
+                        <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c2]}`}>
+                          {formatSector(lap.s2_ms)}
+                        </td>
+                        <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${SECTOR_TEXT[c3]}`}>
+                          {formatSector(lap.s3_ms)}
+                        </td>
+                        <td
+                          className={`px-4 py-2.5 text-right font-mono tabular-nums font-semibold ${
+                            cut
+                              ? "text-muted-foreground/50 line-through"
+                              : isBest
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {formatLapTime(lap.time_ms)}
+                        </td>
+                        <td
+                          className={`px-4 py-2.5 text-right font-mono tabular-nums ${
+                            cut
+                              ? "text-muted-foreground/40"
+                              : gap === 0
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {cut ? "—" : gap === null ? "—" : gap === 0 ? t("table.ref") : formatDelta(gap)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right text-muted-foreground font-mono uppercase text-[10px]">
+                          {lap.tyre ?? "—"}
+                        </td>
+                        <td
+                          className={`px-4 py-2.5 text-right ${
+                            lap.cuts > 0 ? "text-red-400 font-semibold" : "text-muted-foreground/40"
+                          }`}
+                        >
+                          {lap.cuts > 0 ? lap.cuts : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center py-16 border border-border rounded-xl">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">{t("table.empty")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("table.emptyHint")}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Share Modal ───────────────────────────────────────────────────── */}
