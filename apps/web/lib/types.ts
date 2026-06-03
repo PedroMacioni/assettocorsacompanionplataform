@@ -154,3 +154,27 @@ export type SessionWithMeta = Session & {
   deltaPbMs: number | null;
   badge: SessionBadge;
 };
+
+export type TelemetryPoint = [
+  number,  // 0: x (world coordinate ×10 compactado)
+  number,  // 1: z (world coordinate ×10 compactado)
+  number,  // 2: speed km/h
+  number,  // 3: throttle 0-100
+  number,  // 4: brake 0-100
+];
+
+export type LapTelemetryData = {
+  p: TelemetryPoint[];   // points array
+  s: number[];           // normalizedCarPosition dos limites de setor [s1_end, s2_end]
+  mv: number;            // max speed
+  dur: number;           // duration ms
+};
+
+export type LapTelemetry = {
+  id: string;
+  session_source_id: string;
+  lap_number: number;
+  data: LapTelemetryData;
+  sample_hz: number;
+  synced_at: string;
+};
